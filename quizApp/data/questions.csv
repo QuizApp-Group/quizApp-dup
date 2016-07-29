@@ -1,0 +1,40 @@
+dataset_id,Dataset Nickname,question_id,question_text,answer,question_type
+0,Business,1,Which department spent over budget for the first half of the year and under budget for the second half?,Human Resources,multiple_choice
+0,Business,2,Which department was over budget for every month of the year except November?,Information Technology,multiple_choice
+0,Business,3,Which department was the most under budget across all months for the year to date?,Technical Support,multiple_choice
+1,CityFixit,11, Consider the number of problems that were reported. Which of the following is NOT true?:,Street Sweeping problems did not surpass Road Repair.,multiple_choice
+1,CityFixit,12,Consider how long it took for problems to be fixed. Which of the following statements is most accurate?,Problems that have to do with roads took the most time to fix.,multiple_choice
+1,CityFixit,13,"Consider the percentage of problems that were reported using the mobile app called SeeClickFix. Which of the following is NOT true?
+","In 2012, in terms of actual number of complaints, the app was used for more Streetlight complaints than Drainage complaints.",multiple_choice
+2,FuelEconomies,21,Which fuel type is most efficient overall for Midsize Cars?,Diesel,multiple_choice
+2,FuelEconomies,22,Which car  size in terms of average number of cylinders has the most spread in MPG?,4,multiple_choice
+2,FuelEconomies,23,Which car class has all models with MPG less than 23?,Standard Pickup Trucks 4WD,multiple_choice
+3,Tourism,31,Which region is the 3rd largest total in terms of tourist income across all years?,Asia,multiple_choice
+3,Tourism,32,Which of the regions shown saw the LEAST severe drop between 2008 and 2009?,Asia,multiple_choice
+3,Tourism,33,Which region contains the most countries with tourism worth between $20B and $60B across all years?,Americas,multiple_choice
+4,DogBreeds,41,Which of the following statements is true?,Longer living breeds tend to cost less than short lived breeds.,multiple_choice
+4,DogBreeds,42,Which of the following statements is true?,"On averge, non-sporting dogs are more popular than sporting dogs. ",multiple_choice
+4,DogBreeds,43,"Which category of dog shown would be best to recommend to someone who wants a moderately expensive, long-lived breed?",toy,multiple_choice
+5,Jeopardy,51,Which question type occurred in all but 3 years?,Literature,multiple_choice
+5,Jeopardy,52,Which year on average was the most lucrative for players in terms of earnings?,2008,multiple_choice
+5,Jeopardy,53,"Based on these numbers, which category would be the strategically best to select as a contestant in the game?",Colleges and Universities,multiple_choice
+0,,4,"This visualization makes important information visually
+salient.",,heuristic
+1,,14,This visualization uses visual components appropriately.,,heuristic
+2,,24,This visualization successfully presents multiple relevant facts into a single visual pattern.,,heuristic
+3,,34,"This visualization makes important information visually
+salient.",,heuristic
+4,,44,This visualization uses visual components appropriately.,,heuristic
+5,,54,This visualization successfully presents multiple relevant facts into a single visual pattern.,,heuristic
+0,,5,Rate the graph on a scale of 1 to 5,,rating
+1,,15,Rate the graph on a scale of 1 to 5,,rating
+2,,25,Rate the graph on a scale of 1 to 5,,rating
+3,,35,Rate the graph on a scale of 1 to 5,,rating
+4,,45,Rate the graph on a scale of 1 to 5,,rating
+5,,55,Rate the graph on a scale of 1 to 5,,rating
+0,,6,Rank the graphs above from best to worst,,pre_test
+1,,16,Rank the graphs above from best to worst,,pre_test
+2,,26,Rank the graphs above from best to worst,,pre_test
+3,,36,Rank the graphs above from best to worst,,pre_test
+4,,46,Rank the graphs above from best to worst,,pre_test
+5,,56,Rank the graphs above from best to worst,,pre_test

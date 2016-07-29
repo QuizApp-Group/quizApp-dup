@@ -1,0 +1,26 @@
+{% extends 'header.html' %}
+{% import "macros.html" as macros %}
+{% import "activities/activities_macros.html" as activities_macros %}
+
+{% block head %}
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<script src="{{ url_for('static', filename='js/common_ajax.js') }}"></script>
+<script src="{{ url_for('static', filename='js/datasets_ajax.js') }}"></script>
+{% endblock %}
+
+{% block title %}Graph {{ graph.name }} - Settings{% endblock %}
+
+{% block content %}
+<div class="media-item-container">
+  {{ macros.render_media_item(graph) }}
+</div>
+<h3>General</h3>
+
+<form action="{{ url_for('datasets.update_media_item',
+dataset_id=dataset.id, media_item_id=graph.id) }}" method="put" id="update-dataset-form">
+  {{ macros.render_form(update_graph_form) }}
+</form>
+
+<hr>
+
+{% endblock %}

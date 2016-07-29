@@ -1,0 +1,89 @@
+{% import 'macros.html' as macros %}
+
+{% macro experiment_table(experiments, create_form, id, admin_controls) -%}
+<table class="table table-striped" id="{{ id }}">
+  <thead>
+    <tr>
+      <th class="col-md-3">Name</th>
+      <th class="col-md-2">Start time</th>
+      <th class="col-md-2">End time</th>
+      <th class="col-md-1"></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for experiment in experiments %}
+    {{ experiment_row(experiment, admin_controls) }}
+    {% endfor %}
+    {% if create_form and admin_controls %}
+    <tr>
+      <td>{{ macros.render_field(create_form.name, label_visible=false) }}</td>
+      <td>{{ macros.render_field(create_form.start, label_visible=false) }}</td>
+      <td>{{ macros.render_field(create_form.stop, label_visible=false) }}</td>
+      <td>{{ macros.render_field(create_form.submit, value="Create") }}</td>
+    </tr>
+    {% endif %}
+  </tbody>
+</table>
+{%- endmacro %}
+
+{% macro experiment_row(exp, admin_controls) -%}
+<tr>
+  <td class="name">
+    <a href="{{ url_for('experiments.read_experiment', experiment_id=exp.id) }}">{{exp.name}}</a>
+  </td>
+  <td class="start">{{exp.start|datetime_format}}</td>
+  <td class="stop">{{exp.stop|datetime_format}}</td>
+  <td>{% if admin_controls %}
+    <a href="{{ url_for('experiments.settings_experiment', experiment_id=exp.id) }}">
+      {{ macros.render_glyphicon('cog') }}
+    </a>
+    <a href="{{ url_for('experiments.results_experiment', experiment_id=exp.id) }}">
+      {{ macros.render_glyphicon('signal') }}
+    </a>
+    {% endif %}
+  </td>
+</tr>
+{%- endmacro %}
+
+{% macro activity_table(form, mapping) %}
+<table class="table">
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Datasets</th>
+      <th>Text</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for activity_field in form.activities %}
+    {% if mapping[activity_field.data] %}
+      {{ activity_row(mapping[activity_field.data], activity_field) }}
+    {% endif %}
+    {% endfor %}
+  </tbody>
+</table>
+{% endmacro %}
+
+{% macro activity_row(activity, field) %}
+  <tr>
+    <td>{{ activity.type }}</td>
+    <td>
+      {% if activity.datasets %}
+      {% for dataset in activity.datasets %}
+      {{ dataset.id }}
+      {% endfor %}
+      {% else %}
+      -
+      {% endif %}
+    </td>
+    <td>
+      {% if "question" in activity.type %}
+      {{ activity.question }}
+      {% else %}
+      -
+      {% endif %}
+    </td>
+    <td>{{ field }}</td>
+  </tr>
+{% endmacro %}

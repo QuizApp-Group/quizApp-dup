@@ -1,0 +1,53 @@
+{% extends 'header.html' %}
+{% import 'macros.html' as macros %}
+
+{% block head %}
+{{ macros.import_datatables() }}
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<script src="{{ url_for('static', filename='js/common_ajax.js') }}"></script>
+<script src="{{ url_for('static', filename='js/datasets_ajax.js') }}"></script>
+{% endblock %}
+
+{% block title %}
+Dataset List
+{% endblock %}
+
+{% block content %}
+<form action="{{ url_for('datasets.create_dataset') }}" method="post",
+id="create-dataset-form">
+  <table class="table table-striped data-table" id="datasets-table">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>URI</th>
+        <th data-orderable="false"></th>
+      </tr>
+    </thead>
+    <tfoot>
+      <tr>
+        <td></td>
+        <td>{{ macros.render_field(create_dataset_form.name,
+          label_visible=False) }}</td>
+        <td>{{ macros.render_field(create_dataset_form.uri, label_visible=False) }}</td>
+        <td>{{ macros.render_field(create_dataset_form.submit, value="Create")
+          }}</td>
+      </tr>
+    </tfoot>
+    <tbody>
+      {% for dataset in datasets %}
+      <tr>
+        <td>{{ dataset.id }}</td>
+        <td>{{ dataset.name }}</a>
+        </td>
+        <td>{{ dataset.uri }}</a>
+        <td>
+          <a href="{{ url_for('datasets.settings_dataset',
+          dataset_id=dataset.id) }}">{{ macros.render_glyphicon("cog") }}</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</form>
+{% endblock %}

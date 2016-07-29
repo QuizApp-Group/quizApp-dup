@@ -1,0 +1,56 @@
+{% extends 'header.html' %}
+
+{% import 'macros.html' as macros %}
+
+{% block head %}
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<script src="{{ url_for('static', filename='js/common_ajax.js') }}"></script>
+<script src="{{ url_for('static', filename='js/experiments_ajax.js') }}"></script>
+{% endblock %}
+
+{% block title %}
+Quiz
+{% endblock %}
+
+{% block content %}
+{% for media_item in assignment.media_items %}
+<div class="row media-item-container"
+  {% if not experiment_complete %}
+  data-flash-duration="{{ media_item.flash_duration }}"
+  {% endif %}
+  >
+  {{ macros.render_media_item(media_item) }}
+</div>
+{% endfor %}
+
+<div id='question'>
+  <h3>{{ question.question }}</h3>
+  <form action="{{ url_for('experiments.update_assignment', experiment_id=exp.id,
+  a_id=assignment.id)}}" method="patch" id="question-submit-form">
+    {{ macros.render_field(mc_form.choices, disabled=experiment_complete) }}
+    {% if question.needs_comment %}
+    <p>Why do you think this is the correct choice?</p>
+    {{ macros.render_field(mc_form.comment, rows="5",
+    disabled=experiment_complete) }}
+    <br />
+    {% endif %}
+    <p id="explanation-text">{{ explanation }}</p>
+    <div class="row">
+      <div class="previous-button">
+        {% if previous_assignment %}
+        <a href="{{ url_for('experiments.read_assignment', experiment_id=exp.id,
+        a_id=previous_assignment.id) }}" class="btn btn-primary"
+                                         role="button">Previous</a>
+        {% endif %}
+      </div>
+      <div class="next-button">
+        {% if experiment_complete %}
+        <a href="{{ next_url }}" role="button" class="btn btn-primary">Next</a>
+        {% else %}
+        {{ macros.render_field(mc_form.submit, value="Next") }}
+        {% endif %}
+      </div>
+    </div>
+  </form>
+</div>
+{% endblock %}

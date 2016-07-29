@@ -1,0 +1,23 @@
+{% extends 'header.html' %}
+
+{% block head %}
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<script src="{{ url_for('static', filename='js/common_ajax.js') }}"></script>
+<script src="{{ url_for('static', filename='js/experiments_ajax.js') }}"></script>
+{% endblock %}
+
+{% block title %}
+Confirm experiment submission
+{% endblock %}
+
+{% block content %}
+<p>If you are ready to submit your answers, click the "Submit" button below.
+You will not be able to modify your answers after this.</p>
+
+<form action="{{ url_for('experiments.finalize_experiment', experiment_id=experiment.id)
+}}" method="patch" id="submit-experiment-form">
+  <input type="submit" value="Submit" class="btn btn-primary">
+  <a href="{{ url_for('experiments.read_experiment', experiment_id=experiment.id) }}"
+     class="btn btn-primary" role="button">Go back to start</a>
+</form>
+{% endblock %}

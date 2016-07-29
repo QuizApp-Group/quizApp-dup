@@ -1,0 +1,34 @@
+{% extends 'header.html' %}
+{% import 'macros.html' as macros %}
+{% block head %}
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<script src="{{ url_for('static', filename='js/common_ajax.js') }}"></script>
+<script src="{{ url_for('static', filename='js/experiments_ajax.js') }}"></script>
+{{ macros.import_datetimepicker() }}
+{% endblock %}
+
+{% block title %}
+Experiment List
+{% endblock %}
+
+{% import "experiments/experiment_macros.html" as exp_macros %}
+
+{% block content %}
+{% if current_user.has_role("experimenter") %}
+<h3>Future experiments</h3>
+{{ exp_macros.experiment_table(future_experiments, False,
+"future_experiment_table", current_user.has_role("experimenter")) }}
+<hr>
+{% endif %}
+<h3>Present experiments</h3>
+<form id="create-experiment-form" method="post">
+  {{ exp_macros.experiment_table(present_experiments, create_form,
+  "present_experiment_table", current_user.has_role("experimenter")) }}
+</form>
+{% if current_user.has_role("experimenter") %}
+<hr>
+<h3>Past experiments</h3>
+{{ exp_macros.experiment_table(past_experiments, False,
+"past_experiment_table", current_user.has_role("experimenter")) }}
+{% endif %}
+{% endblock %}

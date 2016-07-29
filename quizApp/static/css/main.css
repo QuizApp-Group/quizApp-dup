@@ -6,78 +6,23 @@
     src: local('Raleway'), local('Raleway-Regular'), url(/static/fonts/Raleway-Regular.ttf) format('truetype');
 }
 
-.bottom{
-    border-top: 1px solid #ccc;
+form {
+  margin-bottom: 20px;
 }
 
-img {
-    width: 100%;
+.media-item-container img {
+    max-width: 100%;
+    margin: auto;
+    display: block;
 }
 
-.overflow {
-    height: 550px;
-    overflow-y: auto;
-    overflow-x: hidden;
-    margin-bottom: 1em;
-}
-
-.overflow-stopped {
-    height: 550px;
-    overflow: hidden;
-    margin-bottom: 1em;
-}
-
-.overflow-small {
-    height: 250px;
-}
 
 .wrapper{
     width: 90%;
     margin: 0 auto;
 }
 
-.vcenter {
-    display: inline-block;
-    vertical-align: middle;
-    float: none;
-}
-
 /*Global Components*/
-.block-list-item{
-    border-bottom: 1px solid #ccc;
-    padding: 1.43em 0 1.43em 0;
-}
-
-.block-list-item:nth-of-type(1){
-    padding-top: 0;
-}
-
-.block-list-item:last-child{
-    border: none;
-}
-
-.inline-list-item{
-    margin-right: 1em;
-}
-
-.key{
-    font-weight: bold;
-    margin-right: 1em;
-    text-transform: uppercase;
-    font-size: 85%;
-}
-
-.more-info{
-    border-radius: 50%;
-    padding: 1px 5px 0px 5px;
-    color: white;
-    font-size: 12px;
-    transform: translateY(-15%);
-}
-
-.page-header{
-    margin-top: 0;
-}
 
 header, .trial-pane-header {
     margin-top: 150px;
@@ -92,9 +37,6 @@ a .btn {
     margin-right: 2em;
 }
 
-.nodec:hover {
-    text-decoration: none;
-}
 
 .modal-input {
     margin-bottom: 10px;
@@ -105,78 +47,6 @@ a .btn {
     min-width: 85px;
 }
 
-
-
-
-
-.main-search-addon {
-    padding-left: 25px;
-    padding-right: 25px;
-    padding-top: 10px;
-    padding-bottom: 10px;
-}
-
-.twitter-typeahead{
-    float:left;
-    width:100%;
-}
-
-.tt-input {
-    width: 100%;
-}
-
-.twitter-typeahead .form-control {
-    padding-left: 12px;
-    padding-right: 12px;
-    padding-top: 8px;
-    padding-bottom: 8px;
-    height: auto;
-}
-
-.twitter-typeahead .tt-query, .twitter-typeahead .tt-hint {
-    margin-bottom: 0;
-}
-
-.tt-dropdown-menu {
-    width: 100%;
-    min-width: 160px;
-    background-color: #fff;
-    border: 1px solid #ccc;
-    border: 1px solid rgba(0, 0, 0, 0.2);
-    *border-right-width: 2px;
-    *border-bottom-width: 2px;
-    -webkit-box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
-    -moz-box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
-    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
-    -webkit-background-clip: padding-box;
-    -moz-background-clip: padding;
-    background-clip: padding-box;
-}
-.tt-suggestion {
-    display: block;
-    padding: 3px 20px;
-}
-.twitter-typeahead .tt-suggestion.tt-cursor {
-    color: #fff;
-    background-color: #0081c2;
-}
-.tt-suggestion.tt-cursor a {
-    color: #fff;
-}
-.tt-suggestion p {
-    margin: 0;
-}
-
-.tt-suggestion {
-    cursor: pointer;
-}
-
-.search-header {
-    font-size: 18px;
-    background-color: #eee;
-    padding-left: .6em;
-    font-weight: 500;
-}
 
 .btn.input-group-addon{
     color: #fff;
@@ -196,25 +66,10 @@ a .btn {
     color:#333;
 }
 
-#training-next , #pretest-next{
-    margin-bottom: 1em;
-}
-
-.graph {
+.media-item {
     width: 70%;
     height: 70%;
 }
-
-.no-disc {
-    list-style-type: none;
-}
-
-.dropdown-wide {
-    width: 60%;
-    text-align: right;
-}
-
-
 
 
 /*Global Responsive*/
@@ -252,18 +107,6 @@ a .btn {
     .overflow-small{height: 200px;}
 }
 
-
-
-/*Top navbar*/
-.navbar-brand{
-    display: block;
-    height: auto;
-}
-.navbar-brand img{
-    width: 32px;
-    display: block;
-}
-
 .navbar {
     min-height: 30px;
     margin-bottom: 15px;
@@ -299,7 +142,6 @@ a .btn {
     }
 }
 
-
 nav .site-name{
     padding-left: 2%;
     margin-top: 8px;
@@ -320,281 +162,104 @@ nav .site-name a:hover{
     opacity: .9;
 }
 
-
-
-
-
-
-/* ratings styles */
-#ratings-summary {
-    margin-bottom: 20px;
+.likert {
+  width: 100%;
+  display: table;
+  table-layout: fixed;
+  /* the magic dust that ensure equal width */
 }
 
-.ratings-table {
-    margin-top: 20px;
+.likert li {
+  display: table-cell;
+  text-align: center;
+  list-style-type: none;
 }
 
-.rating-overall {
-    font-size: 150%;
-    font-weight: bold;
+.likert li label {
+  display: block;
 }
 
-.rating-category {
-    font-size: 135%;
+body {
+  padding-top: 20px;
+  padding-bottom: 20px;
 }
 
-.rating {
-    color: #FFB90F;
+/* Everything but the jumbotron gets side spacing for mobile first views */
+.header,
+.marketing,
+.footer {
+  padding-right: 15px;
+  padding-left: 15px;
 }
 
-.stars-text {
-    text-align: center;
+/* Custom page header */
+.header {
+  padding-bottom: 20px;
+  border-bottom: 1px solid #e5e5e5;
+}
+/* Make the masthead heading the same height as the navigation */
+.header h1 {
+  margin-top: 0;
+  margin-bottom: 0;
+  line-height: 40px;
 }
 
-.main-rating {
-    font-size: 1.5em;
+/* Customize container */
+@media (min-width: 768px) {
+  .container {
+    max-width: 730px;
+  }
+}
+.container-narrow > hr {
+  margin: 30px 0;
 }
 
-.rating-large {
-    font-size: 150%;
-    margin-top: .3em;
-}
 
-
-
-
-
-/* facility and sponsor list */
-.facility {
-    margin-bottom: .5em;
-}
-
-#facility-list ul.list-group-horizontal {
+/* Responsive: Portrait tablets and up */
+@media screen and (min-width: 768px) {
+  /* Remove the padding we set earlier */
+  .header,
+  .marketing,
+  .footer {
+    padding-right: 0;
     padding-left: 0;
-      -moz-column-count: 3;
-      -moz-column-gap: 20px;
-      -webkit-column-count: 3;
-      -webkit-column-gap: 20px;
-  column-count: 3;
-  column-gap: 20px;
+  }
+  /* Space out the masthead */
+  .header {
+    margin-bottom: 30px;
+  }
+  /* Remove the bottom border on the jumbotron for visual effect */
+  .jumbotron {
+    border-bottom: 0;
+  }
 }
 
-
-
-
-/* horizontal list group */
-.list-group-horizontal .list-group-item {
-    display: inline-block;
+ul#answers {
+  list-style-type: none;
 }
 
-
-
-
-/*Footer*/
-footer{
-    margin-top: 4em;
-    padding-top: 4em;
-    padding-bottom: 4em;
-    border-top: 1px solid #ccc;
-    text-align: center;
+#explanation-container {
+  display: none;
 }
 
-footer .site-name:hover{
-    text-decoration: none;
-    opacity: .9;
+.table-container {
+  max-height: 30em;
+  margin-bottom: 20px;
+  overflow: auto;
+  width: 100%;
 }
 
-
-/* institution page */
-svg rect:hover, svg text:hover {
-    cursor: pointer;
+.table-container table {
+  margin-bottom: 0px;
 }
 
-tspan {
-    font-weight: bold;
+.previous-button {
+  float: left;
+}
+.next-button {
+  float: right;
 }
 
-#inst-summary, .ratings-table {
-    margin-left: 1.5em;
+.modal img {
+  max-width: 100%;
 }
-
-#top-conditions {
-    text-align: center;
-}
-
-
-
-
-
-
-/* map */
-#map {
-    height: 400px;
-}
-
-.leaflet-popup{
-    cursor: pointer;
-}
-
-
-
-/* trial pane */
-.filter-col-header {
-    font-size: .8em;
-    font-weight: bold;
-    text-align: center;
-    vertical-align: bottom;
-}
-
-.filter-col-header td {
-    padding-bottom: 0.4em;
-}
-
-.filter-row td {
-    padding-bottom: 0.5em;
-    font-size: 0.8em;
-}
-
-.filter-div {
-    margin-top: 1em;
-}
-
-.filter-div h6 {
-    margin-left: 1em;
-    margin-top: 1px;
-    margin-bottom: 1px;
-}
-
-#see-more-trials:hover {
-    cursor: pointer;
-}
-
-.filter-form {
-    text-align: center;
-}
-
-.light-border {
-    border-style: dotted;
-    border-width: 1px;
-    border-color: #ddd;
-    -webkit-box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
-    -moz-box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
-    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
-}
-
-
-
-
-
-/* criteria active learning */
-.criteria-highlight {
-    background-color: #ddd;
-}
-
-.small-cell {
-    font-size: 0.7em;
-    text-align: center;
-}
-
-#criteria-list td {
-    vertical-align: top;
-    word-wrap:break-word;
-}
-
-#criteria-list table {
-    width: 100%;
-    table-layout:fixed;
-}
-
-#criteria-list td.long-text {
-    padding-right: 2em;
-}
-
-.criteria-text {
-    font-size: 1.15em;
-}
-
-.disabled-text {
-    color: #888;
-}
-
-#term-exclude-list {
-    border-right: solid 1px #ccc;
-}
-
-#learning-pane-term, #learning-pane-predictor {
-    height: 250px;
-}
-
-#terms-and-preds h4, #terms-and-preds div {
-    padding-left: 1em;
-}
-
-.overlay-box {
-    width: 100%;
-    height: 100%;
-    position: absolute;
-    top: 0;
-    left: 0;
-    z-index: 500;
-    background-color: rgba(235,235,235,0.5);
-}
-
-#terms-and-preds ul {
-    padding-left: 1em;
-}
-
-.word-highlight {
-    font-size: 1.1em;
-    font-weight: bold;
-    text-decoration: underline;
-}
-
-.word-btn {
-    margin-left: 1em;
-}
-
-#term-include, #predictor-include {
-    font-weight: bold;
-    color: green;
-}
-
-#term-exclude, #predictor-exclude {
-    font-weight: bold;
-    color: red;
-}
-
-.active-learn-table {
-    width: 100%;
-}
-
-
-
-
-/* approval pages */
-.top-margin-1em {
-    margin-top: 1em;
-}
-.top-margin-2em {
-    margin-top: 2em;
-}
-
-#concept-term-table table {
-    margin-top: 1em;
-}
-
-
-
-
-/* about pages */
-
-.bottom-margin-2em {
-    margin-bottom: 2em;
-}
-
-#about-page p, #ratings-description p {
-    font-size: 1.12em;
-}
-
-
-

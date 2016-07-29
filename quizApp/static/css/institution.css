@@ -1,9 +1,0 @@
-.institution .institution-logo{
-	padding-top: 2em;
-}
-
-@media (max-width: 992px) {
-	svg{
-		width: 100%;
-	}
-}

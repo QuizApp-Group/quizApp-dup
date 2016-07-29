@@ -1,0 +1,55 @@
+answer_id,question_id,answer_letter,answer_text,correct
+11,1,a,Facilities,no
+12,1,b,Finance,no
+13,1,c,Human Resources,yes
+21,2,a,Information Technology,yes
+22,2,b,Finance,no
+23,2,c,Executive,no
+31,3,a,Finance,no
+32,3,b,Technical Support,yes
+33,3,c,Sales,no
+111,11,a,Building Maintenance requests were lower than Electrical requests until 2011.,no
+112,11,b,"Vegetation Control, Survey, and Streetlights request counts were the same across all years, except Streetlights increased slightly in 2012.",no
+113,11,c,Street Sweeping problems did not surpass Road Repair.,yes
+121,12,a,Problems that were reported most frequently took the most time to fix.,no
+122,12,b,Problems that have to do with roads took the most time to fix.,yes
+123,12,c,There is no pattern between time to fix and number of reported problems.,no
+131,13,a,"The app was not operational in 2009, and increased in usage overall each year after introduction.",no
+132,13,b,"In 2012, in terms of actual number of complaints, the app was used for more Streetlight complaints than Drainage complaints.",yes
+133,13,c,"In 2010, in terms of actual number of complaints, the app was used for more Illegal Dumping complaints than Graffiti complaints.",no
+211,21,a,Regular,no
+212,21,b,Premium,no
+213,21,c,Diesel,yes
+221,22,a,4,yes
+222,22,b,6,no
+223,22,c,8,no
+231,23,a,Small Station Wagons,no
+232,23,b,Standard Pickup Trucks 4WD,yes
+233,23,c,Large Cars,no
+311,31,a,Americas,no
+312,31,b,Asia,yes
+313,31,c,Africa,no
+321,32,a,Europe,no
+322,32,b,Americas,no
+323,32,c,Asia,yes
+331,33,a,Americas,yes
+332,33,b,Europe,no
+333,33,c,Asia,no
+411,41,a,Longer living breeds tend to be  more popular than short lived breeds.,no
+412,41,b,Longer living breeds tend to cost less than short lived breeds.,yes
+413,41,c,Longer living breeds tend to be working dogs.,no
+421,42,a,"On average, toys live longer than terriers.",no
+422,42,b,"On average, sporting dogs are more expensive than hounds.",no
+423,42,c,"On averge, non-sporting dogs are more popular than sporting dogs. ",yes
+431,43,a,toy,yes
+432,43,b,hound,no
+433,43,c,working,no
+511,51,a,Literature,yes
+512,51,b,Potpourri,no
+513,51,c,American History,no
+521,52,a,2008,yes
+522,52,b,2009,no
+523,52,c,2011,no
+531,53,a,Potpourri,no
+532,53,b,Colleges & Universities,yes
+533,53,c,Sports,no

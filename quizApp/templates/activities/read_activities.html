@@ -1,0 +1,49 @@
+{% extends 'header.html' %}
+{% import 'macros.html' as macros %}
+
+{% block head %}
+{{ macros.import_datatables() }}
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<script src="{{ url_for('static', filename='js/common_ajax.js') }}"></script>
+<script src="{{ url_for('static', filename='js/activities_ajax.js') }}"></script>
+{% endblock %}
+
+{% block title %}
+Activity List
+{% endblock %}
+
+{% block content %}
+  <table class="table table-striped data-table" id="activities-table">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Type</th>
+        <th>Text</th>
+        <th>Category</th>
+        <th data-orderable="false"></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for activity in activities %}
+      <tr>
+        <td><a href="{{ url_for('activities.read_activity',
+        activity_id=activity.id) }}">{{ activity.id }}</a></td>
+        <td>{{ activity.type }}</a>
+        <td>{{ activity.question }}</a>
+        </td>
+        <td>{{ activity.category }}</a>
+        <td>
+          <a href="{{ url_for('activities.settings_activity',
+          activity_id=activity.id) }}">{{ macros.render_glyphicon("cog") }}</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <h3>Create new activity</h3>
+  <form action="{{ url_for('activities.create_activity') }}" method="post"
+    id="create-activity-form">
+    {{ macros.render_field(activity_type_form.object_type) }}
+    {{ macros.render_field(activity_type_form.submit, value="Create") }}
+  </form>
+{% endblock %}

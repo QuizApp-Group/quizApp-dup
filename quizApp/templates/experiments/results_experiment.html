@@ -1,0 +1,28 @@
+{% extends 'header.html' %}
+{% import "experiments/experiment_macros.html" as exp_macros %}
+{% import "macros.html" as macros %}
+
+{% block title %}Results - {{ experiment.name }}{% endblock %}
+
+{% block content %}
+<p>Number of participants involved: {{ num_participants }}</p>
+<p>Number of participants finished: {{ num_finished }} </p>
+<table class="table">
+  <thead>
+    <tr>
+      <th>Question</th>
+      <th>Number of responses</th>
+      <th>Number of correct responses</th>
+    </tr>
+  </thead>
+  <tbody>
+{% for question, data in question_stats.iteritems() %}
+<tr>
+  <td>{{ question }}</td>
+  <td>{{ data["num_responses"] }}</td>
+  <td>{{ data["num_correct"] }}</td>
+</tr>
+{% endfor %}
+</table>
+
+{% endblock %}

@@ -4,75 +4,65 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>QuizApp</title>
-
-    <!-- GLOBAL -->
-    <link href="{{ url_for('static', filename='js/jquery-ui/jquery-ui.css') }}" rel="stylesheet">
+    <title>QuizApp - {% block title %}{% endblock %}</title>
     <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">
-    <link href="{{ url_for('static', filename='css/bootstrap-switch.min.css') }}" rel="stylesheet">
-    <link href="{{ url_for('static', filename='css/bootstrap-tagsinput.css') }}" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/main.css') }}" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/font-awesome.min.css') }}" type='text/css'>
-
-    <!-- INDEX -->
-    {% if is_home %}
-      <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
-      <link rel="stylesheet" href="http://leaflet.github.io/Leaflet.markercluster/dist/MarkerCluster.Default.css" />
-    {% endif %}
-    <!-- CONDITION PAGE -->
-    <link href="{{ url_for('static', filename='css/condition.css') }}" rel="stylesheet">
-    <!-- INSTITUTION PAGE -->
-    <link href="{{ url_for('static', filename='css/institution.css') }}" rel="stylesheet">
-
-    <!-- All -->
     <script src="{{ url_for('static', filename='js/jquery.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/jquery-ui/jquery-ui.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/bootstrap_components.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/bootstrap-switch.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/bootstrap-tagsinput.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/typeahead.bundle.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/jquery.waypoints.min.js') }}"></script>
-    <script src="http://www.bitstorm.org/jquery/shadow-animation/jquery.animate-shadow-min.js"></script>
-    <script src="{{ url_for('static', filename='js/jquery.pulse.min.js') }}"></script>
-    <script type=text/javascript>$SCRIPT_ROOT = {{ request.script_root|tojson|safe }} + "/";</script>
     <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
     <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
     <!--[if lt IE 9]>
       <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
       <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
     <![endif]-->
-    <!--favicon-->
-    <link rel="icon" type="image/png" href="{{ url_for('static', filename='assets/favicon_green.png') }}">
+    {% block head %}{% endblock %}
   </head>
   <body>
-  <nav class="navbar navbar-default navbar-fixed-top" role="navigation">
-    <div class="container-fluid wrapper">
-      <div class="row col-xs-12 col-sm-12 col-md-6">
-        <!-- <a class="navbar-brand" href="{{ url_for('home') }}">
-          <img alt="Brand" src="{{ url_for('static', filename='assets/health-care-symbol-png.png') }}">
-        </a> -->
-        <h1 class='site-name'><span style="letter-spacing: 3px;">Quiz App</span></h1>
+    <div class="wrapper container">
+      <div class="header clearfix">
+        <nav>
+          <ul class="nav nav-pills pull-right">
+            {% if current_user.is_authenticated %}
+            <li role="presentation" class="active"><a>Hello {{
+                current_user.email }}</a></li>
+            <li role="presentation">
+              <a href="{{ url_for('security.logout') }}">Logout</a>
+            </li>
+            <li role="presentation">
+              <a href="{{ url_for('experiments.read_experiments') }}">Experiments</a>
+            </li>
+            {% if current_user.has_role("experimenter") %}
+            <li role="presentation">
+              <a href="{{ url_for('activities.read_activities')
+                }}">Activities</a>
+            </li>
+            <li role="presentation">
+              <a href="{{ url_for('datasets.read_datasets')
+                }}">Datasets</a>
+            </li>
+            <li role="presentation">
+              <a href="{{ url_for('core.manage_data') }}">
+                Manage data
+              </a>
+            </li>
+            {% endif %}
+            {% else %}
+            <li role="presentation" class="active">
+              <a href="{{ url_for('security.login') }}">Login</a>
+            </li>
+            <li role="presentation" class="active">
+              <a href="{{ url_for('security.register') }}">Register</a>
+            </li>
+            {% endif %}
+            <li role="presentation">
+              <a href="{{ url_for('core.home') }}">Home</a>
+            </li>
+          </ul>
+        </nav>
+        <h1 class="site-name">Quiz App</h1>
       </div>
-      {% if not is_home %}
-        <!-- <div class="navbar-search col-xs-12 col-sm-12 col-md-offset-0 col-md-4">
-          <div class="input-group">
-            <label class="sr-only" for="search-text">Condition and Institution Search</label>
-            <div class="input-group-addon">
-              <span class='glyphicon glyphicon-search'></span>
-            </div>
-            <input type="typeahead" class="form-control" id="search-text" placeholder="Search for a condition or institution">
-            <div id="search-button" class="btn btn-primary input-group-addon">
-              Search
-            </div>
-          </div>
-        </div> -->
-      {% endif %}
-      <div id="login-area" class="navbar-button col-xs-12 col-sm-12 {% if is_home %}col-md-offset-4{% else %}col-md-offset-4{% endif %} col-md-2">
-        <button id="login-button" type="button" class="btn btn-success btn-xs" data-toggle="modal" data-target="#login-modal">
-          Login
-        </button>
-      </div>
-  </nav>
-
-{% include 'modals.html' %}
+      <h2>{{ self.title() }}</h2>
+      {% block content %}{% endblock %}
+    </div> <!-- end .wrapper.container -->
+  </body>
+</html>

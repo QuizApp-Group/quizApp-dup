@@ -1,4 +1,13 @@
-from quizApp import app
+"""Run the flask server. Not for production use.
+"""
+from quizApp import create_app
+
+
+def run_dev_server():
+    """Run a server with development config.
+    """
+    app = create_app("development")
+    app.run()
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8882)
+    run_dev_server()

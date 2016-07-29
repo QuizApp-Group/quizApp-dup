@@ -1,0 +1,28 @@
+{% extends 'header.html' %}
+
+{% import 'macros.html' as macros %}
+
+{% block head %}
+{% endblock %}
+
+{% block title %}
+Activity {{ question.id }} - Preview
+{% endblock %}
+
+{% block content %}
+<div id='question'>
+  <h3>{{ question.question }}</h3>
+  <form id="question-submit-form">
+    {{ macros.render_field(question_form.choices) }}
+    {% if question.needs_comment %}
+        <p>Why do you think this is the correct choice?</p>
+        {{ macros.render_field(question_form.comment, rows="5") }}
+        <br />
+    {% endif %}
+    {{ macros.render_field(question_form.submit) }}
+  </form>
+</div>
+<p id="explanation-text">
+{{ question.explanation }}
+</p>
+{% endblock %}
