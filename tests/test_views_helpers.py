@@ -3,8 +3,21 @@
 
 from mock import MagicMock, patch
 
+from tests.auth import login_participant
+from tests.factories import create_experiment
 from quizApp.models import Base
-from quizApp.views.helpers import validate_model_id
+from quizApp.views.helpers import validate_model_id,\
+    get_or_create_participant_experiment
+
+
+def test_get_or_create_participant_experiment(client, users):
+    login_participant(client)
+    experiment = create_experiment(1, 1)
+    experiment.participant_experiments = []
+    experiment.save()
+
+    result = get_or_create_participant_experiment(experiment)
+    assert result is None
 
 
 @patch('quizApp.views.helpers.abort', autospec=True)

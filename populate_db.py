@@ -10,14 +10,14 @@ import random
 from sqlalchemy.engine import reflection
 from sqlalchemy.schema import MetaData, Table, DropTable, DropConstraint, \
         ForeignKeyConstraint
+from flask_security.utils import encrypt_password
 
 from clear_db import clear_db
 from quizApp import create_app
 from quizApp.models import Question, Assignment, ParticipantExperiment, \
     Participant, Graph, Experiment, User, Dataset, Choice, Role
-from quizApp import db
+from quizApp import db, security
 from quizApp.config import basedir
-import pdb
 
 GRAPH_ROOT = "static/graphs"
 
@@ -25,15 +25,21 @@ GRAPH_ROOT = "static/graphs"
 def get_experiments():
     """Populate the database with initial experiments.
     """
+    blurb = ("You will be asked to respond to a series of multiple choice"
+    " questions regarding various graphs and visualizations.")
+
     pre_test = Experiment(name="pre_test",
+                          blurb=blurb,
                           start=datetime.now(),
                           stop=datetime.now() + timedelta(days=3))
 
     test = Experiment(name="test",
+                      blurb=blurb,
                       start=datetime.now(),
                       stop=datetime.now() + timedelta(days=5))
 
     post_test = Experiment(name="post_test",
+                           blurb=blurb,
                            start=datetime.now() + timedelta(days=-3),
                            stop=datetime.now())
 
@@ -49,16 +55,6 @@ QUESTION_TYPE_MAPPING = {"multiple_choice": "question_mc_singleselect",
                          "rating": "question_mc_singleselect_scale",
                          "pre_test": "question"}
 
-def get_random_duration():
-    """Get a random duration for a question.
-    """
-    # 50% chance of indefinite display
-    duration = random.randint(-1, 0)
-
-    if duration == 0:
-        duration = random.randint(500, 1500)
-
-    return duration
 
 def get_questions():
     """Populate the database with questions based on csv files.
@@ -135,7 +131,8 @@ def get_choices():
             graph = Graph(
                 id=graph["graph_id"],
                 dataset_id=int(graph["dataset"])+1,
-                flash_duration=get_random_duration(),
+                flash=bool(random.getrandbits(1)),
+                flash_duration=random.randint(500, 1500),
                 path=os.path.join(basedir, GRAPH_ROOT,
                                       graph["graph_location"]))
             db.session.add(graph)
@@ -182,18 +179,18 @@ PARTICIPANT_QUESTION_LIST = \
  [(5, 0), (4, 0), (2, 2), (3, 0), (1, 2), (0, 1)],
  [(4, 0), (1, 2), (2, 1), (5, 1), (0, 2), (3, 2)]]
 
-def create_participant(pid, experiments, roles):
+def create_participant(pid, experiments):
     """Given an ID number, create a participant record, adding them to each
     of the given experiments.
     """
     participant = Participant(
         id=pid,
         email=str(pid),
-        password=str(pid),
+        password=encrypt_password(str(pid)),
         opt_in=False,
         active=True,
-        roles=roles
     )
+    security.datastore.add_role_to_user(participant, "participant")
     for exp in experiments:
         part_exp = ParticipantExperiment(
             progress=0,
@@ -209,8 +206,8 @@ def get_students():
     heuristic_participant_id_list = []
     experiments = Experiment.query.all()
 
-    participant_role = Role(name="participant", description="Participant role")
-    experimenter_role = Role(name="experimenter", description="Experimenter role")
+    security.datastore.create_role(name="participant")
+    security.datastore.create_role(name="experimenter")
 
     with open(os.path.join(DATA_ROOT, "participant_id_list.csv")) as participants_csv:
         participant_reader = csv.DictReader(participants_csv)
@@ -220,22 +217,17 @@ def get_students():
 
             if questions_id:
                 question_participant_id_list.append(questions_id)
-                create_participant(questions_id, experiments,
-                                   [participant_role])
+                create_participant(questions_id, experiments)
 
             if heuristics_id:
                 heuristic_participant_id_list.append(heuristics_id)
-                create_participant(heuristics_id, experiments,
-                                   [participant_role])
-
-    root = User(
+                create_participant(heuristics_id, experiments)
+    security.datastore.create_user(
         email="experimenter@example.com",
-        password="foobar",
+        password=encrypt_password("foobar"),
         active=True,
-        roles=[experimenter_role]
+        roles=["experimenter"]
     )
-
-    db.session.add(root)
 
     return question_participant_id_list, heuristic_participant_id_list
 
@@ -380,7 +372,13 @@ def setup_db():
         get_choices()
         questions, heuristics = get_students()
         create_assignments(questions, heuristics)
+
+        # Random assortment of PE's to Participants
+        for participant_experiment in ParticipantExperiment.query.all():
+            participant_experiment.participant = None
+
         db.session.commit()
+
 
 if __name__ == "__main__":
     setup_db()

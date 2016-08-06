@@ -13,6 +13,12 @@ Dataset List
 {% endblock %}
 
 {% block content %}
+<div class="alert alert-info">
+  {{ macros.render_glyphicon('info-sign') }}
+  To modify the media items of a dataset, click on the {{
+  macros.render_glyphicon('cog') }} button in the row of the relevant
+  dataset.
+</div>
 <form action="{{ url_for('datasets.create_dataset') }}" method="post",
 id="create-dataset-form">
   <table class="table table-striped data-table" id="datasets-table">

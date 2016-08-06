@@ -123,19 +123,16 @@ class DatasetFactory(factory.Factory):
             self.media_items.append(MediaItemFactory())
 
 
-def create_experiment(num_activities, participants, activity_types=[]):
+def create_experiment(num_activities, num_participants, activity_types=[]):
     experiment = ExperimentFactory()
-    num_participants = len(participants)
     participant_experiments = []
 
-    for participant in participants:
+    for _ in xrange(0, num_participants):
         part_exp = ParticipantExperimentFactory()
-        part_exp.participant = participant
-        part_exp.experiment = experiment
+        experiment.participant_experiments.append(part_exp)
         participant_experiments.append(part_exp)
 
     for i in xrange(0, num_activities*num_participants):
-        participant = participants[i % num_participants]
         part_exp = participant_experiments[i % num_participants]
 
         if activity_types:
@@ -153,7 +150,6 @@ def create_experiment(num_activities, participants, activity_types=[]):
         activity.experiments.append(experiment)
 
         assignment.experiment = experiment
-        assignment.participant = participant
         assignment.activity = activity
 
         part_exp.assignments.append(assignment)

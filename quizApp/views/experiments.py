@@ -7,7 +7,7 @@ import json
 import os
 
 from flask import Blueprint, render_template, url_for, jsonify, abort, \
-    current_app, request
+    current_app, request, session
 from flask_security import login_required, current_user, roles_required
 from sqlalchemy.orm.exc import NoResultFound
 
@@ -17,13 +17,18 @@ from quizApp.forms.experiments import CreateExperimentForm, \
     get_question_form
 from quizApp.models import Choice, Experiment, Assignment, \
     ParticipantExperiment, Activity, Participant
-from quizApp.views.helpers import validate_model_id
+from quizApp.views.helpers import validate_model_id, get_first_assignment
+from quizApp.views.mturk import submit_assignment
 
 experiments = Blueprint("experiments", __name__, url_prefix="/experiments")
 
 EXPERIMENT_ROUTE = "/<int:experiment_id>"
 ASSIGNMENTS_ROUTE = EXPERIMENT_ROUTE + "/assignments/"
 ASSIGNMENT_ROUTE = ASSIGNMENTS_ROUTE + "<int:a_id>"
+
+POST_FINALIZE_HANDLERS = {
+    "mturk": submit_assignment,
+}
 
 
 def get_participant_experiment_or_abort(experiment_id, code=400):
@@ -80,18 +85,15 @@ def create_experiment():
 def read_experiment(experiment_id):
     """View the landing page of an experiment, along with the ability to start.
     """
-    exp = validate_model_id(Experiment, experiment_id)
-    if current_user.has_role("participant"):
-        part_exp = get_participant_experiment_or_abort(experiment_id)
+    experiment = validate_model_id(Experiment, experiment_id)
 
-        if len(part_exp.assignments) == 0:
-            assignment = None
-        else:
-            assignment = part_exp.assignments[0]
+    if current_user.has_role("participant"):
+        assignment = get_first_assignment(experiment)
     else:
         assignment = None
 
-    return render_template("experiments/read_experiment.html", experiment=exp,
+    return render_template("experiments/read_experiment.html",
+                           experiment=experiment,
                            assignment=assignment)
 
 
@@ -360,6 +362,9 @@ def finalize_experiment(experiment_id):
     validate_model_id(Experiment, experiment_id)
     part_exp = get_participant_experiment_or_abort(experiment_id)
 
+    if part_exp.complete:
+        abort(400)
+
     part_exp.complete = True
 
     db.session.commit()
@@ -371,10 +376,20 @@ def finalize_experiment(experiment_id):
 
 @experiments.route(EXPERIMENT_ROUTE + "/done", methods=["GET"])
 @roles_required("participant")
-def done_experiment(_):
+def done_experiment(experiment_id):
     """Show the user a screen indicating that they are finished.
     """
-    return render_template("experiments/done_experiment.html")
+    # Handle any post finalize actions, e.g. providing a button to submit a HIT
+    post_finalize = session.pop("experiment_post_finalize_handler", None)
+    addendum = None
+    if post_finalize:
+        handler = POST_FINALIZE_HANDLERS[post_finalize]
+        addendum = handler()
+    validate_model_id(Experiment, experiment_id)
+    get_participant_experiment_or_abort(experiment_id)
+
+    return render_template("experiments/done_experiment.html",
+                           addendum=addendum)
 
 
 @experiments.app_template_filter("datetime_format")
@@ -393,5 +408,8 @@ def get_graph_url_filter(graph):
     else:
         filename = current_app.config.get("EXPERIMENTS_PLACEHOLDER_GRAPH")
 
-    graph_path = url_for('static', filename=os.path.join("graphs", filename))
+    graph_path = url_for(
+        'static',
+        filename=os.path.join(current_app.config.get("GRAPH_DIRECTORY"),
+                              filename))
     return graph_path

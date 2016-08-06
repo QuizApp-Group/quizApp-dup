@@ -73,6 +73,12 @@ class User(Base, UserMixin):
 
     type = db.Column(db.String(50), nullable=False)
 
+    def has_any_role(self, roles):
+        """Given a list of Roles, return True if the user has at least one of
+        them.
+        """
+        return any(self.has_role(role) for role in roles)
+
     __mapper_args__ = {
         'polymorphic_identity': 'user',
         'polymorphic_on': type
@@ -91,13 +97,18 @@ class Participant(User):
 
     Attributes:
         opt_in (bool): Has this user opted in to data collection?
-
-    Relationships:
-        O2M with Assignment (parent)
-        O2M with ParticipantExperiment (parent)
+        foreign_id (str): If the user is coming from an external source (e.g.
+            canvas, mechanical turk) it may be necessary to record their user
+            ID on the other service (e.g. preventing multiple submission). This
+            field holds the foreign ID of this user.
+        assignments (list of Assignments): List of assignments that this user
+            has
+        participant_experiments (list of ParticipantExperiments): List of
+            ParticipantExperiments that this participant has
     """
 
     opt_in = db.Column(db.Boolean)
+    foreign_id = db.Column(db.String(100))
 
     assignments = db.relationship("Assignment", back_populates="participant")
     experiments = db.relationship("ParticipantExperiment",
@@ -115,15 +126,15 @@ class ParticipantExperiment(Base):
     Essentially, this tracks the progress of each User in each Experiment.
 
     Attributes:
-        activities (set): Order of activities for this user in this experiment
+        activities (list of Activity): Order of activities for this
+            user in this experiment
         progress (int): Which question the user is currently working on.
         complete (bool): True if the user has finalized their responses, False
             otherwise
-
-    Relationships:
-        M2O with Participant (child)
-        M2O with Experiment (child)
-        O2M with Assignment (parent)
+        participant (Participant): Which Participant this refers to
+        experiment (Experiment): Which Experiment this refers to
+        assignments (list of Assignment): The assignments that this Participant
+            should do in this Experiment
     """
     class Meta(object):
         """Specify field order.
@@ -178,13 +189,12 @@ class Assignment(Base):
             order of choices that this participant was presented with when
             answering this question, e.g. {[1, 50, 9, 3]} where the numbers are
             the IDs of those choices.
-
-    Relationships:
-        M2M with MediaItem
-        M2O with Participant (child)
-        M2O with Activity (child)
-        M2O with Choice (specifically, which answer this User chose) (child)
-        M2O with ParticipantExperiment (child)
+        media_items (list of MediaItem): What MediaItems should be shown
+        participant (Participant): Which Participant gets this Assignment
+        activity (Activity): Which Activity this Participant should see
+        choice (Choice): Which Choice this Participant chose as their answer
+        participant_experiment (ParticipantExperiment): Which
+            ParticipantExperiment this Assignment belongs to
     """
 
     skipped = db.Column(db.Boolean, info={"import_include": False})
@@ -278,10 +288,10 @@ class Activity(Base):
             of Activity this is.
         category (string): A description of this assignment's category, for the
             users' convenience.
-
-    Relationships:
-        M2M with Experiment
-        O2M with Assignment (parent)
+        experiments (list of Experiment): What Experiments include this
+            Activity
+        assignments (list of Assignment): What Assignments include this
+            Activity
     """
 
     type = db.Column(db.String(50), nullable=False)
@@ -331,10 +341,10 @@ class Question(Activity):
             they picked what they did after they answer the question.
         num_media_items (int): How many MediaItems should be shown when
             displaying this question
-
-    Relationships:
-       O2M with Choice (parent)
-       M2M with Dataset - if empty, this Question is universal
+        choices (list of Choice): What Choices this Question has
+        datasets (list of Dataset): Which Datasets this Question can pull
+            MediaItems from. If this is empty, this Question can use MediaItems
+            from any Dataset.
     """
 
     question = db.Column(db.String(200), nullable=False, info={"label":
@@ -416,10 +426,9 @@ class Choice(Base):
         choice (string): The choice as a string.
         label (string): The label for this choice (1,2,3,a,b,c etc)
         correct (bool): "True" if this choice is correct, "False" otherwise
-
-    Relationships:
-        M2O with Question (child)
-        O2M with Assignment (parent)
+        question (Question): Which Question owns this Choice
+        assignment (Assignment): Which Assignments had Participants pick this
+            Choice as the correct answer
     """
     choice = db.Column(db.String(200), nullable=False,
                        info={"label": "Choice"})
@@ -441,21 +450,23 @@ class MediaItem(Base):
     this class and define their own fields needed for rendering.
 
     Attributes:
-    flash_duration (integer): How long to display the MediaItem (-1 for
-        indefinitely)
-    name (string): Name for this Media Item
-
-    Relationships:
-        M2M with Assignment
-        M2O with Dataset (child)
+        flash (bool): If True, flash the MediaItem for flash_duration
+        milliseconds
+        flash_duration (int): How long to display the MediaItem in milliseconds
+        name (str): Name for this Media Item
+        assignments (list of Assignment): Which Assignments display this
+            MediaItem
+        dataset (Dataset): Which Dataset owns this MediaItem
     """
 
     assignments = db.relationship(
         "Assignment",
         secondary=assignment_media_item_table,
         back_populates="media_items")
+    flash = db.Column(db.Boolean,
+                      info={"label": "Flash this MediaItem when displaying?"})
     flash_duration = db.Column(db.Integer, nullable=False, default=-1,
-                               info={"label": "Flash duration"})
+                               info={"label": "Flash duration (ms)"})
     dataset = db.relationship("Dataset", back_populates="media_items")
     dataset_id = db.Column(db.Integer, db.ForeignKey("dataset.id"))
     type = db.Column(db.String(80), nullable=False)
@@ -474,7 +485,7 @@ class Graph(MediaItem):
     conjunction with an Assignment.
 
     Attributes:
-        filename (string): Filename of the graph
+        path (str): Absolute path to this Graph on disk
     """
 
     path = db.Column(db.String(200), nullable=False)
@@ -493,15 +504,16 @@ class Experiment(Base):
     """An Experiment contains a list of Activities.
 
     Attributes:
-      name (string
-      created (datetime
-      start (datetime): When this experiment becomes accessible for answers
-      stop (datetime): When this experiment stops accepting answers
-
-    Relationships:
-      M2M with Activity
-      O2M with ParticipantExperiment (parent)
-      O2M with Assignment (parent)
+        name (string
+        created (datetime
+        start (datetime): When this experiment becomes accessible for answers
+        stop (datetime): When this experiment stops accepting answers
+        activities (list of Activity): What Activities are included in this
+            Experiment's ParticipantExperiments
+        participant_experiments (list of ParticiapntExperiment): List of
+            ParticipantExperiments that are associated with this Experiment
+        assignments (list of Assignment): Assignments that are present in this
+            Experiment's ParticipantExperiments
     """
 
     name = db.Column(db.String(150), index=True, nullable=False,
@@ -530,10 +542,8 @@ class Dataset(Base):
     Attributes:
         name (string): The name of this dataset.
         uri (string): A path or descriptor of where this dataset is located.
-
-    Relationships:
-        O2M with MediaItem (parent)
-        M2M with Question
+        media_items (list of MediaItem): Which MediaItems this Dataset owns
+        questions (list of Questions): Which Questions reference this Dataset
     """
     name = db.Column(db.String(100), nullable=False, info={"label": "Name"})
     uri = db.Column(db.String(200), info={"label": "URI"})

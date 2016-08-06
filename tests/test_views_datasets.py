@@ -2,11 +2,15 @@
 """
 import factory
 
+from werkzeug.datastructures import FileStorage
+
+from quizApp.forms.datasets import GraphForm
 from tests.helpers import json_success
 from tests.auth import login_experimenter
 from tests.factories import DatasetFactory, GraphFactory, MediaItemFactory
 from quizApp.models import Dataset
 from quizApp import db
+import mock
 
 
 def test_read_datasets(client, users):
@@ -215,3 +219,44 @@ def test_update_media_item(client, users):
 
     response = client.put(url, data={"name": unrelated_media_item.name})
     assert response.status_code == 404
+
+    # Test uploading a graph
+
+    url = "/datasets/" + str(dataset.id) + "/media_items/" + str(graph.id)
+
+    """
+    graph_form = GraphForm()
+    graph_mock.set_spec(graph_form.graph)
+    attrs = {"data": ""}
+    graph_mock.configure_mock(**attrs)
+    """
+
+    with mock.patch("quizApp.views.datasets.GraphForm") as GraphFormMock:
+        graph_form_mock = mock.MagicMock(spec_set=GraphForm(),
+                                         name="graph_form_mock")
+        file_storage_mock = mock.MagicMock(spec_set=FileStorage())
+        file_storage_mock.configure_mock(filename="foo.png")
+
+        attrs = {"graph.data": file_storage_mock}
+        graph_form_mock.configure_mock(**attrs)
+
+        GraphFormMock.configure_mock(return_value=graph_form_mock)
+
+        response = client.put(url,
+                              data={"graph": open("tests/data/graph.png")})
+        assert response.status_code == 200
+        assert json_success(response.data)
+        assert file_storage_mock.save.called_once()
+        assert str(graph.id) in file_storage_mock.save.call_args[0][0]
+
+        with mock.patch("quizApp.views.datasets.os.path.isfile",
+                        autospec=True) as isfile_mock:
+            isfile_mock.return_value = True
+            db.session.refresh(graph)
+            file_storage_mock.reset_mock()
+            response = client.put(url,
+                                  data={"graph": open("tests/data/graph.png")})
+            assert response.status_code == 200
+            assert json_success(response.data)
+            assert file_storage_mock.save.called_once()
+            assert str(graph.path) in file_storage_mock.save.call_args[0][0]

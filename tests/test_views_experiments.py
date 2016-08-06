@@ -7,13 +7,23 @@ from datetime import datetime, timedelta
 
 from quizApp import db
 from quizApp.models import ParticipantExperiment
-from quizApp.views.experiments import get_participant_experiment_or_abort,\
-    get_next_assignment_url, get_graph_url_filter
+from quizApp.views.experiments import get_next_assignment_url, \
+    get_graph_url_filter, POST_FINALIZE_HANDLERS,\
+    get_participant_experiment_or_abort
 from tests.factories import ExperimentFactory, create_experiment, \
-    GraphFactory, ParticipantFactory
+    GraphFactory
 from tests.auth import login_participant, get_participant, \
     login_experimenter
 from tests.helpers import json_success
+
+
+@mock.patch('quizApp.views.experiments.abort', autospec=True)
+def test_get_participant_experiment_or_abort(abort_mock, client):
+    """Make sure get_participant_experiment_or_abort actually aborts.
+    """
+    get_participant_experiment_or_abort(5, 500)
+
+    abort_mock.assert_called_once_with(500)
 
 
 def test_experiments(client):
@@ -77,6 +87,8 @@ def test_experiments_authed_experimenter(client, users):
     assert "Hello experimenter" in response.data
 
     exp = ExperimentFactory()
+    part_exp = ParticipantExperiment()
+    exp.participant_experiments.append(part_exp)
     exp.save()
 
     exp_url = "/experiments/" + str(exp.id)
@@ -167,23 +179,12 @@ def test_create_experiment(client, users):
     assert data["errors"]
 
 
-@mock.patch('quizApp.views.experiments.abort', autospec=True)
-def test_get_participant_experiment_or_abort(abort_mock, client):
-    """Make sure get_participant_experiment_or_abort actually aborts.
-    """
-    get_participant_experiment_or_abort(5, 500)
-
-    abort_mock.assert_called_once_with(500)
-
-
 def test_read_experiment(client, users):
     """Test the read_experiment method.
     """
     login_participant(client)
 
-    participant = get_participant()
-
-    exp = create_experiment(1, [participant])
+    exp = create_experiment(1, 1)
     exp.save()
 
     url = "/experiments/" + str(exp.id)
@@ -198,9 +199,7 @@ def test_read_experiment(client, users):
 
 def test_update_experiment(client, users):
     login_experimenter(client)
-    participant = get_participant()
-
-    experiment = create_experiment(3, [participant])
+    experiment = create_experiment(3, 1)
     experiment.save()
 
     new_exp = ExperimentFactory()
@@ -231,10 +230,11 @@ def test_read_assignment(client, users):
     login_participant(client)
     participant = get_participant()
 
-    experiment = create_experiment(3, [participant],
+    experiment = create_experiment(3, 1,
                                    ["question_mc_singleselect"])
     participant_experiment = experiment.participant_experiments[0]
     participant_experiment.complete = False
+    participant_experiment.participant = participant
     experiment.save()
 
     url = "/experiments/" + str(experiment.id) + "/assignments/"
@@ -266,7 +266,7 @@ def test_read_assignment(client, users):
         assert "disabled" in response.data
 
     # Verify that we check that the assignment is in this experiment
-    experiment2 = create_experiment(3, [participant])
+    experiment2 = create_experiment(3, 1)
     experiment2.save()
     participant_experiment2 = experiment2.participant_experiments[0]
     assignment2 = participant_experiment2.assignments[0]
@@ -278,14 +278,16 @@ def test_read_assignment(client, users):
     url2 = "/experiments/" + str(experiment2.id) + "/assignments/"
 
     response = client.get(url2 + str(assignment2.id))
-    assert response.status_code == 404
-    experiment2 = create_experiment(3, [participant])
+    assert response.status_code == 400
+    experiment2 = create_experiment(3, 1)
 
     # Make sure likert questions render correctly
-    experiment3 = create_experiment(3, [participant],
+    experiment3 = create_experiment(3, 1,
                                     ["question_mc_singleselect_scale"])
     experiment3.save()
     participant_experiment3 = experiment3.participant_experiments[0]
+    participant_experiment3.participant = participant
+    participant_experiment3.save()
     assignment3 = participant_experiment3.assignments[0]
     url3 = "/experiments/" + str(experiment3.id) + "/assignments/"
 
@@ -300,12 +302,13 @@ def test_update_assignment(client, users):
     login_participant(client)
     participant = get_participant()
 
-    experiment = create_experiment(3, [participant],
+    experiment = create_experiment(3, 1,
                                    ["question_mc_singleselect"])
 
     participant_experiment = experiment.participant_experiments[0]
     participant_experiment.complete = False
     participant_experiment.progress = 1
+    participant_experiment.participant = participant
     experiment.save()
 
     assignment = participant_experiment.assignments[0]
@@ -340,9 +343,11 @@ def test_update_assignment(client, users):
     assert not json_success(response.data)
 
     # Test behavior for non-mc questions
-    experiment2 = create_experiment(3, [participant])
+    experiment2 = create_experiment(3, 1)
     participant_experiment2 = experiment2.participant_experiments[0]
     participant_experiment2.complete = False
+    participant_experiment2.participant = participant
+    participant_experiment2.save()
     experiment2.save()
 
     assignment2 = participant_experiment2.assignments[0]
@@ -354,8 +359,7 @@ def test_update_assignment(client, users):
     assert json_success(response.data)
 
     # Make sure participants can't see each others' stuff
-    other_participant = ParticipantFactory()
-    experiment3 = create_experiment(3, [other_participant])
+    experiment3 = create_experiment(3, 1)
     participant_experiment3 = experiment3.participant_experiments[0]
     participant_experiment3.complete = False
     experiment3.save()
@@ -369,8 +373,7 @@ def test_update_assignment(client, users):
 
 
 def test_get_next_assignment_url(users):
-    participant = get_participant()
-    experiment = create_experiment(3, [participant])
+    experiment = create_experiment(3, 1)
     experiment.participant_experiments[0].complete = False
     experiment.save()
 
@@ -383,9 +386,13 @@ def test_finalize_experiment(client, users):
     login_participant(client)
     participant = get_participant()
 
-    experiment = create_experiment(3, [participant],
+    experiment = create_experiment(3, 1,
                                    ["question_mc_singleselect"])
     experiment.save()
+    participant_experiment = experiment.participant_experiments[0]
+    participant_experiment.participant = participant
+    participant_experiment.complete = False
+    participant_experiment.save()
 
     url = "/experiments/" + str(experiment.id) + "/finalize"
 
@@ -393,10 +400,14 @@ def test_finalize_experiment(client, users):
     assert response.status_code == 200
     assert json_success(response.data)
 
+    url = "/experiments/" + str(experiment.id) + "/finalize"
+
+    response = client.patch(url)
+    assert response.status_code == 400
+
     url = "/experiments/" + str(experiment.id) + "/assignments/" + \
         str(experiment.participant_experiments[0].assignments[0].id)
 
-    participant_experiment = experiment.participant_experiments[0]
     choice = random.choice(participant_experiment.assignments[0].
                            activity.choices)
 
@@ -407,9 +418,90 @@ def test_finalize_experiment(client, users):
     assert response.status_code == 400
 
 
+def test_done_experiment_hook(client, users):
+    login_participant(client)
+    participant = get_participant()
+
+    experiment2 = create_experiment(3, 1)
+    experiment2.save()
+    participant_experiment2 = experiment2.participant_experiments[0]
+    participant_experiment2.participant = participant
+    participant_experiment2.complete = False
+    participant_experiment2.save()
+
+    mock_handler = mock.MagicMock()
+    POST_FINALIZE_HANDLERS["test_handler"] = mock_handler
+
+    url = "/experiments/" + str(experiment2.id) + "/done"
+    with client.session_transaction() as sess:
+        sess["experiment_post_finalize_handler"] = "test_handler"
+    response = client.get(url)
+    assert response.status_code == 200
+
+    with client.session_transaction() as sess:
+        sess["experiment_post_finalize_handler"] = None
+
+    mock_handler.assert_called_once()
+
+
+def test_done_experiment(client, users):
+    login_participant(client)
+    participant = get_participant()
+
+    experiment = create_experiment(3, 1)
+    experiment.save()
+    participant_experiment = experiment.participant_experiments[0]
+    participant_experiment.participant = participant
+    participant_experiment.save()
+
+    url = "/experiments/" + str(experiment.id) + "/done"
+
+    response = client.get(url)
+    assert response.status_code == 200
+
+    experiment2 = create_experiment(3, 1)
+    experiment2.save()
+
+    url = "/experiments/" + str(experiment2.id) + "/done"
+
+    response = client.get(url)
+    assert response.status_code == 400
+
+    url = "/experiments/" + str(experiment2.id + 34) + "/done"
+
+    response = client.get(url)
+    assert response.status_code == 404
+
+
 def test_get_graph_url_filter():
     graph = GraphFactory()
 
     url = get_graph_url_filter(graph)
 
     assert "missing" in url
+
+
+def test_confirm_done_experiment(client, users):
+    login_participant(client)
+    experiment = create_experiment(1, 1)
+    experiment.save()
+
+    url = "/experiments/" + str(experiment.id) + "/confirm_done"
+
+    response = client.get(url)
+    assert response.status_code == 200
+
+    url = "/experiments/" + str(experiment.id + 4) + "/confirm_done"
+
+    response = client.get(url)
+    assert response.status_code == 404
+
+
+def test_results_experiment(client, users):
+    login_experimenter(client)
+
+    exp = create_experiment(1, 1)
+    exp.save()
+    url = "/experiments/" + str(exp.id) + "/results"
+    response = client.get(url)
+    assert response.status_code == 200

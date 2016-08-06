@@ -211,11 +211,13 @@ def object_list_to_sheet(object_list):
             if not include:
                 continue
 
-            if column not in sheet[0]:
-                sheet[0].append(column)
+            column_name = header_from_property(prop)
+
+            if column_name not in sheet[0]:
+                sheet[0].append(column_name)
                 row.append("")
 
-            index = sheet[0].index(column)
+            index = sheet[0].index(column_name)
 
             row[index] = field_to_string(obj, column)
         sheet.append(row)

@@ -25,7 +25,6 @@ quizApp.models module
 
 .. automodule:: quizApp.models
     :members:
-    :undoc-members:
     :show-inheritance:
 
 

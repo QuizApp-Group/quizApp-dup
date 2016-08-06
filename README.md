@@ -1,4 +1,6 @@
 [![codecov](https://codecov.io/gh/PlasmaSheep/quizApp/branch/develop/graph/badge.svg)](https://codecov.io/gh/PlasmaSheep/quizApp)
+[![Documentation Status](https://readthedocs.org/projects/quizapp/badge/?version=latest)](http://quizapp.readthedocs.io/en/latest/?badge=latest)
+
 
 Platform for asking questions based on visualizations.
 
@@ -8,15 +10,8 @@ Platform for asking questions based on visualizations.
     mysql -u root -p < setup_db.sql
     python populate_students_db.py
 
-## A note on production environments
-
-In order to run this application on a production environment, you must do two
-things.
-
-1. Set the `APP_CONFIG` environment variable to `production`
-
-2. Copy the `instance/instance_config.py.ex` file to `instance/instance_config.py` and modify
-    the `SECRET_KEY` and `SQLALCHEMY_DATABASE_URI` to suitable values.
+For more detailed installation instructions, check out the
+[documentation](https://quizapp.readthedocs.io/en/latest/getting_started.html).
 
 ## Running
 

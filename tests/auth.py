@@ -23,6 +23,8 @@ def login_experimenter(client):
 def login_user(client, user):
     """Log in the given User in the given client.
     """
+    response = client.get("/logout", follow_redirects=True)
+    assert response.status_code == 200
     response = client.post('/login', data=dict(
         email=user.email,
         password=user.password), follow_redirects=True)

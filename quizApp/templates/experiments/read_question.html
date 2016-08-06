@@ -15,7 +15,7 @@ Quiz
 {% block content %}
 {% for media_item in assignment.media_items %}
 <div class="row media-item-container"
-  {% if not experiment_complete %}
+  {% if not experiment_complete and media_item.flash %}
   data-flash-duration="{{ media_item.flash_duration }}"
   {% endif %}
   >

@@ -6,10 +6,11 @@ from collections import OrderedDict
 import tempfile
 
 import openpyxl
-from flask import Blueprint, render_template, send_file, jsonify
-from flask_security import roles_required
+from flask import Blueprint, render_template, send_file, jsonify, redirect, \
+    url_for
+from flask_security import roles_required, login_required, current_user
 
-from quizApp import models
+from quizApp import models, db
 from quizApp.views import import_export
 from quizApp.forms.core import ImportDataForm
 
@@ -69,19 +70,34 @@ def import_template():
         ["Use IDs from the export sheet to populate relationship columns."],
         [("If you want multiple objects in a relation, separate the IDs using"
           " commas.")],
+        [("There is no need to modify any sheet if you are not interested in "
+          "adding in objects of that type")],
+        [("Example: To make an experiment and use existing assignments for "
+          "the experiment, fill out the Experiments, Participant Experiment, "
+          "and Assignment sheets.")],
+        [("Example: To add assignments to an existing experiment, fill out "
+          "the Participant Experiment and Assignment sheet. For the "
+          "participant_experiment_experiment column, use the experiment_id "
+          "of the experiment you wish to modify. You can find this ID in the "
+          "export spreadsheet.")],
+        [("If you wish to do one the above as well as create new "
+          "activities, fill out the sheets mentioned above as well as the "
+          "Activities sheet. If you are making new multiple choice questions, "
+          "you'll also need to fill out the Choices sheet.")],
     ]
 
     workbook = openpyxl.Workbook()
     workbook.remove_sheet(workbook.active)
+
+    current_sheet = workbook.create_sheet()
+    current_sheet.title = "Documentation"
+    import_export.write_list_to_sheet(documentation, current_sheet)
+
     for sheet_name, model in sheets.iteritems():
         current_sheet = workbook.create_sheet()
         current_sheet.title = sheet_name
         headers = import_export.model_to_sheet_headers(model)
         import_export.write_list_to_sheet(headers, current_sheet)
-
-    current_sheet = workbook.create_sheet()
-    current_sheet.title = "Documentation"
-    import_export.write_list_to_sheet(documentation, current_sheet)
 
     file_handle, file_name = tempfile.mkstemp(".xlsx")
     os.close(file_handle)
@@ -118,3 +134,40 @@ def manage_data():
 
     return render_template("core/manage_data.html",
                            import_data_form=import_data_form)
+
+
+def query_exists(query):
+    """Given a query, return True if it would return any rows, and False
+    otherwise.
+    """
+    return db.session.query(query.exists()).scalar()
+
+
+@core.route("getting_started", methods=["GET"])
+@roles_required("experimenter")
+def getting_started():
+    """Show some instructions for getting started with quizApp.
+    """
+    experiments_done = query_exists(models.Experiment.query)
+    activities_done = query_exists(models.Activity.query)
+    datasets_done = query_exists(models.Dataset.query)
+    media_items_done = query_exists(models.MediaItem.query)
+    assignments_done = query_exists(models.Assignment.query)
+
+    return render_template("core/getting_started.html",
+                           experiments_done=experiments_done,
+                           activities_done=activities_done,
+                           datasets_done=datasets_done,
+                           media_items_done=media_items_done,
+                           assignments_done=assignments_done)
+
+
+@core.route("post_login", methods=["GET"])
+@login_required
+def post_login():
+    """Once a user has logged in, redirect them based on their role.
+    """
+    if current_user.has_role("experimenter"):
+        return redirect(url_for("core.getting_started"))
+    else:
+        return redirect(url_for("experiments.read_experiments"))

@@ -1,13 +1,16 @@
 """Views for CRUD datasets.
 """
 import os
-from flask import Blueprint, render_template, url_for, jsonify, abort, request
+
+from werkzeug.datastructures import CombinedMultiDict
+from flask import Blueprint, render_template, url_for, jsonify, abort, \
+    request, current_app
 from flask_security import roles_required
 
-from quizApp.models import Dataset, MediaItem
+from quizApp import db
 from quizApp.forms.common import DeleteObjectForm, ObjectTypeForm
 from quizApp.forms.datasets import DatasetForm, GraphForm
-from quizApp import db
+from quizApp.models import Dataset, MediaItem
 from quizApp.views.helpers import validate_model_id, validate_form_or_error
 
 datasets = Blueprint("datasets", __name__, url_prefix="/datasets")
@@ -209,7 +212,8 @@ def update_media_item(dataset_id, media_item_id):
 def update_graph(_, graph):
     """Update a graph.
     """
-    update_graph_form = GraphForm(request.form)
+    update_graph_form = GraphForm(CombinedMultiDict((request.form,
+                                                     request.files)))
 
     response = validate_form_or_error(update_graph_form)
 
@@ -218,5 +222,22 @@ def update_graph(_, graph):
 
     update_graph_form.populate_obj(graph)
 
+    if update_graph_form.graph.data:
+        # Replace the current graph with this
+        if os.path.isfile(graph.path):
+            # Just overwrite this
+            update_graph_form.graph.data.save(graph.path)
+        else:
+            # Need to create a new file
+            graphs_dir = os.path.join(
+                current_app.static_folder,
+                current_app.config.get("GRAPH_DIRECTORY"))
+            graph_filename = str(graph.id) + \
+                os.path.splitext(update_graph_form.graph.data.filename)[1]
+            new_graph_path = os.path.join(graphs_dir, graph_filename)
+            update_graph_form.graph.data.save(new_graph_path)
+            graph.path = new_graph_path
+
     db.session.commit()
+
     return jsonify({"success": 1})

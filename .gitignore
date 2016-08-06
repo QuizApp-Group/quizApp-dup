@@ -61,4 +61,7 @@ target/
 *.pkl
 
 # Instance config
-instance/instance_config.py
+instance/*
+
+# Any new graphs, by default
+quizApp/static/graphs/*

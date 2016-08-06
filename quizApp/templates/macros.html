@@ -24,6 +24,8 @@
     {{ render_date_time_field(field, label_visible, **kwargs) }}
   {% elif field.type == 'FileField' %}
     {{ render_file_field(field, label_visible, **kwargs) }}
+  {% elif field.type == "HiddenField" %}
+    {{ render_string_field(field, False, **kwargs) }}
   {% else %}
     {{ render_string_field(field, label_visible, **kwargs) }}
 	{% endif %}
@@ -183,17 +185,30 @@ $(function () {
 
 {# Macros for specific js/css imports #}
 {% macro import_datetimepicker() %}
-<script src="{{ url_for('static', filename='js/moment.min.js')}}"></script>
-<script src="{{ url_for('static', filename='js/bootstrap-datetimepicker.min.js') }}"></script>
-<link href="{{ url_for('static', filename='css/bootstrap-datetimepicker.min.css') }}" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.14.1/moment.min.js"
+        integrity="sha384-ohw6o2vy/chIavW0iVsUoWaIPmAnF9VKjEMSusADB79PrE3CdeJhvR84BjcynjVl"
+        crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.37/js/bootstrap-datetimepicker.min.js"
+        integrity="sha384-V936AaxnYTkq53cO2z8e42PFtCCdZhbRttfhgX8U1K9weNYVdCMbDetUKTtllFdc"
+        crossorigin="anonymous"></script>
+<link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.37/css/bootstrap-datetimepicker.min.css"
+      integrity="sha384-/XmhRcB6e51B3NO1S5VVWnNKCDM74NlX0cmxZUwCJPg2P/0ECTkBKnjnzNnF7rX5"
+      crossorigin="anonymous">
 {% endmacro %}
 
 {% macro import_datatables() %}
-<script src="{{ url_for('static', filename='js/jquery.dataTables.min.js')}}"></script>
-<script src="{{ url_for('static', filename='js/dataTables.bootstrap.min.js') }}"></script>
-<link href="{{ url_for('static', filename='css/dataTables.bootstrap.min.css') }}" rel="stylesheet">
-<script src="{{ url_for('static', filename='js/enable_dataTables.js')
-}}"></script>
+<script src="https://cdn.datatables.net/1.10.12/js/jquery.dataTables.min.js"
+        integrity="sha384-89aj/hOsfOyfD0Ll+7f2dobA15hDyiNb8m1dJ+rJuqgrGR+PVqNU8pybx4pbF3Cc"
+        crossorigin="anonymous"></script>
+<script src="https://cdn.datatables.net/1.10.12/js/dataTables.bootstrap.min.js"
+        integrity="sha384-SR1gffNfWzqensZ3u8O8AkytPBwtg4pKQuOrHUvvCuAxqcoAE4LWPryg4o+1Y9uP"
+        crossorigin="anonymous"></script>
+<link rel="stylesheet"
+      href="https://cdn.datatables.net/1.10.12/css/dataTables.bootstrap.min.css"
+      integrity="sha384-p/NQoT0G1WaSOtpkNLDWe2nWstNl65yswLy5523OUNaS0Zg+2Pw+6P2OID9vA74O"
+      crossorigin="anonymous">
+<script src="{{ url_for('static', filename='js/enable_dataTables.js')}}"></script>
 {% endmacro %}
 
 {% macro render_media_item(media_item) %}

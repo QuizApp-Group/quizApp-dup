@@ -1,7 +1,7 @@
 """Forms for dataset views.
 """
 
-from wtforms import SubmitField
+from wtforms import SubmitField, FileField
 from wtforms_alchemy import ModelForm
 from quizApp.models import Graph, Dataset
 from quizApp.forms.common import OrderFormMixin
@@ -29,4 +29,5 @@ class GraphForm(OrderFormMixin, ModelForm):
         exclude = ['path']
         order = ('*', 'submit')
 
+    graph = FileField("Replace graph", render_kw={"accept": "image/*"})
     submit = SubmitField("Submit")

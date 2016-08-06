@@ -1,11 +1,4 @@
 /*Global*/
-@font-face {
-    font-family: 'Raleway';
-    font-style: normal;
-    font-weight: 400;
-    src: local('Raleway'), local('Raleway-Regular'), url(/static/fonts/Raleway-Regular.ttf) format('truetype');
-}
-
 form {
   margin-bottom: 20px;
 }
@@ -194,7 +187,6 @@ body {
 
 /* Custom page header */
 .header {
-  padding-bottom: 20px;
   border-bottom: 1px solid #e5e5e5;
 }
 /* Make the masthead heading the same height as the navigation */
@@ -262,4 +254,26 @@ ul#answers {
 
 .modal img {
   max-width: 100%;
+}
+
+.page-tabs {
+  margin-bottom: 0;
+  margin-top: 20px;
+}
+
+.page-tabs li {
+  border: 1px solid #eee;
+  border-radius: 4px;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  border-bottom: none;
+}
+
+.page-tabs li a {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.task-list > .done, .task-list > .done a {
+  color: green;
 }

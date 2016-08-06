@@ -1,8 +1,8 @@
 [MASTER]
-ignore=populate_db.py,tests/,docs/
+ignore=populate_db.py,tests/,docs/,instance/
 
 [TYPECHECK]
-generated-members=query,delete,commit,add,flush
+generated-members=query,delete,commit,add,flush,expunge,save,filename
 ignored-modules=flask_sqlalchemy,sqlalchemy.orm.properties 
 
 [MESSAGES CONTROL]
