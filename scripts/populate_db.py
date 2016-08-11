@@ -334,10 +334,6 @@ def setup_db():
     get_students()
     create_assignments()
 
-    # Random assortment of PE's to Participants
-    for participant_experiment in ParticipantExperiment.query.all():
-        participant_experiment.participant = None
-
     db.session.commit()
 
 
