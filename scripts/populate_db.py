@@ -216,9 +216,6 @@ def create_participant(pid):
 def get_students():
     """Get a list of students from csv files.
     """
-    question_participant_id_list = []
-    heuristic_participant_id_list = []
-
     security.datastore.create_role(name="participant")
     security.datastore.create_role(name="experimenter")
     participant_list_file = os.path.join(DATA_ROOT,
@@ -231,20 +228,17 @@ def get_students():
             heuristics_id = row["Heuristics"]
 
             if questions_id:
-                question_participant_id_list.append(questions_id)
                 create_participant(questions_id)
 
             if heuristics_id:
-                heuristic_participant_id_list.append(heuristics_id)
                 create_participant(heuristics_id)
+
     security.datastore.create_user(
         email="experimenter@example.com",
         password=encrypt_password("foobar"),
         active=True,
         roles=["experimenter"]
     )
-
-    return question_participant_id_list, heuristic_participant_id_list
 
 
 def create_participant_data(participant_question_list, test, group):
