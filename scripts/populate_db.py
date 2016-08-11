@@ -58,12 +58,11 @@ PARTICIPANT_QUESTION_LIST = \
      [(4, 0), (1, 2), (2, 1), (5, 1), (0, 2), (3, 2)]]
 
 GRAPH_ROOT = "static/graphs"
-DATA_ROOT = "quizApp/data/"
+DATA_ROOT = "data/"
 QUESTION_TYPE_MAPPING = {"multiple_choice": "question_mc_singleselect",
                          "heuristic": "question_mc_singleselect_scale",
                          "rating": "question_mc_singleselect_scale",
                          "pre_test": "question"}
-
 
 def randomize_scorecard_settings(scorecard):
     """Generate some random data for this scorecard
