@@ -66,7 +66,7 @@ def get_experiments():
     db.session.add(test)
     db.session.add(post_test)
 
-DATA_ROOT = "quizApp/data/"
+DATA_ROOT = "data/"
 
 QUESTION_TYPE_MAPPING = {"multiple_choice": "question_mc_singleselect",
                          "heuristic": "question_mc_singleselect_scale",
