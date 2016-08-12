@@ -175,10 +175,9 @@ $(function () {
         action_text - text of submit button
         class_ - sets a class for form
     #}
-{% macro render_form(form, action_url='', method='POST', action_text='Submit',
-      class_='', id='') -%}
-  <form method="{{ method }}" action="{{ action_url }}" role="form" class="{{
-  class_ }}", id="{{ id }}">
+{% macro render_form(form, action='', method='POST', class_='', id='') -%}
+  <form method="{{ method }}" action="{{ action }}" role="form" class="{{
+  class_ }}" id="{{ id }}">
     {% if caller %}
         {{ caller() }}
     {% else %}

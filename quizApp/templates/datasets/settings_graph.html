@@ -16,10 +16,10 @@
 </div>
 <h3>General</h3>
 
-<form action="{{ url_for('datasets.update_media_item',
-dataset_id=dataset.id, media_item_id=graph.id) }}" method="put" id="update-dataset-form">
-  {{ macros.render_form(update_graph_form) }}
-</form>
+{{ macros.render_form(update_graph_form,
+  action=url_for('datasets.update_media_item', dataset_id=dataset.id, media_item_id=graph.id),
+  method="put",
+  id="update-dataset-form") }}
 
 <hr>
 

@@ -28,10 +28,10 @@ Activity List
       <tr>
         <td><a href="{{ url_for('activities.read_activity',
         activity_id=activity.id) }}">{{ activity.id }}</a></td>
-        <td>{{ activity.type }}</a>
-        <td>{{ activity.question }}</a>
-        </td>
-        <td>{{ activity.category }}</a>
+        <td>{{ activity.type }}</td>
+        <td>{{ activity.question }}
+    td  </td>
+        <td>{{ activity.category }}</td>
         <td>
           <a href="{{ url_for('activities.settings_activity',
           activity_id=activity.id) }}">{{ macros.render_glyphicon("cog") }}</a>
@@ -41,8 +41,8 @@ Activity List
     </tbody>
   </table>
   <h3>Create new activity</h3>
-  <form action="{{ url_for('activities.create_activity') }}" method="post"
-    id="create-activity-form">
-    {{ macros.render_form(activity_type_form) }}
-  </form>
+  {{ macros.render_form(activity_type_form,
+  action=url_for('activities.create_activity'),
+  method="post",
+  id="create-activity-form") }}
 {% endblock %}
