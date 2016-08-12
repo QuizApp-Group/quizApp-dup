@@ -43,7 +43,6 @@ Activity List
   <h3>Create new activity</h3>
   <form action="{{ url_for('activities.create_activity') }}" method="post"
     id="create-activity-form">
-    {{ macros.render_field(activity_type_form.object_type) }}
-    {{ macros.render_field(activity_type_form.submit, value="Create") }}
+    {{ macros.render_form(activity_type_form) }}
   </form>
 {% endblock %}

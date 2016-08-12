@@ -21,10 +21,7 @@
       </div>
         <div class="modal-body">
           <form id="update-choice-form" method="put">
-            {{ macros.render_field(update_choice_form.label) }}
-            {{ macros.render_field(update_choice_form.choice) }}
-            {{ macros.render_field(update_choice_form.correct) }}
-            {{ macros.render_field(update_choice_form.submit, value="Save") }}
+            {{ macros.render_form(update_choice_form) }}
           </form>
           <form id="delete-choice-form" method="delete">
             {{ macros.render_field(delete_choice_form.submit,

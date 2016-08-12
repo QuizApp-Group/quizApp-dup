@@ -81,9 +81,7 @@
 
 <form id="create-media-item-form" method="post" action="{{
 url_for('datasets.create_media_item', dataset_id=dataset.id) }}">
-  {{ macros.render_field(create_media_item_form.object_type) }}
-  {{ macros.render_field(create_media_item_form.submit, class_="btn-success",
-  value="Create") }}
+  {{ macros.render_form(create_media_item_form) }}
 </form>
 
 

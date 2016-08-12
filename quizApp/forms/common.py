@@ -61,7 +61,7 @@ class ObjectTypeForm(Form):
     """Select an object type from a drop down menu.
     """
     object_type = SelectField("Type")
-    submit = SubmitField("Submit")
+    submit = SubmitField("Create")
 
     def populate_object_type(self, mapping):
         """Given a mapping of object types to human readable names, populate

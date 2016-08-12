@@ -571,8 +571,9 @@ class Choice(Base):
                       info={"label": "Label"})
     correct = db.Column(db.Boolean,
                         info={"label": "Correct?"})
+    points = db.Column(db.Integer,
+                       info={"label": "Point value of this choice"})
 
-    points = db.Column(db.Integer)
     question_id = db.Column(db.Integer, db.ForeignKey("activity.id"))
     question = db.relationship("Question", back_populates="choices")
 
