@@ -209,7 +209,6 @@ def create_participant(pid):
     )
     security.datastore.add_role_to_user(participant, "participant")
     db.session.add(participant)
-    db.session.commit()  # TODO: do we need this?
 
 
 def get_students():
@@ -261,9 +260,8 @@ def create_participant_data(participant_question_list, test, group):
 
     for participant in question_list:
         participant_experiment = ParticipantExperiment(
-            progress=0,
             experiment=experiments[test])
-        participant_experiment.save()  # TODO: do we need this?
+        db.session.add(participant_experiment)
 
         for graph in participant:
             dataset = graph[0]
