@@ -1,4 +1,4 @@
-{% extends 'header.html' %}
+{% extends 'layout.html' %}
 {% block head %}
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <script src="{{ url_for('static', filename='js/common_ajax.js') }}"></script>
@@ -19,7 +19,7 @@
 {% if current_user.has_role("experimenter") %}
 <a href="{{ url_for('experiments.settings_experiment', experiment_id=experiment.id) }}"
    role="button" class="btn btn-primary">Edit</a>
-<a href="{{ url_for('experiments.read_experiments') }}" class="btn btn-primary" role="button">Back to experiment listing</a> 
+<a href="{{ url_for('experiments.read_experiments') }}" class="btn btn-primary" role="button">Back to experiment listing</a>
 {% endif %}
 {% if current_user.has_role("participant") %}
   {% if assignment %}

@@ -238,3 +238,24 @@ $(function () {
 {% macro render_graph(graph) %}
 <img src="{{ graph|get_graph_url }}">
 {% endmacro %}
+
+
+{% macro render_flashed_message_list(messages, alert_class, preamble) %}
+  {% if messages %}
+  <div class="alert alert-{{ alert_class }}" role="alert">
+    <strong>{{ preamble }}</strong>
+    <ul>
+      {% for message in messages %}
+      <li>{{ message }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+{% endmacro %}
+
+
+{% macro render_flashed_messages(categories, alert_class, preamble) %}
+  {% with messages = get_flashed_messages(category_filter=categories) %}
+    {{ render_flashed_message_list(messages, alert_class, preamble) }}
+  {% endwith %}
+{% endmacro %}
