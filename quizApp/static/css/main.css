@@ -278,7 +278,7 @@ ul#answers {
   color: green;
 }
 
-.form-group * {
+.form-control {
   transition: all .5s;
 }
 
