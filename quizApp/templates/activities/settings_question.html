@@ -20,9 +20,7 @@
         <h4 class="modal-title" id="exampleModalLabel"></h4>
       </div>
         <div class="modal-body">
-          <form id="update-choice-form" method="put">
-            {{ macros.render_form(update_choice_form) }}
-          </form>
+          {{ macros.render_form(update_choice_form, id="update-choice-form", method="put") }}
           <form id="delete-choice-form" method="delete">
             {{ macros.render_field(delete_choice_form.submit,
             class_="btn-danger") }}
@@ -38,10 +36,9 @@
 
 <h3>General</h3>
 
-<form action="{{ url_for('activities.update_activity', activity_id=question.id
-) }}" method="put" id="update-activity-form">
-  {{ macros.render_form(general_form) }}
-</form>
+{{ macros.render_form(general_form,
+action=url_for('activities.update_activity', activity_id=question.id),
+method="put", id="update-activity-form") }}
 
 <hr>
 

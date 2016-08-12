@@ -14,10 +14,11 @@
 {% block content %}
 <h3>General settings</h2>
 
-<form action="{{ url_for('experiments.update_experiment',
-experiment_id=experiment.id) }}" method="put" id="update-experiment-form">
-  {{ macros.render_form(update_experiment_form) }}
-</form>
+{{ macros.render_form(update_experiment_form,
+action=url_for('experiments.update_experiment',
+experiment_id=experiment.id),
+method="put",
+id="update-experiment-form") }}
 
 <hr>
 
