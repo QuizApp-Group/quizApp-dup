@@ -14,17 +14,18 @@ import sqlalchemy_utils
 
 from quizApp import create_app
 from quizApp import db
-from scripts import populate_db
+from scripts import populate_db, post_hits
 
 
 @click.pass_context
 def get_app(ctx, _):
     """Create an app with the correct config.
     """
-    return create_app(ctx.parent.params["config"])
+    return create_app(ctx.find_root().params["config"])
 
 
-@click.option("-c", "--config", default="development")
+@click.option("-c", "--config", default="development",
+              help="Name of config to use for the app")
 @click.group(cls=FlaskGroup, create_app=get_app)
 def cli(**_):
     """Define the top level group.
@@ -47,8 +48,9 @@ def test():
 
 
 @cli.command("create-db")
-@click.option("-u", "--user")
-@click.option("-p", "--password")
+@click.option("-u", "--user", help="Username for the mysql admin user")
+@click.option("-p", "--password", is_flag=True,
+              help="Set this flag to use a password while logging in")
 def create_db(password, user):
     """Bootstrap the database for this config.
 
@@ -71,13 +73,19 @@ def create_db(password, user):
         click.echo(("If you enter the database credentials, I will try to "
                     "set up the database. If any conflicts exist, nothing "
                     "will happen - this operation is safe."))
+
         if not user:
             root_name = click.prompt("Enter root username", type=str)
             root_pass = click.prompt("Enter root password", type=str,
                                      hide_input=True)
         else:
+            if password:
+                root_pass = click.prompt("Enter root password", type=str,
+                                         hide_input=True)
+            else:
+                root_pass = ""
             root_name = user
-            root_pass = password
+
         db_uri = make_url(current_app.config["SQLALCHEMY_DATABASE_URI"])
         root_uri = URL(db_uri.drivername,
                        root_name,
@@ -99,6 +107,34 @@ def create_db(password, user):
 
         return
     click.echo("Database seems to be working OK.")
+
+
+@cli.command("post-hits")
+@click.option("--live", is_flag=True,
+              help=("Post HIT to the actual mturk site, rather than the"
+                    " sandbox"))
+@click.option("--reward", type=float, default=0.0,
+              help="How much to pay turkers for this task, in USD")
+@click.option("--experiment-id", type=int,
+              help="ID of the experiment to submit a HIT for", required=True)
+@click.option("--title", default="QuizApp HIT",
+              help="Title of the HIT")
+@click.option("--description", default="HIT posted by QuizApp",
+              help="Description of this HIT")
+@click.option("--keywords", default="",
+              help="Comma separated list of keywords for this HIT")
+@click.option("--duration", type=int, default=60*60,
+              help="Duration of this HIT in seconds")
+@click.option("--max-assignments", type=int, default=15,
+              help=("Amount of independent copies of the task (turkers can"
+                    " only see one)"))
+def run_post_hits(max_assignments, duration, keywords, description, title,
+                  experiment_id, reward, live):
+    """Post HITs to amazon based on the command line arguments.
+    """
+    keywords_list = keywords.split(",")
+    post_hits.post_hits(max_assignments, duration, keywords_list, description,
+                        title, experiment_id, reward, live)
 
 
 @cli.command("populate-db")

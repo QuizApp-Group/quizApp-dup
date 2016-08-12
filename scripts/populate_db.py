@@ -6,22 +6,64 @@ from datetime import datetime, timedelta
 import os
 import csv
 import random
-import pdb
 
-from sqlalchemy.engine import reflection
-from sqlalchemy.schema import MetaData, Table, DropTable, DropConstraint, \
-        ForeignKeyConstraint
 from flask_security.utils import encrypt_password
-from sqlalchemy.orm.exc import NoResultFound
 
 from scripts.clear_db import clear_db
-from quizApp import create_app
 from quizApp.models import Question, Assignment, ParticipantExperiment, \
-    Participant, Graph, Experiment, User, Dataset, Choice, Role
+    Participant, Graph, Experiment, Dataset, Choice
 from quizApp import db, security
 from quizApp.config import basedir
 
+# In this list, each list is associated with a participant (one to one).  The
+# first three tuples in each list are associated with training questions.  The
+# last three tuples in each list are associated with pre/post questions.  In
+# each tuple, the first number represents the dataset of the question.  The
+# second number is associated with the ID of the graph. TODO: simplify this
+# relationship.  The order of the tuples along with the participant id gives
+# the participant test id.  Note: No participant has two tuples with the same
+# dataset - this means the relationship between participant test and dataset is
+# many to one.
+
+PARTICIPANT_QUESTION_LIST = \
+    [[(1, 2), (3, 2), (4, 0), (2, 1), (5, 0), (0, 0)],
+     [(1, 2), (0, 2), (5, 1), (2, 0), (3, 0), (4, 1)],
+     [(3, 0), (2, 1), (4, 0), (5, 1), (0, 0), (1, 2)],
+     [(5, 2), (2, 2), (0, 1), (1, 0), (3, 1), (4, 0)],
+     [(2, 2), (0, 1), (3, 1), (4, 0), (1, 1), (5, 1)],
+     [(0, 0), (3, 0), (1, 0), (2, 2), (5, 2), (4, 2)],
+     [(4, 2), (1, 1), (5, 2), (0, 0), (3, 1), (2, 1)],
+     [(4, 2), (3, 0), (1, 2), (0, 1), (5, 2), (2, 1)],
+     [(3, 1), (2, 0), (4, 2), (1, 1), (0, 1), (5, 2)],
+     [(0, 2), (4, 1), (3, 0), (5, 0), (1, 1), (2, 0)],
+     [(5, 1), (4, 1), (0, 2), (3, 2), (1, 2), (2, 0)],
+     [(2, 1), (5, 0), (0, 2), (3, 2), (4, 2), (1, 1)],
+     [(3, 1), (5, 2), (4, 1), (0, 2), (2, 0), (1, 0)],
+     [(1, 1), (5, 1), (2, 2), (4, 0), (3, 1), (0, 2)],
+     [(2, 0), (1, 0), (5, 0), (4, 1), (0, 2), (3, 2)],
+     [(1, 1), (5, 1), (0, 2), (4, 2), (2, 1), (3, 1)],
+     [(5, 1), (4, 2), (2, 0), (1, 2), (3, 2), (0, 1)],
+     [(0, 0), (2, 2), (1, 0), (4, 1), (5, 2), (3, 2)],
+     [(0, 1), (1, 2), (5, 2), (2, 0), (4, 2), (3, 0)],
+     [(1, 0), (3, 2), (0, 0), (2, 2), (4, 0), (5, 0)],
+     [(3, 2), (2, 1), (4, 1), (1, 0), (5, 1), (0, 0)],
+     [(1, 0), (3, 2), (5, 0), (0, 1), (4, 1), (2, 2)],
+     [(5, 2), (3, 1), (1, 1), (0, 0), (4, 0), (2, 2)],
+     [(4, 1), (0, 0), (3, 1), (2, 1), (5, 1), (1, 0)],
+     [(5, 0), (2, 0), (0, 1), (3, 0), (1, 1), (4, 2)],
+     [(0, 2), (4, 0), (1, 1), (3, 1), (2, 2), (5, 0)],
+     [(2, 0), (0, 0), (3, 0), (1, 2), (5, 0), (4, 1)],
+     [(0, 1), (4, 2), (2, 1), (5, 2), (1, 0), (3, 0)],
+     [(5, 0), (4, 0), (2, 2), (3, 0), (1, 2), (0, 1)],
+     [(4, 0), (1, 2), (2, 1), (5, 1), (0, 2), (3, 2)]]
+
 GRAPH_ROOT = "static/graphs"
+DATA_ROOT = "data/"
+QUESTION_TYPE_MAPPING = {"multiple_choice": "question_mc_singleselect",
+                         "heuristic": "question_mc_singleselect_scale",
+                         "rating": "question_mc_singleselect_scale",
+                         "pre_test": "question"}
+
 
 def randomize_scorecard_settings(scorecard):
     """Generate some random data for this scorecard
@@ -32,11 +74,12 @@ def randomize_scorecard_settings(scorecard):
     for setting in settings:
         setattr(scorecard, setting, bool(random.getrandbits(1)))
 
+
 def get_experiments():
     """Populate the database with initial experiments.
     """
     blurb = ("You will be asked to respond to a series of multiple choice"
-    " questions regarding various graphs and visualizations.")
+             " questions regarding various graphs and visualizations.")
 
     pre_test = Experiment(name="Pretest",
                           blurb=blurb,
@@ -61,17 +104,9 @@ def get_experiments():
                            start=datetime.now() + timedelta(days=-3),
                            stop=datetime.now())
 
-
     db.session.add(pre_test)
     db.session.add(test)
     db.session.add(post_test)
-
-DATA_ROOT = "data/"
-
-QUESTION_TYPE_MAPPING = {"multiple_choice": "question_mc_singleselect",
-                         "heuristic": "question_mc_singleselect_scale",
-                         "rating": "question_mc_singleselect_scale",
-                         "pre_test": "question"}
 
 
 def get_questions():
@@ -98,7 +133,7 @@ def get_questions():
             explanation = ""
             if includes_explanation:
                 explanation = "This explains question " + \
-                str(row["question_id"])
+                    str(row["question_id"])
 
             if QUESTION_TYPE_MAPPING[row["question_type"]] == "question":
                 continue
@@ -113,7 +148,6 @@ def get_questions():
                 category=random.choice(categories),
                 needs_comment=needs_comment)
             randomize_scorecard_settings(question.scorecard_settings)
-
 
             if "scale" in question.type:
                 for i in range(1, 6):
@@ -133,6 +167,7 @@ def get_questions():
 
             db.session.add(question)
 
+
 def get_choices():
     """Populate the database with choices based on csv files.
     """
@@ -146,7 +181,7 @@ def get_choices():
                 correct=row["correct"] == "yes",
                 label=row["answer_letter"])
             if choice.correct:
-                choice.points = random.choice(range(1,5))
+                choice.points = random.choice(range(1, 5))
             db.session.add(choice)
     with open(os.path.join(DATA_ROOT, 'graph_table.csv')) as graphs_csv:
         graphs = csv.DictReader(graphs_csv)
@@ -158,52 +193,11 @@ def get_choices():
                 flash=bool(random.getrandbits(1)),
                 flash_duration=random.randint(500, 1500),
                 path=os.path.join(basedir, GRAPH_ROOT,
-                                      graph["graph_location"]))
+                                  graph["graph_location"]))
             db.session.add(graph)
 
-# In this list, each list is associated with a participant (one to one).  The
-# first three tuples in each list are associated with training questions.  The
-# last three tuples in each list are associated with pre/post questions.  In
-# each tuple, the first number represents the dataset of the question.  The
-# second number is associated with the ID of the graph. TODO: simplify this
-# relationship.  The order of the tuples along with the participant id gives
-# the participant test id.  Note: No participant has two tuples with the same
-# dataset - this means the relationship between participant test and dataset is
-# many to one.
 
-PARTICIPANT_QUESTION_LIST = \
-[[(1, 2), (3, 2), (4, 0), (2, 1), (5, 0), (0, 0)],
- [(1, 2), (0, 2), (5, 1), (2, 0), (3, 0), (4, 1)],
- [(3, 0), (2, 1), (4, 0), (5, 1), (0, 0), (1, 2)],
- [(5, 2), (2, 2), (0, 1), (1, 0), (3, 1), (4, 0)],
- [(2, 2), (0, 1), (3, 1), (4, 0), (1, 1), (5, 1)],
- [(0, 0), (3, 0), (1, 0), (2, 2), (5, 2), (4, 2)],
- [(4, 2), (1, 1), (5, 2), (0, 0), (3, 1), (2, 1)],
- [(4, 2), (3, 0), (1, 2), (0, 1), (5, 2), (2, 1)],
- [(3, 1), (2, 0), (4, 2), (1, 1), (0, 1), (5, 2)],
- [(0, 2), (4, 1), (3, 0), (5, 0), (1, 1), (2, 0)],
- [(5, 1), (4, 1), (0, 2), (3, 2), (1, 2), (2, 0)],
- [(2, 1), (5, 0), (0, 2), (3, 2), (4, 2), (1, 1)],
- [(3, 1), (5, 2), (4, 1), (0, 2), (2, 0), (1, 0)],
- [(1, 1), (5, 1), (2, 2), (4, 0), (3, 1), (0, 2)],
- [(2, 0), (1, 0), (5, 0), (4, 1), (0, 2), (3, 2)],
- [(1, 1), (5, 1), (0, 2), (4, 2), (2, 1), (3, 1)],
- [(5, 1), (4, 2), (2, 0), (1, 2), (3, 2), (0, 1)],
- [(0, 0), (2, 2), (1, 0), (4, 1), (5, 2), (3, 2)],
- [(0, 1), (1, 2), (5, 2), (2, 0), (4, 2), (3, 0)],
- [(1, 0), (3, 2), (0, 0), (2, 2), (4, 0), (5, 0)],
- [(3, 2), (2, 1), (4, 1), (1, 0), (5, 1), (0, 0)],
- [(1, 0), (3, 2), (5, 0), (0, 1), (4, 1), (2, 2)],
- [(5, 2), (3, 1), (1, 1), (0, 0), (4, 0), (2, 2)],
- [(4, 1), (0, 0), (3, 1), (2, 1), (5, 1), (1, 0)],
- [(5, 0), (2, 0), (0, 1), (3, 0), (1, 1), (4, 2)],
- [(0, 2), (4, 0), (1, 1), (3, 1), (2, 2), (5, 0)],
- [(2, 0), (0, 0), (3, 0), (1, 2), (5, 0), (4, 1)],
- [(0, 1), (4, 2), (2, 1), (5, 2), (1, 0), (3, 0)],
- [(5, 0), (4, 0), (2, 2), (3, 0), (1, 2), (0, 1)],
- [(4, 0), (1, 2), (2, 1), (5, 1), (0, 2), (3, 2)]]
-
-def create_participant(pid, experiments):
+def create_participant(pid):
     """Given an ID number, create a participant record, adding them to each
     of the given experiments.
     """
@@ -216,31 +210,28 @@ def create_participant(pid, experiments):
     )
     security.datastore.add_role_to_user(participant, "participant")
     db.session.add(participant)
-    db.session.commit()
+
 
 def get_students():
     """Get a list of students from csv files.
     """
-    question_participant_id_list = []
-    heuristic_participant_id_list = []
-    experiments = Experiment.query.all()
-
     security.datastore.create_role(name="participant")
     security.datastore.create_role(name="experimenter")
+    participant_list_file = os.path.join(DATA_ROOT,
+                                         "participant_id_list.csv")
 
-    with open(os.path.join(DATA_ROOT, "participant_id_list.csv")) as participants_csv:
+    with open(participant_list_file) as participants_csv:
         participant_reader = csv.DictReader(participants_csv)
         for row in participant_reader:
             questions_id = row["Questions"]
             heuristics_id = row["Heuristics"]
 
             if questions_id:
-                question_participant_id_list.append(questions_id)
-                create_participant(questions_id, experiments)
+                create_participant(questions_id)
 
             if heuristics_id:
-                heuristic_participant_id_list.append(heuristics_id)
-                create_participant(heuristics_id, experiments)
+                create_participant(heuristics_id)
+
     security.datastore.create_user(
         email="experimenter@example.com",
         password=encrypt_password("foobar"),
@@ -248,34 +239,30 @@ def get_students():
         roles=["experimenter"]
     )
 
-    return question_participant_id_list, heuristic_participant_id_list
 
-
-def create_participant_data(pid_list, participant_question_list, test, group):
+def create_participant_data(participant_question_list, test, group):
     """
     sid_list: list of participant id's
     participant_question_list: magic list of lists of tuples
     test: pre_test or training or post_test
     group: question or heuristic
     """
-    global seen_ids
-    experiments = {"pre_test":
-                   Experiment.query.filter_by(name="Pretest").one(),
-                   "test": Experiment.query.filter_by(name="Main test").one(),
-                   "post_test": Experiment.query.filter_by(name="Post-test").one()}
+    experiments = {
+        "pre_test": Experiment.query.filter_by(name="Pretest").one(),
+        "test": Experiment.query.filter_by(name="Main test").one(),
+        "post_test": Experiment.query.filter_by(name="Post-test").one()
+    }
 
     if test == 'pre_test' or test == 'post_test':
         question_list = [x[:3] for x in participant_question_list]
     else:
-        #pick last three
+        # pick last three
         question_list = [x[3:] for x in participant_question_list]
-    # pdb.set_trace()
-    for n, participant in enumerate(question_list):
-        #n is the nth participant
+
+    for participant in question_list:
         participant_experiment = ParticipantExperiment(
-            progress=0,
             experiment=experiments[test])
-        participant_experiment.save()
+        db.session.add(participant_experiment)
 
         for graph in participant:
             dataset = graph[0]
@@ -286,16 +273,16 @@ def create_participant_data(pid_list, participant_question_list, test, group):
                                   experiments[test],
                                   participant_experiment, graph_id)
 
-            else: #training
+            else:  # training
                 if group == 'heuristic':
-                    dataset_range = range(5,9)
+                    dataset_range = range(5, 9)
 
                 else:
-                    dataset_range = range(1,5)
+                    dataset_range = range(1, 5)
 
                 for x in dataset_range:
                     question_id = int(str(dataset)+str(x))
-                    #write row to db
+                    # write row to db
                     create_assignment(question_id,
                                       experiments[test],
                                       participant_experiment, graph_id)
@@ -305,6 +292,9 @@ def create_participant_data(pid_list, participant_question_list, test, group):
 
 def create_assignment(question_id, experiment,
                       participant_experiment, graph_id):
+    """Given parameters, create an assignment, returning without doing anything
+    if the question doesn't exist.
+    """
     question = Question.query.get(question_id)
     if not question:
         return
@@ -314,35 +304,33 @@ def create_assignment(question_id, experiment,
         experiment=experiment,
         participant=participant_experiment.participant,
         media_items=[Graph.query.get(graph_id)])
-    assignment.activity=question
-    assignment.participant_experiment=participant_experiment
+    assignment.activity = question
+    assignment.participant_experiment = participant_experiment
 
     experiment.activities.append(
         Question.query.get(question_id))
 
     db.session.add(assignment)
 
-#create all the participant_test table data
 
-def create_assignments(participants_question, participants_heuristic):
+def create_assignments():
+    """Create all necessary assignments/ParticipantExperiments.
+    """
     for test in ['pre_test', 'test', 'post_test']:
-        create_participant_data(participants_question,
-                                PARTICIPANT_QUESTION_LIST, test, 'question')
-        create_participant_data(participants_heuristic,
-                                PARTICIPANT_QUESTION_LIST, test, 'heuristic')
+        create_participant_data(PARTICIPANT_QUESTION_LIST, test, 'question')
+        create_participant_data(PARTICIPANT_QUESTION_LIST, test, 'heuristic')
+
 
 def setup_db():
+    """Clear the database, then populate it using default data.
+    """
     # There needs to be an app context for this to run.
     clear_db()
     get_experiments()
     get_questions()
     get_choices()
-    questions, heuristics = get_students()
-    create_assignments(questions, heuristics)
-
-    # Random assortment of PE's to Participants
-    for participant_experiment in ParticipantExperiment.query.all():
-        participant_experiment.participant = None
+    get_students()
+    create_assignments()
 
     db.session.commit()
 

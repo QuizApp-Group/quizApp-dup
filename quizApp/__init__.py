@@ -4,12 +4,14 @@ from flask import Flask
 from flask_wtf.csrf import CsrfProtect
 from flask_sqlalchemy import SQLAlchemy
 from flask_security import Security, SQLAlchemyUserDatastore
+from flask_migrate import Migrate
 from quizApp import config
 
 
 db = SQLAlchemy()
 csrf = CsrfProtect()
 security = Security()
+migrate = Migrate()
 
 
 def create_app(config_name, overrides=None):
@@ -33,6 +35,8 @@ def create_app(config_name, overrides=None):
     # Workaround for flask-security bug #383
     security.datastore = user_datastore
     security.app = app
+
+    migrate.init_app(app, db)
 
     from quizApp.views.activities import activities
     from quizApp.views.core import core
