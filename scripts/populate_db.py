@@ -64,6 +64,7 @@ QUESTION_TYPE_MAPPING = {"multiple_choice": "question_mc_singleselect",
                          "rating": "question_mc_singleselect_scale",
                          "pre_test": "question"}
 
+
 def randomize_scorecard_settings(scorecard):
     """Generate some random data for this scorecard
     """
