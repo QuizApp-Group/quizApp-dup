@@ -5,8 +5,10 @@ tests the kind of activity it is loading and then defers to a more specific
 function (for example, questions are read by read_question rather than
 read_activity itself).
 """
-from flask import Blueprint, render_template, url_for, jsonify, abort, request
-from flask_security import roles_required
+from flask import Blueprint, render_template, url_for, jsonify, abort, \
+    request
+from flask.views import MethodView
+from flask_security import roles_required, login_required
 from sqlalchemy import not_
 
 from quizApp.models import Activity, Dataset, Question, Choice
@@ -29,38 +31,37 @@ CHOICES_ROUTE = "/<int:question_id>/choices/"
 CHOICE_ROUTE = CHOICES_ROUTE + "<int:choice_id>"
 
 
-@activities.route('/', methods=["GET"])
-@roles_required("experimenter")
-def read_activities():
-    """Display a list of all activities.
-    """
-    activities_list = Activity.query.all()
-    activity_type_form = ObjectTypeForm()
-    activity_type_form.populate_object_type(ACTIVITY_TYPES)
+class ActivitiesView(MethodView):
+    def get():
+        """Display a list of all activities.
+        """
+        activities_list = Activity.query.all()
+        activity_type_form = ObjectTypeForm()
+        activity_type_form.populate_object_type(ACTIVITY_TYPES)
 
-    return render_template("activities/read_activities.html",
-                           activities=activities_list,
-                           activity_type_form=activity_type_form)
+        return render_template("activities/read_activities.html",
+                               activities=activities_list,
+                               activity_type_form=activity_type_form)
 
+    def post():
+        """Create an activity.
+        """
+        activity_type_form = ObjectTypeForm()
+        activity_type_form.populate_object_type(ACTIVITY_TYPES)
 
-@activities.route("/", methods=["POST"])
-@roles_required("experimenter")
-def create_activity():
-    """Create an activity.
-    """
-    activity_type_form = ObjectTypeForm()
-    activity_type_form.populate_object_type(ACTIVITY_TYPES)
+        if not activity_type_form.validate():
+            return jsonify({"success": 0, "errors": activity_type_form.errors})
 
-    if not activity_type_form.validate():
-        return jsonify({"success": 0, "errors": activity_type_form.errors})
+        activity = Activity(type=activity_type_form.object_type.data)
+        activity.save()
 
-    activity = Activity(type=activity_type_form.object_type.data)
-    activity.save()
+        next_url = url_for("activities.settings_activity",
+                           activity_id=activity.id)
 
-    next_url = url_for("activities.settings_activity", activity_id=activity.id)
+        return jsonify({"success": 1, "next_url": next_url})
 
-    return jsonify({"success": 1, "next_url": next_url})
-
+view = roles_required(ActivitiesView.as_view("activities"), "experimenter")
+activities.add_url_rule('/', view_func=view)
 
 @activities.route(ACTIVITY_ROUTE, methods=["GET"])
 @roles_required("experimenter")
