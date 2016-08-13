@@ -62,15 +62,15 @@ called ``quizapp`` and a user named ``quizapp``.  The default password is
 ``foobar``, so you are going to want to change it in ``setup_db.sql`` if you
 are using QuizApp in production. Otherwise your information will not be secure.
 
-..note::
+.. note::
 
     ``manage.py`` can handle creation and population of multiple database
     configurations. If you are running a development sever, the above command
-    is sufficient. This is because ``manage.py`` defaults to the ``development``
-    configuration.
+    is sufficient. This is because ``manage.py`` defaults to the
+    ``development`` configuration.
 
-    If you want to set up a production server, you must specify the ``--config``
-    option:
+    If you want to set up a production server, you must specify the
+    ``--config`` option::
 
         ./mange.py --config production create-db
 
