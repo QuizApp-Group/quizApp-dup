@@ -2,6 +2,7 @@
 
 """Using excel files, populate the database with some placeholder data.
 """
+from __future__ import print_function
 from datetime import datetime, timedelta
 import os
 import csv
@@ -287,7 +288,7 @@ def create_participant_data(participant_question_list, test, group):
                                       experiments[test],
                                       participant_experiment, graph_id)
 
-    print "Completed storing {} {} tests".format(test, group)
+    print("Completed storing {} {} tests".format(test, group))
 
 
 def create_assignment(question_id, experiment,

@@ -2,6 +2,7 @@
 
 This script is adapted from akuznets0v/quickstart-mturk.
 """
+from __future__ import print_function
 
 import yaml
 from boto.mturk.connection import MTurkConnection
@@ -61,5 +62,5 @@ def post_hits(max_assignments, duration, keywords, description, title,
         response_groups=('Minimal', 'HITDetail'),
         qualifications=qualifications,
     )
-    print "HIT Created."
-    print "ID: {}".format(create_hit_result[0].HITId)
+    print("HIT Created.")
+    print("ID: {}".format(create_hit_result[0].HITId))
