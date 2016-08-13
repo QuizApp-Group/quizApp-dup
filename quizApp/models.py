@@ -1,5 +1,6 @@
 """Models for the quizApp.
 """
+from builtins import object
 import os
 
 from quizApp import db
@@ -36,7 +37,7 @@ class Base(db.Model):
         others. Subclasses of Base to which this applies are expected to
         override this method and implement their import correctly.
         """
-        for key, value in kwargs.items():
+        for key, value in list(kwargs.items()):
             setattr(self, key, value)
 
 

@@ -1,5 +1,6 @@
 """Test the Experiments blueprint.
 """
+from builtins import str
 import json
 import random
 import mock

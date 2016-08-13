@@ -1,5 +1,6 @@
 """Tests for core views.
 """
+from builtins import range
 import tempfile
 
 from openpyxl import load_workbook
@@ -52,7 +53,7 @@ def test_export_template(client, users):
                           "Activities": models.Activity.query.count(),
                           "Datasets": models.Dataset.query.count()}
 
-    for sheet, num_objects in sheet_name_mapping.items():
+    for sheet, num_objects in list(sheet_name_mapping.items()):
         worksheet = workbook.get_sheet_by_name(sheet)
         # We should have as many rows as objects plus a header row
         assert len(worksheet.rows) == num_objects + 1
@@ -61,7 +62,7 @@ def test_export_template(client, users):
 def test_import_assignments(client, users):
     login_experimenter(client)
     url = "/import"
-    for i in xrange(0, 4):
+    for i in range(0, 4):
         media_item = MediaItemFactory(id=i)
         db.session.add(media_item)
     db.session.commit()

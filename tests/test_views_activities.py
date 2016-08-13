@@ -1,5 +1,6 @@
 """Test activity views.
 """
+from builtins import str
 import factory
 
 from tests.auth import login_experimenter

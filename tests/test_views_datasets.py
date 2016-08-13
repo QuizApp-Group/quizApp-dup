@@ -1,5 +1,6 @@
 """Tests for dataset views.
 """
+from builtins import str
 import factory
 
 from werkzeug.datastructures import FileStorage

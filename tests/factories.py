@@ -1,5 +1,7 @@
 """Various factories, useful for writing less boilerplate when testing.
 """
+from builtins import range
+from builtins import object
 import random
 
 import factory
@@ -8,7 +10,7 @@ from datetime import datetime, timedelta
 
 
 class ExperimentFactory(factory.Factory):
-    class Meta:
+    class Meta(object):
         model = models.Experiment
 
     name = factory.Faker('name')
@@ -18,7 +20,7 @@ class ExperimentFactory(factory.Factory):
 
 
 class ParticipantFactory(factory.Factory):
-    class Meta:
+    class Meta(object):
         model = models.Participant
 
     email = factory.Faker('email')
@@ -26,7 +28,7 @@ class ParticipantFactory(factory.Factory):
 
 
 class ChoiceFactory(factory.Factory):
-    class Meta:
+    class Meta(object):
         model = models.Choice
 
     choice = factory.Faker('text')
@@ -36,14 +38,14 @@ class ChoiceFactory(factory.Factory):
 
 
 class ActivityFactory(factory.Factory):
-    class Meta:
+    class Meta(object):
         model = models.Activity
 
     category = factory.Faker("text")
 
 
 class QuestionFactory(ActivityFactory):
-    class Meta:
+    class Meta(object):
         model = models.Question
 
     question = factory.Faker("text")
@@ -55,7 +57,7 @@ class QuestionFactory(ActivityFactory):
         if len(self.choices):
             return
 
-        for i in xrange(0, 4):
+        for i in range(0, 4):
             self.choices.append(ChoiceFactory())
 
     @factory.post_generation
@@ -63,22 +65,22 @@ class QuestionFactory(ActivityFactory):
         if len(self.datasets):
             return
 
-        for i in xrange(0, 4):
+        for i in range(0, 4):
             self.datasets.append(DatasetFactory())
 
 
 class SingleSelectQuestionFactory(QuestionFactory):
-    class Meta:
+    class Meta(object):
         model = models.SingleSelectQuestion
 
 
 class ScaleQuestionFactory(QuestionFactory):
-    class Meta:
+    class Meta(object):
         model = models.ScaleQuestion
 
 
 class AssignmentFactory(factory.Factory):
-    class Meta:
+    class Meta(object):
         model = models.Assignment
 
     skipped = factory.Faker("boolean")
@@ -87,7 +89,7 @@ class AssignmentFactory(factory.Factory):
 
 
 class ParticipantExperimentFactory(factory.Factory):
-    class Meta:
+    class Meta(object):
         model = models.ParticipantExperiment
 
     progress = factory.Faker("pyint")
@@ -95,21 +97,21 @@ class ParticipantExperimentFactory(factory.Factory):
 
 
 class MediaItemFactory(factory.Factory):
-    class Meta:
+    class Meta(object):
         model = models.MediaItem
 
     name = factory.Faker("text", max_nb_chars=100)
 
 
 class GraphFactory(MediaItemFactory):
-    class Meta:
+    class Meta(object):
         model = models.Graph
 
     path = factory.Faker("file_name")
 
 
 class DatasetFactory(factory.Factory):
-    class Meta:
+    class Meta(object):
         model = models.Dataset
 
     name = factory.Faker("text", max_nb_chars=100)
@@ -120,7 +122,7 @@ class DatasetFactory(factory.Factory):
         if len(self.media_items):
             return
 
-        for i in xrange(0, 4):
+        for i in range(0, 4):
             self.media_items.append(MediaItemFactory())
 
 
@@ -128,12 +130,12 @@ def create_experiment(num_activities, num_participants, activity_types=[]):
     experiment = ExperimentFactory()
     participant_experiments = []
 
-    for _ in xrange(0, num_participants):
+    for _ in range(0, num_participants):
         part_exp = ParticipantExperimentFactory()
         experiment.participant_experiments.append(part_exp)
         participant_experiments.append(part_exp)
 
-    for i in xrange(0, num_activities*num_participants):
+    for i in range(0, num_activities*num_participants):
         part_exp = participant_experiments[i % num_participants]
 
         if activity_types:
