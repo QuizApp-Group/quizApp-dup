@@ -1,6 +1,7 @@
 """Completely erase and drop all tables in the database. Useful for testing
 or after changes in models.
 """
+from __future__ import unicode_literals
 
 from sqlalchemy.engine import reflection
 from sqlalchemy.schema import MetaData, Table, DropTable, DropConstraint, \

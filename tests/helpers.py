@@ -1,5 +1,6 @@
 """Various helper methods for tests.
 """
+from __future__ import unicode_literals
 
 import json
 

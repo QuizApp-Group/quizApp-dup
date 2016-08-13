@@ -1,6 +1,7 @@
 """Handle creating the app and configuring it.
 """
 from __future__ import print_function
+from __future__ import unicode_literals
 from flask import Flask
 from flask_wtf.csrf import CsrfProtect
 from flask_sqlalchemy import SQLAlchemy

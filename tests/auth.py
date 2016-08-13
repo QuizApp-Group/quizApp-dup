@@ -1,5 +1,6 @@
 """Functions for handling logging in and out for testing purposes.
 """
+from __future__ import unicode_literals
 
 from quizApp.models import User
 from tests import conftest

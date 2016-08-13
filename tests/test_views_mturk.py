@@ -1,5 +1,6 @@
 """Test amazon turk views.
 """
+from __future__ import unicode_literals
 import mock
 from flask import session
 

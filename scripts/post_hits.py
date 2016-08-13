@@ -3,6 +3,7 @@
 This script is adapted from akuznets0v/quickstart-mturk.
 """
 from __future__ import print_function
+from __future__ import unicode_literals
 
 import yaml
 from boto.mturk.connection import MTurkConnection

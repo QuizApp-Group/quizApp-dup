@@ -3,6 +3,7 @@
 """Using excel files, populate the database with some placeholder data.
 """
 from __future__ import print_function
+from __future__ import unicode_literals
 from builtins import str
 from builtins import range
 from datetime import datetime, timedelta
