@@ -70,7 +70,7 @@ def test_import_assignments(client, users):
 
     response = client.post(url,
                            data={"data":
-                                 open("tests/data/import.xlsx")})
+                                 open("tests/data/import.xlsx", "rb")})
     assert response.status_code == 200
     assert json_success(response.data)
 
@@ -108,12 +108,13 @@ def test_post_login(client, users):
     url = "/post_login"
 
     response = client.get(url, follow_redirects=True)
-
+    data = response.data.decode(response.charset)
     assert response.status_code == 200
-    assert "readthedocs" in response.data
+    assert "readthedocs" in data
 
     login_participant(client)
     response = client.get(url, follow_redirects=True)
+    data = response.data.decode(response.charset)
 
     assert response.status_code == 200
-    assert "Experiment List" in response.data
+    assert "Experiment List" in data

@@ -17,8 +17,9 @@ def test_register(client, users):
 
     response = client.get("/mturk/register?experiment_id={}".
                           format(experiment.id))
+    data = response.data.decode(response.charset)
     assert response.status_code == 200
-    assert experiment.blurb in response.data
+    assert experiment.blurb in data
 
     response = client.get("/mturk/register")
     assert response.status_code == 400
@@ -29,8 +30,9 @@ def test_register(client, users):
                           format(experiment.id))
 
     assert response.status_code == 200
+    data = response.data.decode(response.charset)
     assert "/experiments/{}/assignments/".format(experiment.id) in \
-        response.data
+        data
 
     # one from users fixture, one from views
     assert Participant.query.count() == 2
@@ -39,10 +41,11 @@ def test_register(client, users):
                            "&workerId=4fsa&assignmentId=4&turkSubmitTo=4"
                            "&hitId=5").
                           format(experiment.id))
+    data = response.data.decode(response.charset)
     assert "mturk/externalSubmit" in session["mturk_post_url"]
 
     assert "/experiments/{}/assignments/".format(experiment.id) in \
-        response.data
+        data
     assert response.status_code == 200
     assert Participant.query.count() == 2
 
