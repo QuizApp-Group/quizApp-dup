@@ -15,7 +15,7 @@ csrf = CsrfProtect()
 security = Security()
 migrate = Migrate()
 jwt = JWT()
-api = Api(prefix="api")
+api = Api(prefix="/api")
 
 
 def create_app(config_name, overrides=None):
@@ -32,6 +32,8 @@ def create_app(config_name, overrides=None):
 
     db.init_app(app)
     csrf.init_app(app)
+
+    from quizApp.views import api as api_view
     api.init_app(app)
 
     from quizApp.models import User, Role

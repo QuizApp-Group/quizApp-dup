@@ -9,6 +9,7 @@ Contents
    import_export
    mturk
    api
+   http_api
 
 Indices and tables
 ==================
