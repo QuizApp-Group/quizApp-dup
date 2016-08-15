@@ -7,8 +7,11 @@ $.ajaxSetup({
   }
 })
 
-function form_ajax(selector, done_callback) {
+function form_ajax(selector, done_callback, pre_callback) {
   $(selector).submit(function(event) {
+    if(pre_callback) {
+      pre_callback(this);
+    }
     event.preventDefault();
 
     if($(this).find("input[type=file]")) {
@@ -37,6 +40,16 @@ function form_ajax(selector, done_callback) {
 }
 
 // Some generic callbacks
+function pre_callback_message(form) {
+  // Put a message saying that the form is being saved
+  var save_message = $(form).find("#submit-message");
+  if(save_message.length) {
+    save_message.remove();
+  }
+  var new_message = $("<span>",
+      { "class": "text-primary", id: "submit-message" }).text("Saving...");
+  $(form).append(new_message)
+}
 
 function done_redirect(data) {
   console.log(data);
@@ -51,8 +64,19 @@ function done_redirect(data) {
 
 function done_highlight(data) {
   console.log(data);
+  var save_message = $(this).find("#submit-message");
   if(data.success) {
+    save_message.text("Saved!");
+    save_message.removeClass();
+    save_message.addClass("text-success").delay(1000).
+      fadeOut(500, function() {
+        $(this).remove();
+      })
+
+    $(this).find(".error-block").remove();
+
     $(this).find(".form-group").
+        removeClass("has-error").
         addClass("has-success").
         delay(1000).
         queue(function(next) {
@@ -60,6 +84,9 @@ function done_highlight(data) {
             next();
     })
   } else {
+    save_message.text("Errors ocurred");
+    save_message.removeClass();
+    save_message.addClass("text-danger");
     render_errors(data.errors, data.prefix);
   }
 }
@@ -97,5 +124,5 @@ function render_errors(errors, prefix) {
 }
 
 function error_to_html(text) {
-  return "<p class='help-block'>" + text + "</p>";
+  return "<p class='help-block error-block'>" + text + "</p>";
 }
