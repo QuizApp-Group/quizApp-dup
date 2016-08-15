@@ -5,6 +5,8 @@ from flask_wtf.csrf import CsrfProtect
 from flask_sqlalchemy import SQLAlchemy
 from flask_security import Security, SQLAlchemyUserDatastore
 from flask_migrate import Migrate
+from flask_jwt import JWT
+from flask_restful import Api
 from quizApp import config
 
 
@@ -12,6 +14,8 @@ db = SQLAlchemy()
 csrf = CsrfProtect()
 security = Security()
 migrate = Migrate()
+jwt = JWT()
+api = Api(prefix="api")
 
 
 def create_app(config_name, overrides=None):
@@ -28,6 +32,7 @@ def create_app(config_name, overrides=None):
 
     db.init_app(app)
     csrf.init_app(app)
+    api.init_app(app)
 
     from quizApp.models import User, Role
     user_datastore = SQLAlchemyUserDatastore(db, User, Role)
@@ -49,5 +54,8 @@ def create_app(config_name, overrides=None):
     app.register_blueprint(datasets)
     app.register_blueprint(experiments)
     app.register_blueprint(mturk)
+
+    from quizApp import jwt_auth
+    jwt.init_app(app)
 
     return app
