@@ -278,7 +278,10 @@ ul#answers {
   color: green;
 }
 
-.form-control {
+.form-group input, .form-group label {
   transition: all .5s;
 }
 
+form #submit-message {
+  transition: all .5s;
+}
