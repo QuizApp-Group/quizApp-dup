@@ -204,6 +204,8 @@ class Assignment(Base):
             order of choices that this participant was presented with when
             answering this question, e.g. {[1, 50, 9, 3]} where the numbers are
             the IDs of those choices.
+        time_to_submit (timedelta): Time from the question being rendered to
+            the question being submitted.
         media_items (list of MediaItem): What MediaItems should be shown
         participant (Participant): Which Participant gets this Assignment
         activity (Activity): Which Activity this Participant should see
@@ -215,6 +217,7 @@ class Assignment(Base):
     skipped = db.Column(db.Boolean, info={"import_include": False})
     comment = db.Column(db.String(200), info={"import_include": False})
     choice_order = db.Column(db.String(80), info={"import_include": False})
+    time_to_submit = db.Column(db.Interval())
 
     media_items = db.relationship("MediaItem",
                                   secondary=assignment_media_item_table,
@@ -367,8 +370,6 @@ class Activity(Base):
     Attributes:
         type (string): Discriminator column that determines what kind
             of Activity this is.
-        time_to_submit (timedelta): Time from the question being rendered to
-            the question being submitted.
         category (string): A description of this assignment's category, for the
             users' convenience.
         experiments (list of Experiment): What Experiments include this
@@ -384,7 +385,6 @@ class Activity(Base):
         result_class = Result
 
     type = db.Column(db.String(50), nullable=False)
-    time_to_submit = db.Column(db.Interval())
     experiments = db.relationship("Experiment",
                                   secondary=activity_experiment_table,
                                   back_populates="activities",
