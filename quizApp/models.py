@@ -572,7 +572,7 @@ class Choice(Base):
     label = db.Column(db.String(3),
                       info={"label": "Label"})
     correct = db.Column(db.Boolean,
-                        info={"label": "Correct?"})
+                        info={"label": "Correct"})
     points = db.Column(db.Integer,
                        info={"label": "Point value of this choice"})
 
@@ -603,7 +603,7 @@ class MediaItem(Base):
         secondary=assignment_media_item_table,
         back_populates="media_items")
     flash = db.Column(db.Boolean,
-                      info={"label": "Flash this MediaItem when displaying?"})
+                      info={"label": "Flash this MediaItem when displaying"})
     flash_duration = db.Column(db.Integer, nullable=False, default=-1,
                                info={"label": "Flash duration (ms)"})
     dataset = db.relationship("Dataset", back_populates="media_items")
@@ -660,17 +660,17 @@ class ScorecardSettings(Base):
     """
 
     display_scorecard = db.Column(db.Boolean,
-                                  info={"label": "Display scorecards?"})
+                                  info={"label": "Display scorecards"})
     display_score = db.Column(db.Boolean,
-                              info={"label": "Display points on scorecard?"})
+                              info={"label": "Display points on scorecard"})
     display_time = db.Column(db.Boolean,
-                             info={"label": "Display time on scorecard?"})
+                             info={"label": "Display time on scorecard"})
     display_correctness = db.Column(db.Boolean,
                                     info={"label":
-                                          "Display correctness on scorecard?"})
+                                          "Display correctness on scorecard"})
     display_feedback = db.Column(db.Boolean,
                                  info={"label":
-                                       "Display feedback on scorecard?"})
+                                       "Display feedback on scorecard"})
 
 
 class Experiment(Base):
@@ -716,13 +716,13 @@ class Experiment(Base):
     blurb = db.Column(db.String(500), info={"label": "Blurb"})
     show_scores = db.Column(db.Boolean,
                             info={"label": ("Show score tally during the"
-                                            " experiment?")})
+                                            " experiment")})
     disable_previous = db.Column(db.Boolean,
                                  info={"label": ("Don't let participants go "
                                                  "back after submitting an "
-                                                 "activity?")})
+                                                 "activity")})
     show_timers = db.Column(db.Boolean,
-                            info={"label": "Show timers on activities?"})
+                            info={"label": "Show timers on activities"})
 
     activities = db.relationship("Activity",
                                  secondary=activity_experiment_table,
