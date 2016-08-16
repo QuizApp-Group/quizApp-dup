@@ -91,6 +91,8 @@ def get_experiments():
                           show_timers=True,
                           show_scores=True,
                           start=datetime.now(),
+                          flash=True,
+                          flash_duration=random.randint(500, 1500),
                           stop=datetime.now() + timedelta(days=3))
     pre_test.scorecard_settings.display_scorecard = True
     pre_test.scorecard_settings.display_score = True
@@ -194,8 +196,6 @@ def get_choices():
             graph = Graph(
                 id=graph["graph_id"],
                 dataset_id=int(graph["dataset"])+1,
-                flash=bool(random.getrandbits(1)),
-                flash_duration=random.randint(500, 1500),
                 path=os.path.join(basedir, GRAPH_ROOT,
                                   graph["graph_location"]))
             db.session.add(graph)
