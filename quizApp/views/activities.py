@@ -151,6 +151,7 @@ def update_question(question):
         return jsonify({"success": 0, "errors": general_form.errors})
 
     general_form.populate_obj(question)
+    db.session.commit()
 
     return jsonify({"success": 1})
 
