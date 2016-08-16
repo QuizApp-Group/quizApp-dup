@@ -6,4 +6,4 @@ HTTP API
 
 .. autoflask:: quizApp:create_app("development")
     :undoc-static:
-    :modules: quizApp.views.api
+    :modules: quizApp.api.endpoints

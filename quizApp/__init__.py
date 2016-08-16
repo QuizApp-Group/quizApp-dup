@@ -7,6 +7,7 @@ from flask_security import Security, SQLAlchemyUserDatastore
 from flask_migrate import Migrate
 from flask_jwt import JWT
 from flask_restful import Api
+from flask_marshmallow import Marshmallow
 from quizApp import config
 
 
@@ -15,7 +16,8 @@ csrf = CsrfProtect()
 security = Security()
 migrate = Migrate()
 jwt = JWT()
-api = Api(prefix="/api")
+restful = Api(prefix="/api", decorators=[csrf.exempt])
+ma = Marshmallow()
 
 
 def create_app(config_name, overrides=None):
@@ -23,6 +25,7 @@ def create_app(config_name, overrides=None):
     """
     app = Flask(__name__, instance_relative_config=True)
 
+    # Set the config
     app.config.from_object(config.configs[config_name])
     app.config.from_pyfile("instance_config.py", silent=True)
     if overrides:
@@ -30,12 +33,16 @@ def create_app(config_name, overrides=None):
 
     print "Using config: " + config_name
 
-    db.init_app(app)
-    csrf.init_app(app)
+    db.init_app(app)  # flask-sqlalchemy
+    csrf.init_app(app)  # CSRF for wtforms
+    ma.init_app(app)  # flask-marshmallow
+    migrate.init_app(app, db)  # flask-migrate
 
-    from quizApp.views import api as api_view
-    api.init_app(app)
+    # Initialize flask-restful
+    from quizApp.api import endpoints
+    restful.init_app(app)
 
+    # Initialize flask-security
     from quizApp.models import User, Role
     user_datastore = SQLAlchemyUserDatastore(db, User, Role)
     security.init_app(app, user_datastore)
@@ -43,8 +50,7 @@ def create_app(config_name, overrides=None):
     security.datastore = user_datastore
     security.app = app
 
-    migrate.init_app(app, db)
-
+    # Register all necessary blueprints
     from quizApp.views.activities import activities
     from quizApp.views.core import core
     from quizApp.views.datasets import datasets
@@ -57,6 +63,7 @@ def create_app(config_name, overrides=None):
     app.register_blueprint(experiments)
     app.register_blueprint(mturk)
 
+    # Initialize flask_jwt
     from quizApp import jwt_auth
     jwt.init_app(app)
 
