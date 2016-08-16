@@ -67,7 +67,7 @@ class ObjectTypeForm(Form):
         """Given a mapping of object types to human readable names, populate
         the object_type field.
         """
-        self.object_type.choices = [(k, v) for k, v in mapping.iteritems()]
+        self.object_type.choices = [(k, v) for k, v in mapping.items()]
 
 
 class OrderFormMixin(object):

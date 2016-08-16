@@ -2,6 +2,7 @@
 unit tests. This is considerably faster than drop_all create_all after every
 test.
 """
+from __future__ import unicode_literals
 
 import pytest
 

@@ -2,6 +2,10 @@
 
 """Using excel files, populate the database with some placeholder data.
 """
+from __future__ import print_function
+from __future__ import unicode_literals
+from builtins import str
+from builtins import range
 from datetime import datetime, timedelta
 import os
 import csv
@@ -181,7 +185,7 @@ def get_choices():
                 correct=row["correct"] == "yes",
                 label=row["answer_letter"])
             if choice.correct:
-                choice.points = random.choice(range(1, 5))
+                choice.points = random.choice(list(range(1, 5)))
             db.session.add(choice)
     with open(os.path.join(DATA_ROOT, 'graph_table.csv')) as graphs_csv:
         graphs = csv.DictReader(graphs_csv)
@@ -275,10 +279,10 @@ def create_participant_data(participant_question_list, test, group):
 
             else:  # training
                 if group == 'heuristic':
-                    dataset_range = range(5, 9)
+                    dataset_range = list(range(5, 9))
 
                 else:
-                    dataset_range = range(1, 5)
+                    dataset_range = list(range(1, 5))
 
                 for x in dataset_range:
                     question_id = int(str(dataset)+str(x))
@@ -287,7 +291,7 @@ def create_participant_data(participant_question_list, test, group):
                                       experiments[test],
                                       participant_experiment, graph_id)
 
-    print "Completed storing {} {} tests".format(test, group)
+    print("Completed storing {} {} tests".format(test, group))
 
 
 def create_assignment(question_id, experiment,

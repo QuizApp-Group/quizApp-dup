@@ -93,7 +93,7 @@ def import_template():
     current_sheet.title = "Documentation"
     import_export.write_list_to_sheet(documentation, current_sheet)
 
-    for sheet_name, model in sheets.iteritems():
+    for sheet_name, model in sheets.items():
         current_sheet = workbook.create_sheet()
         current_sheet.title = sheet_name
         headers = import_export.model_to_sheet_headers(model)

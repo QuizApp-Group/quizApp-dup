@@ -1,5 +1,6 @@
 """Tests for view helpers.
 """
+from __future__ import unicode_literals
 
 from mock import MagicMock, patch
 

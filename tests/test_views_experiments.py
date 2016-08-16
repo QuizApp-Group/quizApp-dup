@@ -1,5 +1,7 @@
 """Test the Experiments blueprint.
 """
+from __future__ import unicode_literals
+from builtins import str
 import json
 import random
 import mock
@@ -49,7 +51,8 @@ def test_experiments_authed_participant(client, users):
     login_participant(client)
 
     response = client.get("/")
-    assert "Hello participant" in response.data
+    data = response.data.decode(response.charset)
+    assert "Hello participant" in data
 
     participant = get_participant()
     exp = ExperimentFactory()
@@ -61,13 +64,15 @@ def test_experiments_authed_participant(client, users):
     exp_url = "/experiments/" + str(exp.id)
 
     response = client.get("/experiments/")
+    data = response.data.decode(response.charset)
     assert response.status_code == 200
-    assert exp.name in response.data
+    assert exp.name in data
 
     response = client.get(exp_url)
+    data = response.data.decode(response.charset)
     assert response.status_code == 200
-    assert exp.name in response.data
-    assert exp.blurb in response.data
+    assert exp.name in data
+    assert exp.blurb in data
 
     response = client.get(exp_url + "/settings")
     assert response.status_code == 302
@@ -85,7 +90,8 @@ def test_experiments_authed_experimenter(client, users):
     login_experimenter(client)
 
     response = client.get("/")
-    assert "Hello experimenter" in response.data
+    data = response.data.decode(response.charset)
+    assert "Hello experimenter" in data
 
     exp = ExperimentFactory()
     part_exp = ParticipantExperiment()
@@ -95,13 +101,15 @@ def test_experiments_authed_experimenter(client, users):
     exp_url = "/experiments/" + str(exp.id)
 
     response = client.get("/experiments/")
+    data = response.data.decode(response.charset)
     assert response.status_code == 200
-    assert exp.name in response.data
+    assert exp.name in data
 
     response = client.get(exp_url)
+    data = response.data.decode(response.charset)
     assert response.status_code == 200
-    assert exp.name in response.data
-    assert "Start" not in response.data
+    assert exp.name in data
+    assert "Start" not in data
 
     response = client.get(exp_url + "/settings")
     assert response.status_code == 200
@@ -129,8 +137,9 @@ def test_delete_experiment(client, users):
     assert json_success(response.data)
 
     response = client.get("/experiments/")
+    data = response.data.decode(response.charset)
     assert response.status_code == 200
-    assert exp.name not in response.data
+    assert exp.name not in data
 
 
 def test_create_experiment(client, users):
@@ -150,34 +159,38 @@ def test_create_experiment(client, users):
     assert json_success(response.data)
 
     response = client.get("/experiments/")
+    data = response.data.decode(response.charset)
     assert response.status_code == 200
-    assert exp.name in response.data
+    assert exp.name in data
 
     response = client.post("/experiments/", data=dict(
         start=exp.start.strftime(datetime_format),
         stop=exp.stop.strftime(datetime_format),
         blurb=exp.blurb))
-    data = json.loads(response.data)
-    assert data["success"] == 0
-    assert data["errors"]
+    data = response.data.decode(response.charset)
+    json_data = json.loads(data)
+    assert json_data["success"] == 0
+    assert json_data["errors"]
 
     response = client.post("/experiments/", data=dict(
         name=exp.name,
         start=exp.start.strftime(datetime_format),
         stop=exp.start.strftime(datetime_format),
         blurb=exp.blurb))
-    data = json.loads(response.data)
-    assert data["success"] == 0
-    assert data["errors"]
+    data = response.data.decode(response.charset)
+    json_data = json.loads(data)
+    assert json_data["success"] == 0
+    assert json_data["errors"]
 
     response = client.post("/experiments/", data=dict(
         name=exp.name,
         start=(datetime.now() - timedelta(days=5)).strftime(datetime_format),
         stop=(datetime.now() - timedelta(days=1)).strftime(datetime_format),
         blurb=exp.blurb))
-    data = json.loads(response.data)
-    assert data["success"] == 0
-    assert data["errors"]
+    data = response.data.decode(response.charset)
+    json_data = json.loads(data)
+    assert json_data["success"] == 0
+    assert json_data["errors"]
 
 
 def test_read_experiment(client, users):
@@ -193,20 +206,22 @@ def test_read_experiment(client, users):
     url = "/experiments/" + str(exp.id)
 
     response = client.get(url)
+    data = response.data.decode(response.charset)
     assert "/assignments/" + \
         str(exp.participant_experiments[0].assignments[0].id) in \
-        response.data
+        data
 
     exp.participant_experiments[0].progress += 1
     db.session.commit()
 
     response = client.get(url)
+    data = response.data.decode(response.charset)
     assert "/assignments/" + \
         str(exp.participant_experiments[0].assignments[0].id) not in \
-        response.data
+        data
     assert "/assignments/" + \
         str(exp.participant_experiments[0].assignments[1].id) in \
-        response.data
+        data
 
 
 def test_update_experiment(client, users):
@@ -234,8 +249,9 @@ def test_update_experiment(client, users):
     assert json_success(response.data)
 
     response = client.get("/experiments/")
+    data = response.data.decode(response.charset)
 
-    assert new_exp.name in response.data
+    assert new_exp.name in data
 
 
 def test_read_assignment(client, users):
@@ -255,8 +271,9 @@ def test_read_assignment(client, users):
         # Verify that the question is present in the output
         question = assignment.activity
         response = client.get(url + str(assignment.id))
-        assert question.question in response.data
-        assert "Time elapsed" not in response.data
+        data = response.data.decode(response.charset)
+        assert question.question in data
+        assert "Time elapsed" not in data
 
         # And save a random question
         choice = random.choice(assignment.activity.choices)
@@ -270,8 +287,9 @@ def test_read_assignment(client, users):
         # Make sure we can read it
         question = assignment.activity
         response = client.get(url + str(assignment.id))
+        data = response.data.decode(response.charset)
         assert response.status_code == 200
-        assert question.question in response.data
+        assert question.question in data
 
     experiment.disable_previous = True
     db.session.commit()
@@ -293,9 +311,10 @@ def test_read_assignment(client, users):
     # next buttons
     for assignment in participant_experiment.assignments:
         response = client.get(url + str(assignment.id))
+        data = response.data.decode(response.charset)
         assert response.status_code == 200
-        assert "checked" in response.data
-        assert "disabled" in response.data
+        assert "checked" in data
+        assert "disabled" in data
 
     # Verify that we check that the assignment is in this experiment
     experiment2 = create_experiment(3, 1)
@@ -327,7 +346,8 @@ def test_read_assignment(client, users):
     assert response.status_code == 200
 
     for choice in assignment3.activity.choices:
-        assert choice.choice in response.data
+        data = response.data.decode(response.charset)
+        assert choice.choice in data
 
 
 def test_update_assignment(client, users):
@@ -377,8 +397,9 @@ def test_update_assignment(client, users):
                             )
 
     assert response.status_code == 200
+    data = response.data.decode(response.charset)
     assert json_success(response.data)
-    assert "scorecard" in json.loads(response.data)
+    assert "scorecard" in json.loads(data)
 
     # Make sure we can edit choices
     participant_experiment.progress = 0
