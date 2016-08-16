@@ -7,6 +7,7 @@ from flask_security import Security, SQLAlchemyUserDatastore
 from flask_migrate import Migrate
 from flask_jwt import JWT
 from flask_restful import Api
+from flask_marshmallow import Marshmallow
 from quizApp import config
 
 
@@ -15,6 +16,7 @@ csrf = CsrfProtect()
 security = Security()
 migrate = Migrate()
 jwt = JWT()
+ma = Marshmallow()
 api = Api(prefix="/api")
 
 
@@ -33,7 +35,7 @@ def create_app(config_name, overrides=None):
     db.init_app(app)
     csrf.init_app(app)
 
-    from quizApp.views import api as api_view
+    import quizApp.resources
     api.init_app(app)
 
     from quizApp.models import User, Role
@@ -42,6 +44,7 @@ def create_app(config_name, overrides=None):
     # Workaround for flask-security bug #383
     security.datastore = user_datastore
     security.app = app
+    ma.init_app(app)
 
     migrate.init_app(app, db)
 
