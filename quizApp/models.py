@@ -589,9 +589,6 @@ class MediaItem(Base):
     this class and define their own fields needed for rendering.
 
     Attributes:
-        flash (bool): If True, flash the MediaItem for flash_duration
-        milliseconds
-        flash_duration (int): How long to display the MediaItem in milliseconds
         name (str): Name for this Media Item
         assignments (list of Assignment): Which Assignments display this
             MediaItem
@@ -602,10 +599,6 @@ class MediaItem(Base):
         "Assignment",
         secondary=assignment_media_item_table,
         back_populates="media_items")
-    flash = db.Column(db.Boolean,
-                      info={"label": "Flash this MediaItem when displaying"})
-    flash_duration = db.Column(db.Integer, nullable=False, default=-1,
-                               info={"label": "Flash duration (ms)"})
     dataset = db.relationship("Dataset", back_populates="media_items")
     dataset_id = db.Column(db.Integer, db.ForeignKey("dataset.id"))
     type = db.Column(db.String(80), nullable=False)
@@ -706,6 +699,9 @@ class Experiment(Base):
 
             In addition, a scorecard will be rendered after the experiment
             according to the Experiment's ``ScorecardSettings``.
+        flash (bool): If True, flash the MediaItem for flash_duration
+        milliseconds
+        flash_duration (int): How long to display the MediaItem in milliseconds
     """
 
     name = db.Column(db.String(150), index=True, nullable=False,
@@ -717,6 +713,10 @@ class Experiment(Base):
     show_scores = db.Column(db.Boolean,
                             info={"label": ("Show score tally during the"
                                             " experiment")})
+    flash = db.Column(db.Boolean,
+                      info={"label": "Flash this MediaItem when displaying"})
+    flash_duration = db.Column(db.Integer, nullable=False, default=-1,
+                               info={"label": "Flash duration (ms)"})
     disable_previous = db.Column(db.Boolean,
                                  info={"label": ("Don't let participants go "
                                                  "back after submitting an "
