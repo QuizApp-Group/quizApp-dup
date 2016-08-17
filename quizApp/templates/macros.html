@@ -198,10 +198,12 @@ $(function () {
 {# Macros for specific js/css imports #}
 {% macro import_datetimepicker() %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.14.1/moment.min.js"
+        defer
         integrity="sha384-ohw6o2vy/chIavW0iVsUoWaIPmAnF9VKjEMSusADB79PrE3CdeJhvR84BjcynjVl"
         data-fallback="{{ url_for('static', filename='js/moment.min.js') }}"
         crossorigin="anonymous" onerror="resource_error(this)"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.37/js/bootstrap-datetimepicker.min.js"
+        async
         integrity="sha384-V936AaxnYTkq53cO2z8e42PFtCCdZhbRttfhgX8U1K9weNYVdCMbDetUKTtllFdc"
         data-fallback="{{ url_for('static', filename='js/bootstrap-datetimepicker.min.js') }}"
         crossorigin="anonymous" onerror="resource_error(this)"></script>
@@ -226,7 +228,7 @@ $(function () {
       data-fallback="{{ url_for('static', filename='js/dataTables.bootstrap.min.js') }}"
       integrity="sha384-p/NQoT0G1WaSOtpkNLDWe2nWstNl65yswLy5523OUNaS0Zg+2Pw+6P2OID9vA74O"
       crossorigin="anonymous" onerror="resource_error(this)">
-<script src="{{ url_for('static', filename='js/enable_dataTables.js')}}"></script>
+<script src="{{ url_for('static', filename='js/enable_dataTables.js')}}" async></script>
 {% endmacro %}
 
 {% macro render_media_item(media_item) %}
