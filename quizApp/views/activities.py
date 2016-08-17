@@ -234,7 +234,11 @@ def create_choice(question_id):
     choice.save()
     db.session.commit()
 
-    return jsonify({"success": 1})
+    return jsonify({
+        "success": 1,
+        "new_row": render_template("activities/render_choice_row.html",
+                                   choice=choice)
+    })
 
 
 @activities.route(CHOICE_ROUTE, methods=["PUT"])
