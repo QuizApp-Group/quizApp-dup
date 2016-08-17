@@ -4,8 +4,10 @@
 
 {% block head %}
 <meta name="csrf-token" content="{{ csrf_token() }}">
-<script src="{{ url_for('static', filename='js/common_ajax.js') }}"></script>
-<script src="{{ url_for('static', filename='js/activities_ajax.js') }}"></script>
+<script defer src="{{ url_for('static', filename='js/common_ajax.js') }}"></script>
+<script defer src="{{ url_for('static', filename='js/activities_ajax.js') }}"></script>
+<script defer src="{{ url_for('static', filename='js/connect_tables.js')
+}}"></script>
 {% endblock %}
 
 {% block title %}Activity {{ question.id }} - Settings{% endblock %}
@@ -48,25 +50,16 @@ method="put", id="update-activity-form") }}
   from any dataset.
 </div>
 
-<form action="{{ url_for('activities.update_question_datasets',
-activity_id=question.id) }}" method="patch" id="remove-dataset-form">
-  <div class="table-container">
-    {{ activities_macros.dataset_table(dataset_form, remove_dataset_mapping) }}
-  </div>
-  {{ macros.render_field(dataset_form.submit, value="Dissasociate datasets",
-  class_="btn-danger") }}
-</form>
-
-<hr>
+<div class="table-container">
+  {{ activities_macros.dataset_table(associated_datasets,
+  url_for("activities.create_question_dataset", activity_id=question.id), "post") }}
+</div>
 
 <h3>Datasets not associated with this activity</h3>
-<form action="{{ url_for('activities.update_question_datasets',
-activity_id=question.id) }}" method="patch" id="add-dataset-form">
-  <div class="table-container">
-    {{ activities_macros.dataset_table(dataset_form, add_dataset_mapping) }}
-  </div>
-  {{ macros.render_field(dataset_form.submit, value="Associate datasets") }}
-</form>
+<div class="table-container">
+  {{ activities_macros.dataset_table(unassociated_datasets,
+  url_for("activities.delete_question_dataset", activity_id=question.id), "delete") }}
+</div>
 
 <hr>
 

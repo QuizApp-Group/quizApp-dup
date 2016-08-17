@@ -120,26 +120,41 @@ def test_update_question_datasets(client, users):
 
     question.save()
     db.session.add_all(datasets)
+    question.datasets.extend(datasets[:5])
     db.session.commit()
 
-    url = "/activities/" + str(question.id) + "/datasets"
+    url = "/activities/" + str(question.id) + "/datasets/"
 
-    dataset_to_add = datasets[0]
+    dataset_to_add = datasets[9]
     dataset_to_remove = question.datasets[0]
 
-    response = client.patch(url,
-                            data={"objects": [str(dataset_to_add.id),
-                                              str(dataset_to_remove.id)]})
+    response = client.post(url,
+                           data={"dataset_id": str(dataset_to_add.id)})
     assert response.status_code == 200
     assert json_success(response.data)
+    db.session.refresh(question)
+    assert dataset_to_add in question.datasets
 
-    updated_question = Question.query.get(question.id)
-    assert dataset_to_add in updated_question.datasets
-    assert dataset_to_remove not in updated_question.datasets
-
-    response = client.patch(url)
+    response = client.delete(url,
+                             data={"dataset_id": str(dataset_to_remove.id)})
+    db.session.refresh(question)
     assert response.status_code == 200
-    assert not json_success(response.data)
+    assert json_success(response.data)
+    assert dataset_to_remove not in question.datasets
+
+    response = client.delete(url,
+                             data={"dataset_id": str(dataset_to_remove.id)})
+    assert response.status_code == 400
+
+    response = client.post(url,
+                           data={"dataset_id": str(dataset_to_add.id)})
+    assert response.status_code == 400
+
+    response = client.post(url)
+    assert response.status_code == 400
+
+    response = client.delete(url)
+    assert response.status_code == 400
 
 
 def test_delete_activity(client, users):

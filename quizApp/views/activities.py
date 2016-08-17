@@ -103,10 +103,9 @@ def settings_question(question):
 
     dataset_form = DatasetListForm()
     dataset_form.reset_objects()
-    remove_dataset_mapping = dataset_form.populate_objects(question.datasets)
-    add_dataset_mapping = dataset_form.populate_objects(
-        Dataset.query.
-        filter(not_(Dataset.questions.any(id=question.id))).all())
+    associated_datasets = question.datasets
+    unassociated_datasets = Dataset.query.\
+        filter(not_(Dataset.questions.any(id=question.id))).all()
 
     if "mc" in question.type:
         create_choice_form = ChoiceForm(prefix="create")
@@ -122,8 +121,8 @@ def settings_question(question):
                            question=question,
                            general_form=general_form,
                            dataset_form=dataset_form,
-                           remove_dataset_mapping=remove_dataset_mapping,
-                           add_dataset_mapping=add_dataset_mapping,
+                           associated_datasets=associated_datasets,
+                           unassociated_datasets=unassociated_datasets,
                            choices=question.choices,
                            create_choice_form=create_choice_form,
                            delete_activity_form=delete_activity_form,
@@ -156,27 +155,45 @@ def update_question(question):
     return jsonify({"success": 1})
 
 
-@activities.route(ACTIVITY_ROUTE + "/datasets", methods=["PATCH"])
+@activities.route(ACTIVITY_ROUTE + "/datasets/", methods=["DELETE"])
 @roles_required("experimenter")
-def update_question_datasets(activity_id):
-    """Change the datasets that this question is associated with.
+def delete_question_dataset(activity_id):
+    """Disassociate this question from a dataset.
+
+    The request should contain the ID of the dataset to disassociate.
+
+    It's not quite RESTful, but I couldn't figure out a better way taking into
+    account that the url has to be known to the client to make the request.
     """
-    question = validate_model_id(Question, activity_id)
-    dataset_form = DatasetListForm(request.form)
-    dataset_mapping = dataset_form.populate_objects(Dataset.query.all())
-    if not dataset_form.validate():
-        return jsonify({"success": 0, "errors": dataset_form.errors})
+    activity = validate_model_id(Activity, activity_id)
+    dataset_id = request.form["dataset_id"]
+    dataset = validate_model_id(Dataset, dataset_id)
 
-    for dataset_id in dataset_form.objects.data:
-        dataset = dataset_mapping[dataset_id]
+    if dataset not in activity.datasets:
+        abort(400)
 
-        if dataset in question.datasets:
-            question.datasets.remove(dataset)
-        else:
-            question.datasets.append(dataset)
-
+    activity.datasets.remove(dataset)
     db.session.commit()
 
+    return jsonify({"success": 1})
+
+
+@activities.route(ACTIVITY_ROUTE + "/datasets/", methods=["POST"])
+@roles_required("experimenter")
+def create_question_dataset(activity_id):
+    """Associate this question with a dataset.
+
+    The request should contain the ID of the dataset to be associated.
+    """
+    activity = validate_model_id(Activity, activity_id)
+    dataset_id = request.form["dataset_id"]
+    dataset = validate_model_id(Dataset, dataset_id)
+
+    if dataset in activity.datasets:
+        abort(400)
+
+    activity.datasets.append(dataset)
+    db.session.commit()
     return jsonify({"success": 1})
 
 
@@ -216,7 +233,11 @@ def create_choice(question_id):
     choice.save()
     db.session.commit()
 
-    return jsonify({"success": 1})
+    return jsonify({
+        "success": 1,
+        "new_row": render_template("activities/render_choice_row.html",
+                                   choice=choice)
+    })
 
 
 @activities.route(CHOICE_ROUTE, methods=["PUT"])

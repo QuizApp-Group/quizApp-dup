@@ -3,7 +3,7 @@ $(document).ready(function() {
   form_ajax("#remove-dataset-form", done_refresh);
   form_ajax("#add-dataset-form", done_refresh);
   form_ajax("#delete-activity-form", done_redirect)
-  form_ajax("#create-choice-form", done_refresh)
+  form_ajax("#create-choice-form", done_add_row)
   form_ajax("#delete-choice-form", done_refresh)
   form_ajax("#update-choice-form", done_refresh)
   form_ajax("#create-activity-form", done_redirect)

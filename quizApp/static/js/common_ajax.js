@@ -14,7 +14,7 @@ function form_ajax(selector, done_callback, pre_callback) {
     }
     event.preventDefault();
 
-    if($(this).find("input[type=file]")) {
+    if($(this).find("input[type=file]").length) {
       $.ajax({
         context: this,
         type: this.getAttribute("method"),
@@ -24,7 +24,10 @@ function form_ajax(selector, done_callback, pre_callback) {
         contentType: false,
         encode: true,
       })
-      .done(done_callback);
+      .done(function(data) {
+          clear_errors(this);
+          done_callback.call(this, data);
+      })
     } else {
       $.ajax({
         context: this,
@@ -33,7 +36,10 @@ function form_ajax(selector, done_callback, pre_callback) {
         data: $(this).serialize(),
         encode: true,
       })
-      .done(done_callback);
+      .done(function(data) {
+          clear_errors(this);
+          done_callback.call(this, data);
+      })
     }
   });
 
@@ -61,6 +67,15 @@ function done_redirect(data) {
 
 }
 
+function done_add_row(data) {
+  console.log(data);
+  if(data.success) {
+    $(this).find("tbody").append(data.new_row);
+  } else {
+    render_errors(data.errors, data.prefix);
+  }
+
+}
 
 function done_highlight(data) {
   console.log(data);
@@ -101,6 +116,11 @@ function done_refresh(data) {
   }
 }
 
+function clear_errors(form) {
+    $(form).find(".error-block").remove();
+    $(form).find(".has-error").removeClass("has-error");
+}
+
 function render_errors(errors, prefix) {
   var cleared_form_ids = [];
   if(!prefix) {
@@ -112,7 +132,7 @@ function render_errors(errors, prefix) {
       var form = form_control.parents("form");
 
       if($.inArray(form.attr("id"), cleared_form_ids) == -1) {
-        form.find(".help-block").remove();
+        form.find(".error-block").remove();
         form.find(".has-error").removeClass("has-error");
         cleared_form_ids.push(form.attr("id"));
       }
