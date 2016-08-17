@@ -285,3 +285,11 @@ ul#answers {
 form #submit-message {
   transition: all .5s;
 }
+
+.draggable {
+    cursor: grab;
+}
+
+tr * {
+    transition: all .5s;
+}

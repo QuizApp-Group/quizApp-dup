@@ -1,19 +1,23 @@
 {% import 'macros.html' as macros %}
 
-{% macro dataset_table(form, mapping) %}
-<table class="table">
+{% macro dataset_table(datasets, url, method) %}
+<table class="table sortable-table connected-sortable"
+       data-action="{{ url }}" data-method="{{ method }}">
   <thead>
     <tr>
-      <th>ID</th>
-      <th>Name</th>
-      <th></th>
+      <th class="col-md-1">ID</th>
+      <th class="col-md-3">Name</th>
+      <th class="col-md-1"></th>
     </tr>
   </thead>
   <tbody>
-    {% for dataset_field in form.objects %}
-    {% if mapping[dataset_field.data] %}
-      {{ dataset_row(mapping[dataset_field.data], dataset_field) }}
-    {% endif %}
+    {% for dataset in datasets %}
+    <tr data-dataset-id="{{ dataset.id }}">
+      <td>{{ dataset.id }}</td>
+      <td>{{ dataset.name }}</td>
+      <td><span class="draggable handle">{{ macros.render_glyphicon("menu-hamburger")
+          }}</span></td>
+    </tr>
     {% endfor %}
   </tbody>
 </table>
