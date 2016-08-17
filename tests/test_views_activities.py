@@ -142,6 +142,14 @@ def test_update_question_datasets(client, users):
     assert json_success(response.data)
     assert dataset_to_remove not in question.datasets
 
+    response = client.delete(url,
+                             data={"dataset_id": str(dataset_to_remove.id)})
+    assert response.status_code == 400
+
+    response = client.post(url,
+                           data={"dataset_id": str(dataset_to_add.id)})
+    assert response.status_code == 400
+
     response = client.post(url)
     assert response.status_code == 400
 
