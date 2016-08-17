@@ -83,6 +83,8 @@
           {% endif %}
         </ul>
       </div>
+      {{ macros.render_flashed_messages(["error"], "danger", "Errors ocurred") }}
+      {{ macros.render_flashed_messages(["message"], "info", "Note:") }}
       <h2>{{ self.title() }}</h2>
       {% block content %}{% endblock %}
     </div> <!-- end .wrapper.container -->

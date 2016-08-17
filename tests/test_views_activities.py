@@ -1,5 +1,7 @@
 """Test activity views.
 """
+from __future__ import unicode_literals
+from builtins import str
 import factory
 
 from tests.auth import login_experimenter
@@ -17,10 +19,11 @@ def test_read_activities(client, users):
     db.session.commit()
 
     response = client.get("/activities/")
+    data = response.data.decode(response.charset)
 
     for activity in activities:
-        assert activity.category in response.data
-        assert str(activity.id) in response.data
+        assert activity.category in data
+        assert str(activity.id) in data
 
 
 def test_create_activity(client, users):
@@ -38,8 +41,9 @@ def test_create_activity(client, users):
     assert json_success(response.data)
 
     response = client.get("/activities/")
+    data = response.data.decode(response.charset)
 
-    assert question.type in response.data
+    assert question.type in data
 
 
 def test_read_activity(client, users):
@@ -51,12 +55,13 @@ def test_read_activity(client, users):
     url = "/activities/" + str(question.id)
 
     response = client.get(url)
+    data = response.data.decode(response.charset)
     assert response.status_code == 200
-    assert question.question in response.data
-    assert question.explanation in response.data
+    assert question.question in data
+    assert question.explanation in data
 
     for choice in question.choices:
-        assert choice.choice in response.data
+        assert choice.choice in data
 
 
 def test_settings_activity(client, users):
@@ -68,12 +73,13 @@ def test_settings_activity(client, users):
     url = "/activities/" + str(question.id) + "/settings"
 
     response = client.get(url)
+    data = response.data.decode(response.charset)
     assert response.status_code == 200
-    assert question.question in response.data
-    assert question.explanation in response.data
+    assert question.question in data
+    assert question.explanation in data
 
     for choice in question.choices:
-        assert choice.choice in response.data
+        assert choice.choice in data
 
 
 def test_update_activity(client, users):
@@ -87,9 +93,10 @@ def test_update_activity(client, users):
     new_question = SingleSelectQuestionFactory()
 
     response = client.put(url)
+    data = response.data.decode(response.charset)
     assert response.status_code == 200
     assert not json_success(response.data)
-    assert "errors" in response.data
+    assert "errors" in data
 
     response = client.put(url,
                           data={"question": new_question.question,
@@ -101,8 +108,9 @@ def test_update_activity(client, users):
     assert json_success(response.data)
 
     response = client.get(url)
-    assert new_question.question in response.data
-    assert new_question.explanation in response.data
+    data = response.data.decode(response.charset)
+    assert new_question.question in data
+    assert new_question.explanation in data
 
 
 def test_update_question_datasets(client, users):

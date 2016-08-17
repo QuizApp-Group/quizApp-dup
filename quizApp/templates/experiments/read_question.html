@@ -1,4 +1,4 @@
-{% extends 'header.html' %}
+{% extends 'layout.html' %}
 
 {% import 'macros.html' as macros %}
 
@@ -22,8 +22,8 @@ Time elapsed: <span class="stopwatch"></span>
 {% endif %}
 {% for media_item in assignment.media_items %}
 <div class="row media-item-container"
-  {% if not experiment_complete and media_item.flash %}
-  data-flash-duration="{{ media_item.flash_duration }}"
+  {% if not experiment_complete and exp.flash %}
+  data-flash-duration="{{ exp.flash_duration }}"
   {% endif %}
   >
   {{ macros.render_media_item(media_item) }}

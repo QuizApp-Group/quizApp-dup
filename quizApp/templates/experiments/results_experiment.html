@@ -1,4 +1,4 @@
-{% extends 'header.html' %}
+{% extends 'layout.html' %}
 {% import "experiments/experiment_macros.html" as exp_macros %}
 {% import "macros.html" as macros %}
 
@@ -21,7 +21,7 @@
     </tr>
   </thead>
   <tbody>
-{% for question, data in question_stats.iteritems() %}
+{% for question, data in question_stats.items() %}
 <tr>
   <td>{{ question }}</td>
   <td>{{ data["num_responses"] }}</td>

@@ -1,5 +1,7 @@
 """Handle creating the app and configuring it.
 """
+from __future__ import print_function
+from __future__ import unicode_literals
 from flask import Flask
 from flask_wtf.csrf import CsrfProtect
 from flask_sqlalchemy import SQLAlchemy
@@ -24,7 +26,7 @@ def create_app(config_name, overrides=None):
     if overrides:
         app.config.from_mapping(overrides)
 
-    print "Using config: " + config_name
+    print("Using config: " + config_name)
 
     db.init_app(app)
     csrf.init_app(app)

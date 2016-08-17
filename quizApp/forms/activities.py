@@ -17,7 +17,6 @@ class ActivityForm(OrderFormMixin, ModelForm):
         """
         model = Activity
         order = ('*', 'scorecard_settings', 'submit')
-        exclude = ['time_to_submit']
 
     scorecard_settings = ModelFormField(ScorecardSettingsForm)
     submit = SubmitField("Save")

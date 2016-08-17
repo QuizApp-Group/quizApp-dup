@@ -1,4 +1,4 @@
-{% extends 'header.html' %}
+{% extends 'layout.html' %}
 {% import 'macros.html' as macros %}
 
 {% block head %}
@@ -30,7 +30,7 @@ Activity List
         activity_id=activity.id) }}">{{ activity.id }}</a></td>
         <td>{{ activity.type }}</td>
         <td>{{ activity.question }}
-    td  </td>
+        </td>
         <td>{{ activity.category }}</td>
         <td>
           <a href="{{ url_for('activities.settings_activity',

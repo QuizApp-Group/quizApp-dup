@@ -46,7 +46,7 @@ def export_to_workbook():
     workbook = Workbook()
     workbook.remove_sheet(workbook.active)
 
-    for sheet_name, model in SHEET_NAME_MAPPING.iteritems():
+    for sheet_name, model in SHEET_NAME_MAPPING.items():
         current_sheet = workbook.create_sheet()
         current_sheet.title = sheet_name
         sheet_data = object_list_to_sheet(model.query.all())
@@ -130,8 +130,8 @@ def write_list_to_sheet(data_list, sheet):
     a row.
     """
 
-    for r in xrange(1, len(data_list) + 1):
-        for c in xrange(1, len(data_list[r - 1]) + 1):
+    for r in range(1, len(data_list) + 1):
+        for c in range(1, len(data_list[r - 1]) + 1):
             sheet.cell(row=r, column=c).value = data_list[r - 1][c - 1]
 
 
@@ -313,7 +313,7 @@ def import_data_from_workbook(workbook):
     """
     pk_mapping = defaultdict(dict)
 
-    for sheet_name, model in SHEET_NAME_MAPPING.iteritems():
+    for sheet_name, model in SHEET_NAME_MAPPING.items():
         try:
             sheet = workbook.get_sheet_by_name(sheet_name)
         except KeyError:

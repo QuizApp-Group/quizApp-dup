@@ -1,5 +1,7 @@
 """Models for the quizApp.
 """
+from __future__ import unicode_literals
+from builtins import object
 import os
 
 from quizApp import db
@@ -36,7 +38,7 @@ class Base(db.Model):
         others. Subclasses of Base to which this applies are expected to
         override this method and implement their import correctly.
         """
-        for key, value in kwargs.items():
+        for key, value in list(kwargs.items()):
             setattr(self, key, value)
 
 
@@ -204,6 +206,8 @@ class Assignment(Base):
             order of choices that this participant was presented with when
             answering this question, e.g. {[1, 50, 9, 3]} where the numbers are
             the IDs of those choices.
+        time_to_submit (timedelta): Time from the question being rendered to
+            the question being submitted.
         media_items (list of MediaItem): What MediaItems should be shown
         participant (Participant): Which Participant gets this Assignment
         activity (Activity): Which Activity this Participant should see
@@ -215,6 +219,7 @@ class Assignment(Base):
     skipped = db.Column(db.Boolean, info={"import_include": False})
     comment = db.Column(db.String(200), info={"import_include": False})
     choice_order = db.Column(db.String(80), info={"import_include": False})
+    time_to_submit = db.Column(db.Interval())
 
     media_items = db.relationship("MediaItem",
                                   secondary=assignment_media_item_table,
@@ -367,8 +372,6 @@ class Activity(Base):
     Attributes:
         type (string): Discriminator column that determines what kind
             of Activity this is.
-        time_to_submit (timedelta): Time from the question being rendered to
-            the question being submitted.
         category (string): A description of this assignment's category, for the
             users' convenience.
         experiments (list of Experiment): What Experiments include this
@@ -384,7 +387,6 @@ class Activity(Base):
         result_class = Result
 
     type = db.Column(db.String(50), nullable=False)
-    time_to_submit = db.Column(db.Interval())
     experiments = db.relationship("Experiment",
                                   secondary=activity_experiment_table,
                                   back_populates="activities",
@@ -570,7 +572,7 @@ class Choice(Base):
     label = db.Column(db.String(3),
                       info={"label": "Label"})
     correct = db.Column(db.Boolean,
-                        info={"label": "Correct?"})
+                        info={"label": "Correct"})
     points = db.Column(db.Integer,
                        info={"label": "Point value of this choice"})
 
@@ -587,9 +589,6 @@ class MediaItem(Base):
     this class and define their own fields needed for rendering.
 
     Attributes:
-        flash (bool): If True, flash the MediaItem for flash_duration
-        milliseconds
-        flash_duration (int): How long to display the MediaItem in milliseconds
         name (str): Name for this Media Item
         assignments (list of Assignment): Which Assignments display this
             MediaItem
@@ -600,10 +599,6 @@ class MediaItem(Base):
         "Assignment",
         secondary=assignment_media_item_table,
         back_populates="media_items")
-    flash = db.Column(db.Boolean,
-                      info={"label": "Flash this MediaItem when displaying?"})
-    flash_duration = db.Column(db.Integer, nullable=False, default=-1,
-                               info={"label": "Flash duration (ms)"})
     dataset = db.relationship("Dataset", back_populates="media_items")
     dataset_id = db.Column(db.Integer, db.ForeignKey("dataset.id"))
     type = db.Column(db.String(80), nullable=False)
@@ -658,17 +653,17 @@ class ScorecardSettings(Base):
     """
 
     display_scorecard = db.Column(db.Boolean,
-                                  info={"label": "Display scorecards?"})
+                                  info={"label": "Display scorecards"})
     display_score = db.Column(db.Boolean,
-                              info={"label": "Display points on scorecard?"})
+                              info={"label": "Display points on scorecard"})
     display_time = db.Column(db.Boolean,
-                             info={"label": "Display time on scorecard?"})
+                             info={"label": "Display time on scorecard"})
     display_correctness = db.Column(db.Boolean,
                                     info={"label":
-                                          "Display correctness on scorecard?"})
+                                          "Display correctness on scorecard"})
     display_feedback = db.Column(db.Boolean,
                                  info={"label":
-                                       "Display feedback on scorecard?"})
+                                       "Display feedback on scorecard"})
 
 
 class Experiment(Base):
@@ -704,6 +699,9 @@ class Experiment(Base):
 
             In addition, a scorecard will be rendered after the experiment
             according to the Experiment's ``ScorecardSettings``.
+        flash (bool): If True, flash the MediaItem for flash_duration
+        milliseconds
+        flash_duration (int): How long to display the MediaItem in milliseconds
     """
 
     name = db.Column(db.String(150), index=True, nullable=False,
@@ -714,13 +712,17 @@ class Experiment(Base):
     blurb = db.Column(db.String(500), info={"label": "Blurb"})
     show_scores = db.Column(db.Boolean,
                             info={"label": ("Show score tally during the"
-                                            " experiment?")})
+                                            " experiment")})
+    flash = db.Column(db.Boolean,
+                      info={"label": "Flash this MediaItem when displaying"})
+    flash_duration = db.Column(db.Integer, nullable=False, default=-1,
+                               info={"label": "Flash duration (ms)"})
     disable_previous = db.Column(db.Boolean,
                                  info={"label": ("Don't let participants go "
                                                  "back after submitting an "
-                                                 "activity?")})
+                                                 "activity")})
     show_timers = db.Column(db.Boolean,
-                            info={"label": "Show timers on activities?"})
+                            info={"label": "Show timers on activities"})
 
     activities = db.relationship("Activity",
                                  secondary=activity_experiment_table,

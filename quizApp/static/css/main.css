@@ -199,7 +199,7 @@ body {
 /* Customize container */
 @media (min-width: 768px) {
   .container {
-    max-width: 730px;
+    max-width: 1000px;
   }
 }
 .container-narrow > hr {
@@ -278,7 +278,10 @@ ul#answers {
   color: green;
 }
 
-.form-control {
+.form-group input, .form-group label {
   transition: all .5s;
 }
 
+form #submit-message {
+  transition: all .5s;
+}

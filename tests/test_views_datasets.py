@@ -1,5 +1,7 @@
 """Tests for dataset views.
 """
+from __future__ import unicode_literals
+from builtins import str
 import factory
 
 from werkzeug.datastructures import FileStorage
@@ -20,9 +22,10 @@ def test_read_datasets(client, users):
     db.session.commit()
 
     response = client.get("/datasets/")
+    data = response.data.decode(response.charset)
     assert response.status_code == 200
     for dataset in datasets:
-        assert dataset.name in response.data
+        assert dataset.name in data
 
 
 def test_create_dataset(client, users):
@@ -50,8 +53,9 @@ def test_create_dataset(client, users):
     assert not json_success(response.data)
 
     response = client.get("/datasets/")
+    data = response.data.decode(response.charset)
     assert response.status_code == 200
-    assert dataset.name in response.data
+    assert dataset.name in data
 
 
 def test_update_dataset(client, users):
@@ -68,8 +72,9 @@ def test_update_dataset(client, users):
     assert json_success(response.data)
 
     response = client.get("/datasets/")
+    data = response.data.decode(response.charset)
     assert response.status_code == 200
-    assert new_dataset.name in response.data
+    assert new_dataset.name in data
 
     response = client.put(url)
     assert response.status_code == 200
@@ -88,8 +93,9 @@ def test_delete_dataset(client, users):
     assert json_success(response.data)
 
     response = client.get("/datasets/")
+    data = response.data.decode(response.charset)
     assert response.status_code == 200
-    assert dataset.name not in response.data
+    assert dataset.name not in data
 
 
 def test_create_media_item(client, users):
@@ -108,8 +114,9 @@ def test_create_media_item(client, users):
     assert json_success(response.data)
 
     response = client.get(url + "/settings")
+    data = response.data.decode(response.charset)
     assert response.status_code == 200
-    assert graph.type in response.data
+    assert graph.type in data
 
     db.session.refresh(dataset)
 
@@ -177,8 +184,9 @@ def test_settings_media_item(client, users):
            "/settings")
 
     response = client.get(url)
+    data = response.data.decode(response.charset)
     assert response.status_code == 200
-    assert graph.name in response.data
+    assert graph.name in data
 
     unrelated_graph = GraphFactory()
     unrelated_graph.save()
@@ -243,7 +251,8 @@ def test_update_media_item(client, users):
         GraphFormMock.configure_mock(return_value=graph_form_mock)
 
         response = client.put(url,
-                              data={"graph": open("tests/data/graph.png")})
+                              data={"graph": open("tests/data/graph.png",
+                                                  "rb")})
         assert response.status_code == 200
         assert json_success(response.data)
         assert file_storage_mock.save.called_once()
@@ -255,7 +264,8 @@ def test_update_media_item(client, users):
             db.session.refresh(graph)
             file_storage_mock.reset_mock()
             response = client.put(url,
-                                  data={"graph": open("tests/data/graph.png")})
+                                  data={"graph": open("tests/data/graph.png",
+                                                      "rb")})
             assert response.status_code == 200
             assert json_success(response.data)
             assert file_storage_mock.save.called_once()

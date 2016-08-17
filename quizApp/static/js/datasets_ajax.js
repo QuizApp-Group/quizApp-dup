@@ -1,6 +1,6 @@
 $(document).ready(function() {
   form_ajax("#create-dataset-form", done_refresh);
-  form_ajax("#update-dataset-form", done_highlight);
+  form_ajax("#update-dataset-form", done_highlight, pre_callback_message);
   form_ajax("#delete-dataset-form", done_redirect);
   form_ajax("#delete-media-item-form", done_refresh);
   form_ajax("#create-media-item-form", done_refresh);

@@ -1,5 +1,7 @@
 """Configurations for the project. These are loaded in app.py.
 """
+from __future__ import unicode_literals
+from builtins import object
 
 import os
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -34,7 +36,7 @@ class Development(Config):
     """Configuration for development environments.
     """
     DEBUG = True
-    SQLALCHEMY_DATABASE_URI = "mysql+mysqldb://quizapp:foobar@localhost/quizapp"
+    SQLALCHEMY_DATABASE_URI = "mysql://quizapp:foobar@localhost/quizapp"
     SECRET_KEY = "Foobar"
     SECURITY_SEND_REGISTER_EMAIL = False
     SQLALCHEMY_ECHO = True
@@ -47,7 +49,7 @@ class Testing(Config):
     DEBUG = True
     TESTING = True
     WTF_CSRF_ENABLED = False
-    SQLALCHEMY_DATABASE_URI = "mysql+mysqldb://quizapp:foobar@localhost/quizapp_test"
+    SQLALCHEMY_DATABASE_URI = "mysql://quizapp:foobar@localhost/quizapp_test"
     SECRET_KEY = "Foobar"
 
 

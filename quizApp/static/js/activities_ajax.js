@@ -1,5 +1,5 @@
 $(document).ready(function() {
-  form_ajax("#update-activity-form", done_highlight);
+  form_ajax("#update-activity-form", done_highlight, pre_callback_message);
   form_ajax("#remove-dataset-form", done_refresh);
   form_ajax("#add-dataset-form", done_refresh);
   form_ajax("#delete-activity-form", done_redirect)
