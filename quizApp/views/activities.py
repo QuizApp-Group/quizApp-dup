@@ -31,7 +31,7 @@ CHOICES_ROUTE = "/<int:question_id>/choices/"
 CHOICE_ROUTE = CHOICES_ROUTE + "<int:choice_id>"
 
 
-class ActivitiesView(MethodView):
+class ActivityListView(MethodView):
     decorators = [roles_required("experimenter")]
     def get():
         """Display a list of all activities.
@@ -62,29 +62,67 @@ class ActivitiesView(MethodView):
         return jsonify({"success": 1, "next_url": next_url})
 
 
-activities.add_url_rule('/', view_func=ActivitiesView.as_view("activities"))
-
-@activities.route(ACTIVITY_ROUTE, methods=["GET"])
-@roles_required("experimenter")
-def read_activity(activity_id):
-    """Display a given activity as it would appear to a participant.
-    """
-    activity = validate_model_id(Activity, activity_id)
-
-    if "question" in activity.type:
-        return read_question(activity)
+activities.add_url_rule('/', view_func=ActivityListView.as_view("activities"))
 
 
-def read_question(question):
-    """Display a given question as it would appear to a participant.
-    """
-    form = get_question_form(question)
+class ActivityView(MethodView):
+    decorators = [roles_required("experimenter")]
+    def get(self, activity_id):
+        """Display a given activity as it would appear to a participant.
+        """
+        activity = validate_model_id(Activity, activity_id)
 
-    form.populate_choices(question.choices)
+        if "question" in activity.type:
+            return self.read_question(activity)
 
-    return render_template("activities/read_question.html",
-                           question=question,
-                           question_form=form)
+
+    def read_question(self, question):
+        """Display a given question as it would appear to a participant.
+        """
+        form = get_question_form(question)
+
+        form.populate_choices(question.choices)
+
+        return render_template("activities/read_question.html",
+                               question=question,
+                               question_form=form)
+
+    def put(self, activity_id):
+        """Update the activity based on transmitted form data.
+        """
+        activity = validate_model_id(Activity, activity_id)
+
+        if "question" in activity.type:
+            return update_question(activity)
+
+
+    def update_question(self, question):
+        """Given a question, update its settings.
+        """
+        general_form = QuestionForm(request.form)
+
+        if not general_form.validate():
+            return jsonify({"success": 0, "errors": general_form.errors})
+
+        general_form.populate_obj(question)
+        db.session.commit()
+
+        return jsonify({"success": 1})
+
+    def delete_activity(self, activity_id):
+        """Delete the given activity.
+        """
+        activity = validate_model_id(Activity, activity_id)
+
+        db.session.delete(activity)
+        db.session.commit()
+
+        next_url = url_for("activities.read_activities")
+
+        return jsonify({"success": 1, "next_url": next_url})
+
+activities.add_url_rule(ACTIVITY_ROUTE,
+                        view_func=ActivityView.as_view("activity"))
 
 
 @activities.route(ACTIVITY_ROUTE + "/settings", methods=["GET"])
@@ -133,29 +171,6 @@ def settings_question(question):
                            update_choice_form=update_choice_form)
 
 
-@activities.route(ACTIVITY_ROUTE, methods=["PUT"])
-@roles_required("experimenter")
-def update_activity(activity_id):
-    """Update the activity based on transmitted form data.
-    """
-    activity = validate_model_id(Activity, activity_id)
-
-    if "question" in activity.type:
-        return update_question(activity)
-
-
-def update_question(question):
-    """Given a question, update its settings.
-    """
-    general_form = QuestionForm(request.form)
-
-    if not general_form.validate():
-        return jsonify({"success": 0, "errors": general_form.errors})
-
-    general_form.populate_obj(question)
-    db.session.commit()
-
-    return jsonify({"success": 1})
 
 
 @activities.route(ACTIVITY_ROUTE + "/datasets", methods=["PATCH"])
@@ -182,21 +197,6 @@ def update_question_datasets(activity_id):
     return jsonify({"success": 1})
 
 
-@activities.route(ACTIVITY_ROUTE, methods=["DELETE"])
-@roles_required("experimenter")
-def delete_activity(activity_id):
-    """Delete the given activity.
-    """
-    activity = validate_model_id(Activity, activity_id)
-
-    db.session.delete(activity)
-    db.session.commit()
-
-    next_url = url_for("activities.read_activities")
-
-    return jsonify({"success": 1, "next_url": next_url})
-
-
 @activities.route(CHOICES_ROUTE, methods=["POST"])
 @roles_required("experimenter")
 def create_choice(question_id):
@@ -221,42 +221,41 @@ def create_choice(question_id):
     return jsonify({"success": 1})
 
 
-@activities.route(CHOICE_ROUTE, methods=["PUT"])
-@roles_required("experimenter")
-def update_choice(question_id, choice_id):
-    """Update the given choice using form data.
-    """
-    question = validate_model_id(Question, question_id)
-    choice = validate_model_id(Choice, choice_id)
+class ChoiceView(MethodView):
+    def put(self, question_id, choice_id):
+        """Update the given choice using form data.
+        """
+        question = validate_model_id(Question, question_id)
+        choice = validate_model_id(Choice, choice_id)
 
-    if choice not in question.choices:
-        abort(404)
+        if choice not in question.choices:
+            abort(404)
 
-    update_choice_form = ChoiceForm(request.form, prefix="update")
+        update_choice_form = ChoiceForm(request.form, prefix="update")
 
-    if not update_choice_form.validate():
-        return jsonify({"success": 0, "prefix": "update-",
-                        "errors": update_choice_form.errors})
+        if not update_choice_form.validate():
+            return jsonify({"success": 0, "prefix": "update-",
+                            "errors": update_choice_form.errors})
 
-    update_choice_form.populate_obj(choice)
+        update_choice_form.populate_obj(choice)
 
-    db.session.commit()
+        db.session.commit()
 
-    return jsonify({"success": 1})
+        return jsonify({"success": 1})
 
+    def delete(question_id, choice_id):
+        """Delete the given choice.
+        """
+        question = validate_model_id(Question, question_id)
+        choice = validate_model_id(Choice, choice_id)
 
-@activities.route(CHOICE_ROUTE, methods=["DELETE"])
-@roles_required("experimenter")
-def delete_choice(question_id, choice_id):
-    """Delete the given choice.
-    """
-    question = validate_model_id(Question, question_id)
-    choice = validate_model_id(Choice, choice_id)
+        if choice not in question.choices:
+            abort(404)
 
-    if choice not in question.choices:
-        abort(404)
+        db.session.delete(choice)
+        db.session.commit()
 
-    db.session.delete(choice)
-    db.session.commit()
+        return jsonify({"success": 1})
 
-    return jsonify({"success": 1})
+activities.add_url_rule(CHOICE_ROUTE,
+                        view_func=ChoiceView.as_view("choice"))
