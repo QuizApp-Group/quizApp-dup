@@ -1,7 +1,6 @@
 """Views that handle CRUD for experiments and rendering questions for
 participants.
 """
-import pdb
 from collections import defaultdict
 from datetime import datetime
 import json
@@ -164,7 +163,6 @@ def read_question(experiment, question, assignment):
     This function assumes that all necessary error checking has been done on
     its parameters.
     """
-    pdb.set_trace()
     question_form = get_question_form(question)
     question_form.populate_choices(question.choices)
 

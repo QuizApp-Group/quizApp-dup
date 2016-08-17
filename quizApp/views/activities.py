@@ -8,7 +8,6 @@ read_activity itself).
 from flask import Blueprint, render_template, url_for, jsonify, abort, request
 from flask_security import roles_required
 from sqlalchemy import not_
-import pdb
 
 from quizApp.models import Activity, Dataset, Question, Choice
 from quizApp.forms.experiments import get_question_form
@@ -156,7 +155,7 @@ def update_question(question):
     return jsonify({"success": 1})
 
 
-@activities.route(ACTIVITY_ROUTE + "/datasets", methods=["DELETE"])
+@activities.route(ACTIVITY_ROUTE + "/datasets/", methods=["DELETE"])
 @roles_required("experimenter")
 def delete_question_dataset(activity_id):
     """Disassociate this question from a dataset.
@@ -179,7 +178,7 @@ def delete_question_dataset(activity_id):
     return jsonify({"success": 1})
 
 
-@activities.route(ACTIVITY_ROUTE + "/datasets", methods=["POST"])
+@activities.route(ACTIVITY_ROUTE + "/datasets/", methods=["POST"])
 @roles_required("experimenter")
 def create_question_dataset(activity_id):
     """Associate this question with a dataset.
