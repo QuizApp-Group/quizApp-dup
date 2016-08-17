@@ -32,6 +32,7 @@ CHOICE_ROUTE = CHOICES_ROUTE + "<int:choice_id>"
 
 
 class ActivitiesView(MethodView):
+    decorators = [roles_required("experimenter")]
     def get():
         """Display a list of all activities.
         """
@@ -60,8 +61,8 @@ class ActivitiesView(MethodView):
 
         return jsonify({"success": 1, "next_url": next_url})
 
-view = roles_required(ActivitiesView.as_view("activities"), "experimenter")
-activities.add_url_rule('/', view_func=view)
+
+activities.add_url_rule('/', view_func=ActivitiesView.as_view("activities"))
 
 @activities.route(ACTIVITY_ROUTE, methods=["GET"])
 @roles_required("experimenter")
