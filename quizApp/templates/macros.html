@@ -197,6 +197,7 @@
         crossorigin="anonymous" onerror="resource_error(this)"></script>
 <script src="{{ url_for('static', filename='js/bootstrap-datetimepicker.min.js') }}"
         defer></script>
+<script defer src="{{ url_for('static', filename='js/form.js') }}"></script>
 <link rel="stylesheet"
       href="{{ url_for('static', filename='css/bootstrap-datetimepicker.min.css') }}"
       >
@@ -206,17 +207,19 @@
 <script src="https://cdn.datatables.net/1.10.12/js/jquery.dataTables.min.js"
         integrity="sha384-89aj/hOsfOyfD0Ll+7f2dobA15hDyiNb8m1dJ+rJuqgrGR+PVqNU8pybx4pbF3Cc"
         data-fallback="{{ url_for('static', filename='js/jquery.dataTables.min.js') }}"
+        defer
         crossorigin="anonymous" onerror="resource_error(this)"></script>
 <script src="https://cdn.datatables.net/1.10.12/js/dataTables.bootstrap.min.js"
         integrity="sha384-SR1gffNfWzqensZ3u8O8AkytPBwtg4pKQuOrHUvvCuAxqcoAE4LWPryg4o+1Y9uP"
         data-fallback="{{ url_for('static', filename='js/dataTables.bootstrap.min.js') }}"
+        defer
         crossorigin="anonymous" onerror="resource_error(this)"></script>
 <link rel="stylesheet"
       href="https://cdn.datatables.net/1.10.12/css/dataTables.bootstrap.min.css"
       data-fallback="{{ url_for('static', filename='js/dataTables.bootstrap.min.js') }}"
       integrity="sha384-p/NQoT0G1WaSOtpkNLDWe2nWstNl65yswLy5523OUNaS0Zg+2Pw+6P2OID9vA74O"
       crossorigin="anonymous" onerror="resource_error(this)">
-<script src="{{ url_for('static', filename='js/enable_dataTables.js')}}" async></script>
+<script src="{{ url_for('static', filename='js/enable_dataTables.js')}}" defer></script>
 {% endmacro %}
 
 {% macro render_media_item(media_item) %}

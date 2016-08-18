@@ -18,11 +18,17 @@
     <title>QuizApp - {% block title %}{% endblock %}</title>
     <link href="https://fonts.googleapis.com/css?family=Raleway"
           rel="stylesheet">
-    <script defer
-			  src="https://code.jquery.com/jquery-3.1.0.min.js"
-			  integrity="sha256-cCueBR6CsyA4/9szpPfrX3s49M9vUU5BgtiJj06wt/s="
-			  crossorigin="anonymous"></script>
     <script src="{{ url_for('static', filename='js/sri-fallback.js') }}"></script>
+    <script defer
+          src="https://code.jquery.com/jquery-3.1.0.min.js"
+          integrity="sha256-cCueBR6CsyA4/9szpPfrX3s49M9vUU5BgtiJj06wt/s="
+          data-fallback="{{ url_for('static', filename='js/jquery.min.js') }}"
+          crossorigin="anonymous" onerror="resource_error(this)"></script>
+    <script src="https://code.jquery.com/ui/1.12.0/jquery-ui.min.js"
+            defer
+            integrity="sha256-eGE6blurk5sHj+rmkfsGYeKyZx3M4bG+ZlFyA7Kns7E="
+            data-fallback="{{ url_for('static', filename='js/jquery-ui.min.js') }}"
+            crossorigin="anonymous" onerror="resource_error(this)"></script>v
     <link rel="stylesheet"
           href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
           integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
@@ -50,7 +56,6 @@
               crossorigin="anonymous" onerror="resource_error(this)"></script>
     <![endif]-->
     {% block head %}{% endblock %}
-    <script defer src="{{ url_for('static', filename='js/form.js') }}"></script>
   </head>
   <body>
     <div class="wrapper container">
