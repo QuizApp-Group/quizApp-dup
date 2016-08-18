@@ -52,7 +52,9 @@ def create_dataset():
 
     dataset.save()
 
-    return jsonify({"success": 1})
+    return jsonify({"success": 1,
+                    "next_url": url_for("datasets.settings_dataset",
+                                        dataset_id=dataset.id)})
 
 
 @datasets.route(DATASET_ROUTE, methods=["PUT"])
@@ -161,6 +163,8 @@ def create_media_item(dataset_id):
 
     return jsonify({
         "success": 1,
+        "next_url": url_for("datasets.settings_media_item", dataset_id=dataset.id,
+                            media_item_id=media_item.id),
     })
 
 

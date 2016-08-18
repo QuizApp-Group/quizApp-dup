@@ -73,12 +73,16 @@ def create_experiment():
     if not form.validate():
         return jsonify({"success": 0, "errors": form.errors})
 
-    exp = Experiment()
-    form.populate_obj(exp)
-    exp.created = datetime.now()
-    exp.save()
+    experiment = Experiment()
+    form.populate_obj(experiment)
+    experiment.created = datetime.now()
+    experiment.save()
 
-    return jsonify({"success": 1})
+    return jsonify({
+        "success": 1,
+        "next_url": url_for("experiments.settings_experiment",
+                            experiment_id=experiment.id),
+    })
 
 
 @experiments.route(EXPERIMENT_ROUTE, methods=["GET"])
