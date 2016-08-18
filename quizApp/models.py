@@ -219,7 +219,7 @@ class Assignment(Base):
     skipped = db.Column(db.Boolean, info={"import_include": False})
     comment = db.Column(db.String(200), info={"import_include": False})
     choice_order = db.Column(db.String(80), info={"import_include": False})
-    time_to_submit = db.Column(db.Interval())
+    time_to_submit = db.Column(db.Interval(), info={"import_include": False})
 
     media_items = db.relationship("MediaItem",
                                   secondary=assignment_media_item_table,
