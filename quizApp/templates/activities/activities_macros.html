@@ -41,6 +41,7 @@
       <th>Choice</th>
       <th>Correct?</th>
       <th>Settings</th>
+      <th>Delete</th>
     </tr>
   </thead>
   <tbody>
@@ -60,13 +61,23 @@
 
 {% macro choice_row(choice) %}
 <tr data-update-action="{{ url_for('activities.update_choice',
-question_id=choice.question_id, choice_id=choice.id) }}" id="choice-{{ choice.id }}">
+question_id=choice.question_id, choice_id=choice.id) }}"
+    data-delete-action="{{ url_for('activities.delete_choice',
+    question_id=choice.question_id, choice_id=choice.id) }}"
+    id="choice-{{ choice.id }}">
   <td class="choice-label" data-field-name="update-label">{{ choice.label }}</td>
-  <td class="choice-choice" data-field-name="update-choice">{{ choice.choice }}</td>
+  <td class="choice-choice name" data-field-name="update-choice">{{ choice.choice }}</td>
   <td class="choice-correct" data-field-name="update-correct">{{ choice.correct }}</td>
   <td><a href="#" class="update-choice" data-choice-id="{{ choice.id }}"
                                         data-toggle="modal" data-target="#update-choice-modal">
       {{ macros.render_glyphicon("cog") }}</a>
+  </td>
+  <td>
+    <a href="#" class="text-danger"
+                data-activity-id="{{ choice.id }}"
+                data-toggle="modal"
+                data-target="#confirm-delete-choice-modal">
+      {{ macros.render_glyphicon("remove") }}</a>
   </td>
 </tr>
 {% endmacro %}

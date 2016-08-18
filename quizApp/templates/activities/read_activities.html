@@ -11,6 +11,7 @@ Activity List
 {% endblock %}
 
 {% block content %}
+{{ macros.render_confirm_delete_modal(confirm_delete_activity_form, "activity") }}
   <table class="table table-striped data-table" id="activities-table">
     <thead>
       <tr>
@@ -19,11 +20,13 @@ Activity List
         <th>Text</th>
         <th>Category</th>
         <th data-orderable="false">Settings</th>
+        <th data-orderable="false">Delete</th>
       </tr>
     </thead>
     <tbody>
       {% for activity in activities %}
-      <tr>
+      <tr data-delete-action="{{ url_for('activities.delete_activity',
+      activity_id=activity.id) }}" id="activity-{{ activity.id }}">
         <td><a href="{{ url_for('activities.read_activity',
         activity_id=activity.id) }}">{{ activity.id }}</a></td>
         <td>{{ activity.type }}</td>
@@ -34,6 +37,14 @@ Activity List
           <a href="{{ url_for('activities.settings_activity',
           activity_id=activity.id) }}">{{ macros.render_glyphicon("cog") }}</a>
         </td>
+      <td>
+        <a href="#" class="text-danger"
+                      data-activity-id="{{ activity.id }}"
+                      data-toggle="modal"
+                      data-target="#confirm-delete-activity-modal">
+          {{ macros.render_glyphicon("remove") }}</a>
+      </td>
+
       </tr>
       {% endfor %}
     </tbody>

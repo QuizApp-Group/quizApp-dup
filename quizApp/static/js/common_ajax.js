@@ -140,3 +140,35 @@ function render_errors(errors, prefix) {
 function error_to_html(text) {
   return "<p class='help-block error-block'>" + text + "</p>";
 }
+
+function doneRemoveRow(data) {
+    if(data.success) {
+        var originRow = $(document).find("#" + $(this).data("origin-row"));
+        originRow.remove();
+    }
+}
+
+
+function handleConfirmDeleteModal(model, human_name='') {
+    var modalId = '#confirm-delete-' + model + '-modal';
+    $(modalId).find("form").submit(function(event) {
+        $(modalId).modal('hide');
+    })
+    $(modalId).on('show.bs.modal', function (event) {
+        if(!human_name.length) {
+            human_name = model;
+        }
+        var formId = "#confirm-delete-" + model + "-form";
+        var button = $(event.relatedTarget); // Button that triggered the modal
+        var row = button.parent().parent();
+        var label = $(".name", row);
+        var action = row.data("delete-action");
+
+        var modal = $(this);
+
+        modal.find(formId).data("origin-row", row.attr("id"));
+        modal.find(formId).prop("action", action);
+        modal.find('.modal-title').text('Delete ' + human_name + ' ' + label.text());
+
+    })
+}

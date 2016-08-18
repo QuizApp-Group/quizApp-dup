@@ -56,11 +56,13 @@ def read_experiments():
     future_experiments = Experiment.query.filter(Experiment.start > now)
 
     create_form = CreateExperimentForm()
+    confirm_delete_experiment_form = DeleteObjectForm()
 
     return render_template("experiments/read_experiments.html",
                            past_experiments=past_experiments,
                            present_experiments=present_experiments,
                            future_experiments=future_experiments,
+                           confirm_delete_experiment_form=confirm_delete_experiment_form,
                            create_form=create_form)
 
 
@@ -112,8 +114,7 @@ def delete_experiment(experiment_id):
     db.session.delete(exp)
     db.session.commit()
 
-    return jsonify({"success": 1, "next_url":
-                    url_for('experiments.read_experiments')})
+    return jsonify({"success": 1})
 
 
 @experiments.route(EXPERIMENT_ROUTE, methods=["PUT"])
@@ -329,12 +330,9 @@ def settings_experiment(experiment_id):
 
     update_experiment_form = CreateExperimentForm(obj=experiment)
 
-    delete_experiment_form = DeleteObjectForm()
-
     return render_template("experiments/settings_experiment.html",
                            experiment=experiment,
-                           update_experiment_form=update_experiment_form,
-                           delete_experiment_form=delete_experiment_form)
+                           update_experiment_form=update_experiment_form)
 
 
 def get_question_stats(assignment, question_stats):

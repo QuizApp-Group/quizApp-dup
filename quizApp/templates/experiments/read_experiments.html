@@ -13,6 +13,7 @@ Experiment List
 
 {% block content %}
 {% if current_user.has_role("experimenter") %}
+{{ macros.render_confirm_delete_modal(confirm_delete_experiment_form, "experiment") }}
 <h3>Future experiments</h3>
 {{ exp_macros.experiment_table(future_experiments, False,
 "future_experiment_table", current_user.has_role("experimenter")) }}

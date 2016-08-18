@@ -12,6 +12,7 @@
 
 {% block content %}
 {% if update_choice_form %}
+{{ macros.render_confirm_delete_modal(confirm_delete_choice_form, "choice") }}
 <div class="modal fade" id="update-choice-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel">
   <div class="modal-dialog" role="document">
     <div class="modal-content">
@@ -21,10 +22,6 @@
       </div>
         <div class="modal-body">
           {{ macros.render_form(update_choice_form, id="update-choice-form", method="put") }}
-          <form id="delete-choice-form" method="delete">
-            {{ macros.render_field(delete_choice_form.submit,
-            class_="btn-danger") }}
-          </form>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
@@ -71,17 +68,6 @@ method="put", id="update-activity-form") }}
   </div>
 </form>
 
-<hr>
 
 {% endif %}
-
-<h3>Delete activity</h3>
-<div class="alert alert-danger" role="alert">
-  {{ macros.render_glyphicon("exclamation-sign") }}
-  Warning: this cannot be undone!
-</div>
-<form action="{{ url_for('activities.delete_activity', activity_id=question.id
-) }}" method="delete" id="delete-activity-form">
-  {{ macros.render_field(delete_activity_form.submit, class_="btn-danger") }}
-</form>
 {% endblock %}
