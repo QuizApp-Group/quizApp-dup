@@ -3,7 +3,7 @@ $(document).ready(function() {
   form_ajax("#update-dataset-form", done_highlight, pre_callback_message);
   form_ajax("#delete-dataset-form", done_redirect);
   form_ajax("#delete-media-item-form", done_refresh);
-  form_ajax("#update-media-item-form", done_highlight, pre_callback_message);
+  form_ajax("#update-media-item-form", done_refresh);
   form_ajax("#create-media-item-form", done_refresh);
 
   $('#preview-media-item-modal').on('show.bs.modal', function (event) {
