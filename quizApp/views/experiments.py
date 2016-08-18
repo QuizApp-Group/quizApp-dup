@@ -56,12 +56,15 @@ def read_experiments():
     future_experiments = Experiment.query.filter(Experiment.start > now)
 
     create_form = CreateExperimentForm()
+    confirm_delete_experiment_form = DeleteObjectForm()
 
-    return render_template("experiments/read_experiments.html",
-                           past_experiments=past_experiments,
-                           present_experiments=present_experiments,
-                           future_experiments=future_experiments,
-                           create_form=create_form)
+    return render_template(
+        "experiments/read_experiments.html",
+        past_experiments=past_experiments,
+        present_experiments=present_experiments,
+        future_experiments=future_experiments,
+        confirm_delete_experiment_form=confirm_delete_experiment_form,
+        create_form=create_form)
 
 
 @experiments.route("/", methods=["POST"])
@@ -73,12 +76,16 @@ def create_experiment():
     if not form.validate():
         return jsonify({"success": 0, "errors": form.errors})
 
-    exp = Experiment()
-    form.populate_obj(exp)
-    exp.created = datetime.now()
-    exp.save()
+    experiment = Experiment()
+    form.populate_obj(experiment)
+    experiment.created = datetime.now()
+    experiment.save()
 
-    return jsonify({"success": 1})
+    return jsonify({
+        "success": 1,
+        "next_url": url_for("experiments.settings_experiment",
+                            experiment_id=experiment.id),
+    })
 
 
 @experiments.route(EXPERIMENT_ROUTE, methods=["GET"])
@@ -108,8 +115,7 @@ def delete_experiment(experiment_id):
     db.session.delete(exp)
     db.session.commit()
 
-    return jsonify({"success": 1, "next_url":
-                    url_for('experiments.read_experiments')})
+    return jsonify({"success": 1})
 
 
 @experiments.route(EXPERIMENT_ROUTE, methods=["PUT"])
@@ -325,12 +331,9 @@ def settings_experiment(experiment_id):
 
     update_experiment_form = CreateExperimentForm(obj=experiment)
 
-    delete_experiment_form = DeleteObjectForm()
-
     return render_template("experiments/settings_experiment.html",
                            experiment=experiment,
-                           update_experiment_form=update_experiment_form,
-                           delete_experiment_form=delete_experiment_form)
+                           update_experiment_form=update_experiment_form)
 
 
 def get_question_stats(assignment, question_stats):

@@ -37,10 +37,13 @@ def read_activities():
     activities_list = Activity.query.all()
     activity_type_form = ObjectTypeForm()
     activity_type_form.populate_object_type(ACTIVITY_TYPES)
+    confirm_delete_activity_form = DeleteObjectForm()
 
-    return render_template("activities/read_activities.html",
-                           activities=activities_list,
-                           activity_type_form=activity_type_form)
+    return render_template(
+        "activities/read_activities.html",
+        activities=activities_list,
+        confirm_delete_activity_form=confirm_delete_activity_form,
+        activity_type_form=activity_type_form)
 
 
 @activities.route("/", methods=["POST"])
@@ -107,6 +110,9 @@ def settings_question(question):
     unassociated_datasets = Dataset.query.\
         filter(not_(Dataset.questions.any(id=question.id))).all()
 
+    activity_type_form = ObjectTypeForm()
+    activity_type_form.populate_object_type(ACTIVITY_TYPES)
+
     if "mc" in question.type:
         create_choice_form = ChoiceForm(prefix="create")
         update_choice_form = ChoiceForm(prefix="update")
@@ -114,20 +120,20 @@ def settings_question(question):
         create_choice_form = None
         update_choice_form = None
 
-    delete_activity_form = DeleteObjectForm(prefix="activity")
-    delete_choice_form = DeleteObjectForm(prefix="choice")
+    confirm_delete_choice_form = DeleteObjectForm()
 
-    return render_template("activities/settings_question.html",
-                           question=question,
-                           general_form=general_form,
-                           dataset_form=dataset_form,
-                           associated_datasets=associated_datasets,
-                           unassociated_datasets=unassociated_datasets,
-                           choices=question.choices,
-                           create_choice_form=create_choice_form,
-                           delete_activity_form=delete_activity_form,
-                           delete_choice_form=delete_choice_form,
-                           update_choice_form=update_choice_form)
+    return render_template(
+        "activities/settings_question.html",
+        question=question,
+        general_form=general_form,
+        activity_type_form=activity_type_form,
+        dataset_form=dataset_form,
+        associated_datasets=associated_datasets,
+        unassociated_datasets=unassociated_datasets,
+        choices=question.choices,
+        create_choice_form=create_choice_form,
+        confirm_delete_choice_form=confirm_delete_choice_form,
+        update_choice_form=update_choice_form)
 
 
 @activities.route(ACTIVITY_ROUTE, methods=["PUT"])

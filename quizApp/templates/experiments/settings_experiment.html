@@ -17,17 +17,4 @@ action=url_for('experiments.update_experiment',
 experiment_id=experiment.id),
 method="put",
 id="update-experiment-form") }}
-
-<hr>
-
-<h3>Delete experiment</h3>
-<div class="alert alert-danger" role="alert">
-  {{ macros.render_glyphicon("exclamation-sign") }}
-  Warning: this cannot be undone!
-</div>
-<form action="{{ url_for('experiments.delete_experiment', experiment_id=experiment.id)
-}}" method="delete" id="experiment-delete-form">
-  {{ macros.render_field(delete_experiment_form.submit, value="Delete",
-  class_="btn-danger") }}
-</form>
 {% endblock %}

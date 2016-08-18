@@ -84,7 +84,6 @@ class CreateExperimentForm(OrderFormMixin, ModelForm):
         exclude = ['created']
         order = ('*', 'scorecard_settings', 'submit')
 
-    blurb = TextAreaField()
     scorecard_settings = ModelFormField(ScorecardSettingsForm)
     submit = SubmitField("Save")
 
