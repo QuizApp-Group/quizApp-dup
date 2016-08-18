@@ -58,12 +58,13 @@ def read_experiments():
     create_form = CreateExperimentForm()
     confirm_delete_experiment_form = DeleteObjectForm()
 
-    return render_template("experiments/read_experiments.html",
-                           past_experiments=past_experiments,
-                           present_experiments=present_experiments,
-                           future_experiments=future_experiments,
-                           confirm_delete_experiment_form=confirm_delete_experiment_form,
-                           create_form=create_form)
+    return render_template(
+        "experiments/read_experiments.html",
+        past_experiments=past_experiments,
+        present_experiments=present_experiments,
+        future_experiments=future_experiments,
+        confirm_delete_experiment_form=confirm_delete_experiment_form,
+        create_form=create_form)
 
 
 @experiments.route("/", methods=["POST"])

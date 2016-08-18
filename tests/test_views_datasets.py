@@ -36,7 +36,7 @@ def test_create_dataset(client, users):
     dataset = DatasetFactory()
 
     response = client.post("/datasets/", data={"name": dataset.name,
-                                               "uri": dataset.uri})
+                                               "info": dataset.info})
 
     assert response.status_code == 200
     assert json_success(response.data)
@@ -45,7 +45,7 @@ def test_create_dataset(client, users):
     created_dataset = Dataset.query.one()
 
     assert created_dataset.name == dataset.name
-    assert created_dataset.uri == dataset.uri
+    assert created_dataset.info == dataset.info
 
     response = client.post("/datasets/")
 
@@ -67,7 +67,7 @@ def test_update_dataset(client, users):
     url = "/datasets/" + str(dataset.id)
 
     response = client.put(url, data={"name": new_dataset.name,
-                          "uri": new_dataset.uri})
+                          "info": new_dataset.info})
     assert response.status_code == 200
     assert json_success(response.data)
 

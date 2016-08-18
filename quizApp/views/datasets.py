@@ -33,10 +33,11 @@ def read_datasets():
     create_dataset_form = DatasetForm()
     confirm_delete_dataset_form = DeleteObjectForm()
 
-    return render_template("datasets/read_datasets.html",
-                           datasets=datasets_list,
-                           confirm_delete_dataset_form=confirm_delete_dataset_form,
-                           create_dataset_form=create_dataset_form)
+    return render_template(
+        "datasets/read_datasets.html",
+        datasets=datasets_list,
+        confirm_delete_dataset_form=confirm_delete_dataset_form,
+        create_dataset_form=create_dataset_form)
 
 
 @datasets.route("/", methods=["POST"])
@@ -137,11 +138,12 @@ def settings_dataset(dataset_id):
     create_media_item_form.populate_object_type(MEDIA_ITEM_TYPES)
     confirm_delete_media_item_form = DeleteObjectForm()
 
-    return render_template("datasets/settings_dataset.html",
-                           dataset=dataset,
-                           update_dataset_form=update_dataset_form,
-                           confirm_delete_media_item_form=confirm_delete_media_item_form,
-                           create_media_item_form=create_media_item_form)
+    return render_template(
+        "datasets/settings_dataset.html",
+        dataset=dataset,
+        update_dataset_form=update_dataset_form,
+        confirm_delete_media_item_form=confirm_delete_media_item_form,
+        create_media_item_form=create_media_item_form)
 
 
 @datasets.route(MEDIA_ITEMS_ROUTE, methods=["POST"])
@@ -164,7 +166,8 @@ def create_media_item(dataset_id):
 
     return jsonify({
         "success": 1,
-        "next_url": url_for("datasets.settings_media_item", dataset_id=dataset.id,
+        "next_url": url_for("datasets.settings_media_item",
+                            dataset_id=dataset.id,
                             media_item_id=media_item.id),
     })
 

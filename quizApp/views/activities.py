@@ -39,10 +39,11 @@ def read_activities():
     activity_type_form.populate_object_type(ACTIVITY_TYPES)
     confirm_delete_activity_form = DeleteObjectForm()
 
-    return render_template("activities/read_activities.html",
-                           activities=activities_list,
-                           confirm_delete_activity_form=confirm_delete_activity_form,
-                           activity_type_form=activity_type_form)
+    return render_template(
+        "activities/read_activities.html",
+        activities=activities_list,
+        confirm_delete_activity_form=confirm_delete_activity_form,
+        activity_type_form=activity_type_form)
 
 
 @activities.route("/", methods=["POST"])
@@ -121,17 +122,18 @@ def settings_question(question):
 
     confirm_delete_choice_form = DeleteObjectForm()
 
-    return render_template("activities/settings_question.html",
-                           question=question,
-                           general_form=general_form,
-                           activity_type_form=activity_type_form,
-                           dataset_form=dataset_form,
-                           associated_datasets=associated_datasets,
-                           unassociated_datasets=unassociated_datasets,
-                           choices=question.choices,
-                           create_choice_form=create_choice_form,
-                           confirm_delete_choice_form=confirm_delete_choice_form,
-                           update_choice_form=update_choice_form)
+    return render_template(
+        "activities/settings_question.html",
+        question=question,
+        general_form=general_form,
+        activity_type_form=activity_type_form,
+        dataset_form=dataset_form,
+        associated_datasets=associated_datasets,
+        unassociated_datasets=unassociated_datasets,
+        choices=question.choices,
+        create_choice_form=create_choice_form,
+        confirm_delete_choice_form=confirm_delete_choice_form,
+        update_choice_form=update_choice_form)
 
 
 @activities.route(ACTIVITY_ROUTE, methods=["PUT"])

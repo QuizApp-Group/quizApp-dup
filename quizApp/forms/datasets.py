@@ -1,7 +1,7 @@
 """Forms for dataset views.
 """
 
-from wtforms import SubmitField, FileField, TextAreaField
+from wtforms import SubmitField, FileField
 from wtforms_alchemy import ModelForm
 from quizApp.models import Graph, Dataset, Text
 from quizApp.forms.common import OrderFormMixin
