@@ -4,6 +4,7 @@
 <table class="table table-striped" id="{{ id }}">
   <thead>
     <tr>
+      <th class="col-md-1">ID</th>
       <th class="col-md-2">Name</th>
       <th class="col-md-3">Start time</th>
       <th class="col-md-3">End time</th>
@@ -20,6 +21,7 @@
     {% endfor %}
     {% if create_form and admin_controls %}
     <tr>
+      <td></td>
       <td>{{ macros.render_field(create_form.name, label_visible=false) }}</td>
       <td>{{ macros.render_field(create_form.start, label_visible=false) }}</td>
       <td>{{ macros.render_field(create_form.stop, label_visible=false) }}</td>
@@ -33,6 +35,7 @@
 {% macro experiment_row(exp, admin_controls) -%}
 <tr data-delete-action="{{ url_for('experiments.delete_experiment', experiment_id=exp.id) }}"
     id="experiment-{{ exp.id }}">
+  <td>{{ exp.id }}</td>
   <td class="name">
     <a href="{{ url_for('experiments.read_experiment', experiment_id=exp.id) }}">{{exp.name}}</a>
   </td>
