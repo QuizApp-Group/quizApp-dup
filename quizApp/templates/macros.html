@@ -225,6 +225,8 @@
 {% macro render_media_item(media_item) %}
 {% if media_item.type == "graph" %}
 {{ render_graph(media_item) }}
+{% elif media_item.type == "text" %}
+{{ media_item.text }}
 {% endif %}
 {% endmacro %}
 

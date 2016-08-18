@@ -6,16 +6,16 @@
 <script defer src="{{ url_for('static', filename='js/datasets_ajax.js') }}"></script>
 {% endblock %}
 
-{% block title %}Graph {{ graph.name }} - Settings{% endblock %}
+{% block title %}Graph {{ media_item.name }} - Settings{% endblock %}
 
 {% block content %}
 <div class="media-item-container">
-  {{ macros.render_media_item(graph) }}
+  {{ macros.render_media_item(media_item) }}
 </div>
 <h3>General</h3>
 
-{{ macros.render_form(update_graph_form,
-  action=url_for('datasets.update_media_item', dataset_id=dataset.id, media_item_id=graph.id),
+{{ macros.render_form(update_media_item_form,
+  action=url_for('datasets.update_media_item', dataset_id=dataset.id, media_item_id=media_item.id),
   method="put",
   id="update-dataset-form") }}
 
