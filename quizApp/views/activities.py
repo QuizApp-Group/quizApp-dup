@@ -109,6 +109,9 @@ def settings_question(question):
     unassociated_datasets = Dataset.query.\
         filter(not_(Dataset.questions.any(id=question.id))).all()
 
+    activity_type_form = ObjectTypeForm()
+    activity_type_form.populate_object_type(ACTIVITY_TYPES)
+
     if "mc" in question.type:
         create_choice_form = ChoiceForm(prefix="create")
         update_choice_form = ChoiceForm(prefix="update")
@@ -121,6 +124,7 @@ def settings_question(question):
     return render_template("activities/settings_question.html",
                            question=question,
                            general_form=general_form,
+                           activity_type_form=activity_type_form,
                            dataset_form=dataset_form,
                            associated_datasets=associated_datasets,
                            unassociated_datasets=unassociated_datasets,

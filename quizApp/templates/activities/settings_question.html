@@ -11,6 +11,12 @@
 {% block title %}Activity {{ question.id }} - Settings{% endblock %}
 
 {% block content %}
+<h3>Create new activity</h3>
+{{ macros.render_form(activity_type_form,
+action=url_for('activities.create_activity'),
+method="post",
+id="create-activity-form") }}
+<hr>
 {% if update_choice_form %}
 {{ macros.render_confirm_delete_modal(confirm_delete_choice_form, "choice") }}
 <div class="modal fade" id="update-choice-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel">
