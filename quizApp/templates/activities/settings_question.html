@@ -30,44 +30,76 @@
   </div>
 </div>
 {% endif %}
-
-<h3>General</h3>
-
-{{ macros.render_form(general_form,
-action=url_for('activities.update_activity', activity_id=question.id),
-method="put", id="update-activity-form") }}
-
-<hr>
-
-<h3>Datasets associated with this activity</h3>
-<div class="alert alert-info" role="alert">
-  If this activity is not associated with any datasets, it may use a media item
-  from any dataset.
-</div>
-
-<div class="table-container">
-  {{ activities_macros.dataset_table(associated_datasets,
-  url_for("activities.create_question_dataset", activity_id=question.id), "post") }}
-</div>
-
-<h3>Datasets not associated with this activity</h3>
-<div class="table-container">
-  {{ activities_macros.dataset_table(unassociated_datasets,
-  url_for("activities.delete_question_dataset", activity_id=question.id), "delete") }}
-</div>
-
-<hr>
-
-{% if create_choice_form %}
-
-<h3>Choices</h3>
-<form action="{{ url_for('activities.create_choice', question_id=question.id
-) }}" method="post" id="create-choice-form">
-  <div class="table-container">
-    {{ activities_macros.choice_table(choices, create_choice_form) }}
+<div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+  <div class="panel panel-default">
+    <div class="panel-heading" role="tab" id="general-heading">
+      <h4 class="panel-title">
+        <a role="button" data-toggle="collapse" data-parent="#accordion" href="#general-collapse" aria-expanded="true" aria-controls="general-collapse">
+          General
+        </a>
+      </h4>
+    </div>
+    <div id="general-collapse" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="general-heading">
+      <div class="panel-body">
+        {{ macros.render_form(general_form,
+        action=url_for('activities.update_activity', activity_id=question.id),
+        method="put", id="update-activity-form") }}
+      </div>
+    </div>
   </div>
-</form>
+  <div class="panel panel-default">
+    <div class="panel-heading" role="tab" id="datasets-heading">
+      <h4 class="panel-title">
+        <a class="collapsed" role="button" data-toggle="collapse" data-parent="#accordion" href="#datasets-collapse" aria-expanded="false" aria-controls="datasets-collapse">
+          Datasets
+        </a>
+      </h4>
+    </div>
+    <div id="datasets-collapse" class="panel-collapse collapse" role="tabpanel" aria-labelledby="datasets-heading">
+      <div class="panel-body">
+        <h3>Datasets associated with this activity</h3>
+        <div class="alert alert-info" role="alert">
+          If this activity is not associated with any datasets, it may use a media item
+          from any dataset.
+        </div>
+
+        <div class="table-container">
+          {{ activities_macros.dataset_table(associated_datasets,
+          url_for("activities.create_question_dataset", activity_id=question.id), "post") }}
+        </div>
+
+        <h3>Datasets not associated with this activity</h3>
+        <div class="table-container">
+          {{ activities_macros.dataset_table(unassociated_datasets,
+          url_for("activities.delete_question_dataset", activity_id=question.id), "delete") }}
+        </div>
+      </div>
+    </div>
+  </div>
+{% if create_choice_form %}
+  <div class="panel panel-default">
+    <div class="panel-heading" role="tab" id="choices-heading">
+      <h4 class="panel-title">
+        <a class="collapsed" role="button" data-toggle="collapse" data-parent="#accordion" href="#choices-collapse" aria-expanded="false" aria-controls="choices-collaspe">
+          Choices
+        </a>
+      </h4>
+    </div>
+    <div id="choices-collapse" class="panel-collapse collapse" role="tabpanel" aria-labelledby="choices-heading">
+      <div class="panel-body">
+        <h3>Choices</h3>
+        <form action="{{ url_for('activities.create_choice', question_id=question.id
+        ) }}" method="post" id="create-choice-form">
+          <div class="table-container">
+            {{ activities_macros.choice_table(choices, create_choice_form) }}
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
 
 
 {% endif %}
+</div>
+
 {% endblock %}
