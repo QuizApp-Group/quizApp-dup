@@ -227,6 +227,7 @@ def update_text(_, text):
 
     return jsonify({"success": 1})
 
+
 def update_graph(_, graph):
     """Update a graph.
     """
