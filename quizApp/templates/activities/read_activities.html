@@ -23,9 +23,9 @@ id="create-activity-form") }}
     <thead>
       <tr>
         <th>ID</th>
+        <th>Category</th>
         <th>Type</th>
         <th>Text</th>
-        <th>Category</th>
         <th data-orderable="false">Settings</th>
         <th data-orderable="false">Delete</th>
       </tr>
@@ -36,10 +36,10 @@ id="create-activity-form") }}
       activity_id=activity.id) }}" id="activity-{{ activity.id }}">
         <td><a href="{{ url_for('activities.read_activity',
         activity_id=activity.id) }}">{{ activity.id }}</a></td>
+        <td>{{ activity.category }}</td>
         <td>{{ activity.type }}</td>
         <td>{{ activity.question }}
         </td>
-        <td>{{ activity.category }}</td>
         <td>
           <a href="{{ url_for('activities.settings_activity',
           activity_id=activity.id) }}">{{ macros.render_glyphicon("cog") }}</a>
