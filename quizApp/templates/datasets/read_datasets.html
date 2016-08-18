@@ -3,9 +3,7 @@
 
 {% block head %}
 {{ macros.import_datatables() }}
-<meta name="csrf-token" content="{{ csrf_token() }}">
-<script src="{{ url_for('static', filename='js/common_ajax.js') }}"></script>
-<script src="{{ url_for('static', filename='js/datasets_ajax.js') }}"></script>
+<script defer src="{{ url_for('static', filename='js/datasets_ajax.js') }}"></script>
 {% endblock %}
 
 {% block title %}

@@ -6,9 +6,7 @@ Manage data
 {% endblock %}
 
 {% block head %}
-<meta name="csrf-token" content="{{ csrf_token() }}">
-<script src="{{ url_for('static', filename='js/common_ajax.js') }}"></script>
-<script src="{{ url_for('static', filename='js/core_ajax.js') }}"></script>
+<script src="{{ url_for('static', filename='js/core_ajax.js') }}" defer></script>
 {% endblock %}
 
 {% block content %}

@@ -1,9 +1,7 @@
 {% extends 'layout.html' %}
 {% import 'macros.html' as macros %}
 {% block head %}
-<meta name="csrf-token" content="{{ csrf_token() }}">
-<script src="{{ url_for('static', filename='js/common_ajax.js') }}"></script>
-<script src="{{ url_for('static', filename='js/experiments_ajax.js') }}"></script>
+<script defer src="{{ url_for('static', filename='js/experiments_ajax.js') }}"></script>
 {{ macros.import_datetimepicker() }}
 {% endblock %}
 
