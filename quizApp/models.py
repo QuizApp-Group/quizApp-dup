@@ -632,6 +632,20 @@ class Graph(MediaItem):
     }
 
 
+class Text(MediaItem):
+    """Text is simply a piece of text that can be used as a MediaItem.
+
+    Attributes:
+        text (str): The text of this media item.
+    """
+
+    text = db.Column(db.String(1000), info={"label": "Text"})
+
+    __mapper_args__ = {
+        'polymorphic_identity': 'text'
+    }
+
+
 class ScorecardSettings(Base):
     """A ScorecardSettings object represents the configuration of some kind of
     scorecard.

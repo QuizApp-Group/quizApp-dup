@@ -9,7 +9,7 @@ from flask_security import roles_required
 
 from quizApp import db
 from quizApp.forms.common import DeleteObjectForm, ObjectTypeForm
-from quizApp.forms.datasets import DatasetForm, GraphForm
+from quizApp.forms.datasets import DatasetForm, GraphForm, TextForm
 from quizApp.models import Dataset, MediaItem
 from quizApp.views.helpers import validate_model_id, validate_form_or_error
 
@@ -17,6 +17,7 @@ datasets = Blueprint("datasets", __name__, url_prefix="/datasets")
 
 MEDIA_ITEM_TYPES = {
     "graph": "Graph",
+    "text": "Text",
 }
 DATASET_ROUTE = "/<int:dataset_id>"
 MEDIA_ITEMS_ROUTE = os.path.join(DATASET_ROUTE + "/media_items/")
@@ -177,19 +178,18 @@ def settings_media_item(dataset_id, media_item_id):
     if media_item not in dataset.media_items:
         abort(404)
 
+    template = "datasets/settings_media_item.html"
+
     if media_item.type == "graph":
-        return settings_graph(dataset, media_item)
+        update_form_cls = GraphForm
+    elif media_item.type == "text":
+        update_form_cls = TextForm
 
-
-def settings_graph(dataset, graph):
-    """Display settings for a graph.
-    """
-    update_graph_form = GraphForm(obj=graph)
-
-    return render_template("datasets/settings_graph.html",
-                           update_graph_form=update_graph_form,
-                           dataset=dataset,
-                           graph=graph)
+    return render_template(
+        template,
+        update_media_item_form=update_form_cls(obj=media_item),
+        dataset=dataset,
+        media_item=media_item)
 
 
 @datasets.route(MEDIA_ITEM_ROUTE, methods=["PUT"])
@@ -207,7 +207,25 @@ def update_media_item(dataset_id, media_item_id):
 
     if media_item.type == "graph":
         return update_graph(dataset, media_item)
+    elif media_item.type == "text":
+        return update_text(dataset, media_item)
 
+
+def update_text(_, text):
+    """Update a Text object.
+    """
+    update_text_form = TextForm(request.form, request.files)
+
+    response = validate_form_or_error(update_text_form)
+
+    if response:
+        return response
+
+    update_text_form.populate_obj(text)
+
+    db.session.commit()
+
+    return jsonify({"success": 1})
 
 def update_graph(_, graph):
     """Update a graph.
