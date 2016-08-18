@@ -26,7 +26,10 @@ function form_ajax(selector, done_callback, pre_callback) {
       })
       .done(function(data) {
           clear_errors(this);
-          render_errors(data.errors, data.prefix)
+          render_errors(data.errors, data.prefix);
+          if(data.success) {
+            clear_form(this);
+          }
           done_callback.call(this, data);
       })
     } else {
@@ -40,6 +43,9 @@ function form_ajax(selector, done_callback, pre_callback) {
       .done(function(data) {
           clear_errors(this);
           render_errors(data.errors, data.prefix)
+          if(data.success) {
+            clear_form(this);
+          }
           done_callback.call(this, data);
       })
     }
@@ -113,6 +119,10 @@ function done_refresh(data) {
 function clear_errors(form) {
     $(form).find(".error-block").remove();
     $(form).find(".has-error").removeClass("has-error");
+}
+
+function clear_form(form) {
+  $(form)[0].reset();
 }
 
 function render_errors(errors, prefix) {
