@@ -3,7 +3,7 @@
 
 {% block head %}
 {{ macros.import_datatables() }}
-<script src="{{ url_for('static', filename='js/activities_ajax.js') }}"></script>
+<script defer src="{{ url_for('static', filename='js/activities_ajax.js') }}"></script>
 {% endblock %}
 
 {% block title %}
