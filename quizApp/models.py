@@ -157,8 +157,7 @@ class ParticipantExperiment(Base):
                                  back_populates="participant_experiments")
 
     assignments = db.relationship("Assignment",
-                                  back_populates="participant_experiment",
-                                  info={"import_include": False})
+                                  back_populates="participant_experiment")
 
     @property
     def score(self):
@@ -246,6 +245,7 @@ class Assignment(Base):
         db.Integer,
         db.ForeignKey("participant_experiment.id"))
     participant_experiment = db.relationship("ParticipantExperiment",
+                                             info={"import_include": False},
                                              back_populates="assignments")
 
     @property
