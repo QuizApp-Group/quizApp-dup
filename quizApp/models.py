@@ -639,7 +639,7 @@ class Text(MediaItem):
         text (str): The text of this media item.
     """
 
-    text = db.Column(db.String(1000), info={"label": "Text"})
+    text = db.Column(db.Text, info={"label": "Text"})
 
     __mapper_args__ = {
         'polymorphic_identity': 'text'
@@ -723,7 +723,7 @@ class Experiment(Base):
     created = db.Column(db.DateTime, info={"import_include": False})
     start = db.Column(db.DateTime, nullable=False, info={"label": "Start"})
     stop = db.Column(db.DateTime, nullable=False, info={"label": "Stop"})
-    blurb = db.Column(db.String(500), info={"label": "Blurb"})
+    blurb = db.Column(db.Text, info={"label": "Blurb"})
     show_scores = db.Column(db.Boolean,
                             info={"label": ("Show score tally during the"
                                             " experiment")})
@@ -768,12 +768,12 @@ class Dataset(Base):
 
     Attributes:
         name (string): The name of this dataset.
-        uri (string): A path or descriptor of where this dataset is located.
+        info (string): Some information about this dataset
         media_items (list of MediaItem): Which MediaItems this Dataset owns
         questions (list of Questions): Which Questions reference this Dataset
     """
     name = db.Column(db.String(100), nullable=False, info={"label": "Name"})
-    uri = db.Column(db.String(200), info={"label": "URI"})
+    info = db.Column(db.Text, info={"label": "Info"})
 
     media_items = db.relationship("MediaItem", back_populates="dataset")
     questions = db.relationship("Question", secondary=question_dataset_table,

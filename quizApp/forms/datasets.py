@@ -42,5 +42,4 @@ class TextForm(OrderFormMixin, ModelForm):
         model = Text
         order = ('*', 'submit')
 
-    text = TextAreaField("Text")
     submit = SubmitField("Save")
