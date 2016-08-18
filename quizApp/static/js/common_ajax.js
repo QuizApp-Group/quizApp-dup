@@ -26,6 +26,7 @@ function form_ajax(selector, done_callback, pre_callback) {
       })
       .done(function(data) {
           clear_errors(this);
+          render_errors(data.errors, data.prefix)
           done_callback.call(this, data);
       })
     } else {
@@ -38,6 +39,7 @@ function form_ajax(selector, done_callback, pre_callback) {
       })
       .done(function(data) {
           clear_errors(this);
+          render_errors(data.errors, data.prefix)
           done_callback.call(this, data);
       })
     }
@@ -61,20 +63,14 @@ function done_redirect(data) {
   console.log(data);
   if(data.success) {
     window.location.href = data["next_url"]
-  } else {
-    render_errors(data.errors);
   }
-
 }
 
 function done_add_row(data) {
   console.log(data);
   if(data.success) {
     $(this).find("tbody").append(data.new_row);
-  } else {
-    render_errors(data.errors, data.prefix);
   }
-
 }
 
 function done_highlight(data) {
@@ -111,8 +107,6 @@ function done_refresh(data) {
   console.log(data);
   if(data.success) {
     window.location.reload();
-  } else {
-    render_errors(data.errors, data.prefix);
   }
 }
 
