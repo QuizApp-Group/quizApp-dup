@@ -13,6 +13,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>QuizApp - {% block title %}{% endblock %}</title>
     <link href="https://fonts.googleapis.com/css?family=Raleway"
@@ -22,11 +23,6 @@
 			  integrity="sha256-cCueBR6CsyA4/9szpPfrX3s49M9vUU5BgtiJj06wt/s="
 			  crossorigin="anonymous"></script>
     <script src="{{ url_for('static', filename='js/sri-fallback.js') }}"></script>
-    <script
-        defer
-			  src="https://code.jquery.com/ui/1.12.0/jquery-ui.min.js"
-			  integrity="sha256-eGE6blurk5sHj+rmkfsGYeKyZx3M4bG+ZlFyA7Kns7E="
-			  crossorigin="anonymous"></script>
     <link rel="stylesheet"
           href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
           integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
@@ -39,6 +35,7 @@
             crossorigin="anonymous" onerror="resource_error(this)"></script>
     <link href="{{ url_for('static', filename='css/main.css') }}" rel="stylesheet">
     <script defer src="{{ url_for('static', filename='js/frame.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='js/common_ajax.js') }}"></script>
 
     <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
     <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
@@ -53,6 +50,7 @@
               crossorigin="anonymous" onerror="resource_error(this)"></script>
     <![endif]-->
     {% block head %}{% endblock %}
+    <script defer src="{{ url_for('static', filename='js/form.js') }}"></script>
   </head>
   <body>
     <div class="wrapper container">

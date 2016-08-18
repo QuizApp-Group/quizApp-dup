@@ -90,13 +90,6 @@
     {% endfor %}
   {% endif %}
 </div>
-<script type="text/javascript">
-$(function () {
-  $("#{{ field.id }}-group").datetimepicker({
-    format: "YYYY-MM-DD HH:mm:ss"
-  });
-});
-</script>
 {%- endmacro %}
 
 {% macro render_submit_field(field, label_visible=True) -%}
@@ -202,16 +195,11 @@ $(function () {
         integrity="sha384-ohw6o2vy/chIavW0iVsUoWaIPmAnF9VKjEMSusADB79PrE3CdeJhvR84BjcynjVl"
         data-fallback="{{ url_for('static', filename='js/moment.min.js') }}"
         crossorigin="anonymous" onerror="resource_error(this)"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.37/js/bootstrap-datetimepicker.min.js"
-        async
-        integrity="sha384-V936AaxnYTkq53cO2z8e42PFtCCdZhbRttfhgX8U1K9weNYVdCMbDetUKTtllFdc"
-        data-fallback="{{ url_for('static', filename='js/bootstrap-datetimepicker.min.js') }}"
-        crossorigin="anonymous" onerror="resource_error(this)"></script>
+<script src="{{ url_for('static', filename='js/bootstrap-datetimepicker.min.js') }}"
+        defer></script>
 <link rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.37/css/bootstrap-datetimepicker.min.css"
-      data-fallback="{{ url_for('static', filename='css/bootstrap-datetimepicker.min.css') }}"
-      integrity="sha384-/XmhRcB6e51B3NO1S5VVWnNKCDM74NlX0cmxZUwCJPg2P/0ECTkBKnjnzNnF7rX5"
-      crossorigin="anonymous" onerror="resource_error(this)">
+      href="{{ url_for('static', filename='css/bootstrap-datetimepicker.min.css') }}"
+      >
 {% endmacro %}
 
 {% macro import_datatables() %}
