@@ -52,4 +52,36 @@ $(document).ready(function() {
   }
   handleConfirmDeleteModal("activity");
   handleConfirmDeleteModal("choice");
+
+
+  $("#update-question-datasets-table :checkbox").change(function() {
+    var $row = $(this).closest("tr");
+    var action = "";
+    var method = "";
+    var data = {};
+    if(this.checked) {
+      action = $row.data("create-action");
+      method = "post";
+      data = {"dataset_id": this.value}
+    } else {
+      action = $row.data("delete-action");
+      method = "delete";
+    }
+    $.ajax({
+      context: this,
+      type: method,
+      url: action,
+      data: data,
+      encode: true,
+    })
+    .done(function(data) {
+      if(data.success) {
+        $tr = $(this).closest("tr");
+        $tr.addClass("success");
+        setTimeout(function() {
+          $tr.removeClass("success");
+        }, 1000);
+      }
+    })
+  })
 })
