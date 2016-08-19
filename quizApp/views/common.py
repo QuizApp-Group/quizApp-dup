@@ -36,12 +36,11 @@ class ObjectListView(MethodView):
     def get(self):
         """Get a list of records of this type.
         """
-        pdb.set_trace()
         object_list = self.model.query.all()
         create_form = self.create_form()
 
         return render_template(self.read_template,
-                               objects=object_list,
+                               object_list=object_list,
                                create_form=create_form)
 
     def post(self):

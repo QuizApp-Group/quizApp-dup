@@ -99,7 +99,7 @@ class ActivityView(MethodView):
 
         return jsonify({"success": 1})
 
-    def delete_activity(self, activity_id):
+    def delete(self, activity_id):
         """Delete the given activity.
         """
         activity = validate_model_id(Activity, activity_id)
@@ -107,7 +107,7 @@ class ActivityView(MethodView):
         db.session.delete(activity)
         db.session.commit()
 
-        next_url = url_for("activities.read_activities")
+        next_url = url_for("activities.activities")
 
         return jsonify({"success": 1, "next_url": next_url})
 
