@@ -164,7 +164,8 @@ def update_question(question):
     return jsonify({"success": 1})
 
 
-@activities.route(ACTIVITY_ROUTE + "/datasets/<int:dataset_id>", methods=["DELETE"])
+@activities.route(ACTIVITY_ROUTE + "/datasets/<int:dataset_id>",
+                  methods=["DELETE"])
 @roles_required("experimenter")
 def delete_question_dataset(activity_id, dataset_id):
     """Disassociate this question from a dataset.
