@@ -11,8 +11,7 @@ from quizApp import db
 from quizApp.models import ParticipantExperiment
 from quizApp.views.experiments import get_next_assignment_url, \
     POST_FINALIZE_HANDLERS, get_participant_experiment_or_abort
-from tests.factories import ExperimentFactory, create_experiment, \
-    GraphFactory
+from tests.factories import ExperimentFactory, create_experiment
 from tests.auth import login_participant, get_participant, \
     login_experimenter
 from tests.helpers import json_success
