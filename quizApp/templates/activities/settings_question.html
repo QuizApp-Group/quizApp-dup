@@ -63,22 +63,41 @@ id="create-activity-form") }}
     </div>
     <div id="datasets-collapse" class="panel-collapse collapse" role="tabpanel" aria-labelledby="datasets-heading">
       <div class="panel-body">
-        <h3>Datasets associated with this activity</h3>
         <div class="alert alert-info" role="alert">
           If this activity is not associated with any datasets, it may use a media item
           from any dataset.
         </div>
-
-        <div class="table-container">
-          {{ activities_macros.dataset_table(associated_datasets,
-          url_for("activities.create_question_dataset", activity_id=question.id), "post") }}
-        </div>
-
-        <h3>Datasets not associated with this activity</h3>
-        <div class="table-container">
-          {{ activities_macros.dataset_table(unassociated_datasets,
-          url_for("activities.delete_question_dataset", activity_id=question.id), "delete") }}
-        </div>
+        <table class="table" id="update-question-datasets-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Associated with this question?</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for object in dataset_form.objects %}
+            <tr
+            data-create-action="{{
+            url_for('activities.create_question_dataset',
+            activity_id=question.id) }}"
+            data-delete-action="{{
+            url_for('activities.delete_question_dataset',
+            activity_id=question.id, dataset_id=object.data) }}"
+            >
+              <td>
+                {{ dataset_form.objects_mapping[object.data].id }}
+              </td>
+              <td>
+                {{ dataset_form.objects_mapping[object.data].name }}
+              </td>
+              <td>
+                {{ object }}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
       </div>
     </div>
   </div>

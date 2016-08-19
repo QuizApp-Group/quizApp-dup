@@ -104,11 +104,14 @@ def settings_question(question):
     """
     general_form = QuestionForm(obj=question)
 
-    dataset_form = DatasetListForm()
+    dataset_form = DatasetListForm(prefix="dataset")
     dataset_form.reset_objects()
     associated_datasets = question.datasets
     unassociated_datasets = Dataset.query.\
         filter(not_(Dataset.questions.any(id=question.id))).all()
+    dataset_form.populate_objects(associated_datasets + unassociated_datasets)
+    dataset_form.objects.default = [x.id for x in associated_datasets]
+    dataset_form.process()
 
     activity_type_form = ObjectTypeForm()
     activity_type_form.populate_object_type(ACTIVITY_TYPES)
@@ -161,18 +164,13 @@ def update_question(question):
     return jsonify({"success": 1})
 
 
-@activities.route(ACTIVITY_ROUTE + "/datasets/", methods=["DELETE"])
+@activities.route(ACTIVITY_ROUTE + "/datasets/<int:dataset_id>",
+                  methods=["DELETE"])
 @roles_required("experimenter")
-def delete_question_dataset(activity_id):
+def delete_question_dataset(activity_id, dataset_id):
     """Disassociate this question from a dataset.
-
-    The request should contain the ID of the dataset to disassociate.
-
-    It's not quite RESTful, but I couldn't figure out a better way taking into
-    account that the url has to be known to the client to make the request.
     """
     activity = validate_model_id(Activity, activity_id)
-    dataset_id = request.form["dataset_id"]
     dataset = validate_model_id(Dataset, dataset_id)
 
     if dataset not in activity.datasets:

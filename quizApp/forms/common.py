@@ -23,6 +23,7 @@ class ListObjectForm(Form):
     """
     objects = MultiCheckboxField(validators=[DataRequired()])
     submit = SubmitField("Submit")
+    objects_mapping = {}
 
     def reset_objects(self):
         """Sometimes choices have to be reset.
@@ -36,16 +37,14 @@ class ListObjectForm(Form):
         if not self.objects.choices:
             self.objects.choices = []
 
-        objects_mapping = {}
+        self.objects_mapping = {}
 
         for obj in object_pool:
-            objects_mapping[str(obj.id)] = obj
+            self.objects_mapping[str(obj.id)] = obj
             self.get_choice_tuple(obj)
 
-        return objects_mapping
-
     def get_choice_tuple(self, obj):
-        """Get a tuple for the choices of objects.
+        """Populate the list of choices with the appropriate tuple.
         """
         self.objects.choices.append((str(obj.id), obj.id))
 
