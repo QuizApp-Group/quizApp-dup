@@ -84,14 +84,14 @@ def include_column(model, column, prop, key):
 def header_from_property(prop):
     """Given a property, return its name for use in sheet headers.
     """
-    return prop.parent.class_.__tablename__ + "_" + prop.key
+    return prop.parent.class_.__tablename__ + ":" + prop.key
 
 
 def header_to_field_name(header, model):
     """Reverse header_from_property - given a header and a model, return the
     actual name of the field.
     """
-    prefix = model.__tablename__ + "_"
+    prefix = model.__tablename__ + ":"
 
     if header[:len(prefix)] != prefix:
         # Sanity check failed

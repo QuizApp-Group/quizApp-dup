@@ -230,8 +230,7 @@ class Assignment(Base):
                                   info={"import_include": False})
 
     activity_id = db.Column(db.Integer, db.ForeignKey("activity.id"))
-    activity = db.relationship("Activity", back_populates="assignments",
-                               info={"import_include": False})
+    activity = db.relationship("Activity", back_populates="assignments")
 
     result_id = db.Column(db.Integer, db.ForeignKey("result.id"))
     result = db.relationship("Result", back_populates="assignment",

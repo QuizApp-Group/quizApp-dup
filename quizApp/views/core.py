@@ -1,6 +1,7 @@
 """This blueprint takes care of rendering static pages outside of the other
 blueprints.
 """
+import pdb
 import os
 from collections import OrderedDict
 import tempfile
@@ -109,6 +110,7 @@ def import_data():
     """Given an uploaded spreadsheet, import data from the spreadsheet
     into the database.
     """
+    pdb.set_trace()
     import_data_form = ImportDataForm()
 
     if not import_data_form.validate():
