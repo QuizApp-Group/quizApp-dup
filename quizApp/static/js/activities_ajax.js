@@ -76,7 +76,7 @@ $(document).ready(function() {
     })
     .done(function(data) {
       if(data.success) {
-        $tr = $(this).closest("tr");
+        var $tr = $(this).closest("tr");
         $tr.addClass("success");
         setTimeout(function() {
           $tr.removeClass("success");
