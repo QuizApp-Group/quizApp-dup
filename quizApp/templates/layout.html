@@ -87,7 +87,8 @@
           {% for endpoint, name, roles in nav_tabs %}
           {% if current_user.has_any_role(roles) %}
           <li role="presentation"
-              {% if endpoint == request.endpoint %}class="active"{% endif %}>
+              {% if endpoint == request.endpoint or
+              request.endpoint|is_nav_child(endpoint) %}class="active"{% endif %}>
             <a href="{{ url_for(endpoint) }}">{{ name }}</a>
           </li>
           {% endif %}
