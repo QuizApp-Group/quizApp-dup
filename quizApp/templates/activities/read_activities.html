@@ -24,7 +24,7 @@ Activity List
       </tr>
     </thead>
     <tbody>
-      {% for activity in activities %}
+      {% for activity in object_list %}
       <tr>
         <td><a href="{{ url_for('activities.read_activity',
         activity_id=activity.id) }}">{{ activity.id }}</a></td>
@@ -41,8 +41,8 @@ Activity List
     </tbody>
   </table>
   <h3>Create new activity</h3>
-  {{ macros.render_form(activity_type_form,
-  action=url_for('activities.create_activity'),
+  {{ macros.render_form(create_form,
+  action=url_for('activities.activities'),
   method="post",
   id="create-activity-form") }}
 {% endblock %}

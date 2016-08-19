@@ -37,7 +37,7 @@
 <h3>General</h3>
 
 {{ macros.render_form(general_form,
-action=url_for('activities.update_activity', activity_id=question.id),
+action=url_for('activities.activity', activity_id=question.id),
 method="put", id="update-activity-form") }}
 
 <hr>
@@ -89,7 +89,7 @@ activity_id=question.id) }}" method="patch" id="add-dataset-form">
   {{ macros.render_glyphicon("exclamation-sign") }}
   Warning: this cannot be undone!
 </div>
-<form action="{{ url_for('activities.delete_activity', activity_id=question.id
+<form action="{{ url_for('activities.activity', activity_id=question.id
 ) }}" method="delete" id="delete-activity-form">
   {{ macros.render_field(delete_activity_form.submit, class_="btn-danger") }}
 </form>

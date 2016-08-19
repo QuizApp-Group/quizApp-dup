@@ -5,10 +5,11 @@ tests the kind of activity it is loading and then defers to a more specific
 function (for example, questions are read by read_question rather than
 read_activity itself).
 """
+import pdb
 from flask import Blueprint, render_template, url_for, jsonify, abort, \
     request
 from flask.views import MethodView
-from flask_security import roles_required, login_required
+from flask_security import roles_required
 from sqlalchemy import not_
 
 from quizApp.models import Activity, Dataset, Question, Choice
@@ -18,6 +19,7 @@ from quizApp.forms.activities import QuestionForm, DatasetListForm,\
 from quizApp.forms.common import DeleteObjectForm, ObjectTypeForm
 from quizApp import db
 from quizApp.views.helpers import validate_model_id
+from quizApp.views.common import ObjectListView
 
 activities = Blueprint("activities", __name__, url_prefix="/activities")
 
@@ -31,42 +33,32 @@ CHOICES_ROUTE = "/<int:question_id>/choices/"
 CHOICE_ROUTE = CHOICES_ROUTE + "<int:choice_id>"
 
 
-class ActivityListView(MethodView):
+class ActivityListView(ObjectListView):
+    """Views for the Activity collection.
+    """
     decorators = [roles_required("experimenter")]
-    def get():
-        """Display a list of all activities.
-        """
-        activities_list = Activity.query.all()
-        activity_type_form = ObjectTypeForm()
-        activity_type_form.populate_object_type(ACTIVITY_TYPES)
+    read_template = "activities/read_activities.html"
+    model = Activity
 
-        return render_template("activities/read_activities.html",
-                               activities=activities_list,
-                               activity_type_form=activity_type_form)
-
-    def post():
-        """Create an activity.
+    def create_form(self, *_, **__):
+        """Return a create form, which needs to be populated in this case.
         """
         activity_type_form = ObjectTypeForm()
         activity_type_form.populate_object_type(ACTIVITY_TYPES)
+        return activity_type_form
 
-        if not activity_type_form.validate():
-            return jsonify({"success": 0, "errors": activity_type_form.errors})
-
-        activity = Activity(type=activity_type_form.object_type.data)
-        activity.save()
-
-        next_url = url_for("activities.settings_activity",
-                           activity_id=activity.id)
-
-        return jsonify({"success": 1, "next_url": next_url})
-
+    def member_url(self, record):
+        return url_for("activities.settings_activity",
+                       activity_id=record.id)
 
 activities.add_url_rule('/', view_func=ActivityListView.as_view("activities"))
 
 
 class ActivityView(MethodView):
+    """View for manipulating an Activity object.
+    """
     decorators = [roles_required("experimenter")]
+
     def get(self, activity_id):
         """Display a given activity as it would appear to a participant.
         """
@@ -74,7 +66,6 @@ class ActivityView(MethodView):
 
         if "question" in activity.type:
             return self.read_question(activity)
-
 
     def read_question(self, question):
         """Display a given question as it would appear to a participant.
@@ -93,8 +84,7 @@ class ActivityView(MethodView):
         activity = validate_model_id(Activity, activity_id)
 
         if "question" in activity.type:
-            return update_question(activity)
-
+            return self.update_question(activity)
 
     def update_question(self, question):
         """Given a question, update its settings.
@@ -171,8 +161,6 @@ def settings_question(question):
                            update_choice_form=update_choice_form)
 
 
-
-
 @activities.route(ACTIVITY_ROUTE + "/datasets", methods=["PATCH"])
 @roles_required("experimenter")
 def update_question_datasets(activity_id):
@@ -222,6 +210,8 @@ def create_choice(question_id):
 
 
 class ChoiceView(MethodView):
+    """View for maniupulating a Choice object.
+    """
     def put(self, question_id, choice_id):
         """Update the given choice using form data.
         """
@@ -243,7 +233,7 @@ class ChoiceView(MethodView):
 
         return jsonify({"success": 1})
 
-    def delete(question_id, choice_id):
+    def delete(self, question_id, choice_id):
         """Delete the given choice.
         """
         question = validate_model_id(Question, question_id)
