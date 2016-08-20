@@ -11,6 +11,7 @@ info attribute). However, in some cases certain columns need to be filled out
 earlier than others. This is why we use a special method on each model to
 populate an object.
 """
+import pdb
 import os
 from collections import OrderedDict, defaultdict
 import tempfile
@@ -25,10 +26,10 @@ from quizApp import models
 
 SHEET_NAME_MAPPING = OrderedDict([
     ("Experiments", models.Experiment),
+    ("Assignments", models.Assignment),
     ("Participant Experiments", models.ParticipantExperiment),
     ("Datasets", models.Dataset),
     ("Media items", models.MediaItem),
-    ("Assignments", models.Assignment),
     ("Activities", models.Activity),
     ("Choices", models.Choice),
 ])
@@ -253,8 +254,10 @@ def populate_field(obj, field_name, value, pk_mapping, args):
     model = type(obj)
     field_attrs = inspect(model).attrs[field_name]
     field = getattr(model, field_name)
+
     if isinstance(field_attrs, RelationshipProperty):
         # This is a relationship
+        pdb.set_trace()
         remote_model = field.property.mapper.class_
         direction = field.property.direction
         if direction in (MANYTOMANY, ONETOMANY):
@@ -264,16 +267,15 @@ def populate_field(obj, field_name, value, pk_mapping, args):
                 fk = int(float(fk))  # goddamn stupid excel
                 collection_item = get_object_from_id(remote_model, fk,
                                                      pk_mapping)
-                if collection_item:
-                    args[field_name].append(collection_item)
+                args[field_name].append(collection_item)
         else:
             value = int(float(value))  # goddamn stupid excel
             collection_item = get_object_from_id(remote_model, value,
                                                  pk_mapping)
-            if collection_item:
-                args[field_name] = collection_item
+            args[field_name] = collection_item
     elif field.primary_key:
-        pk_mapping[model.__tablename__][int(float(value))] = obj
+        pk = int(float(value))
+        pk_mapping[model.__tablename__][pk] = obj
     elif isinstance(field_attrs, ColumnProperty):
         args[field_name] = value
 
@@ -326,6 +328,7 @@ def import_data_from_workbook(workbook):
             obj = instantiate_model(model, headers, row)
             obj_args = {}
 
+            pdb.set_trace()
             for col_index, cell in enumerate(row):
                 if not cell.value:
                     continue
