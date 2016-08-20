@@ -9,10 +9,18 @@
 {% block title %}Graph {{ media_item.name }} - Settings{% endblock %}
 
 {% block content %}
+<h4>Create new...</h4>
+
+{{ macros.render_form(create_media_item_form,
+id="create-media-item-form",
+method="post",
+action=url_for('datasets.create_media_item', dataset_id=dataset.id))
+}}
+
 <div class="media-item-container">
   {{ macros.render_media_item(media_item) }}
 </div>
-<h3>General</h3>
+<h3>Settings</h3>
 
 {{ macros.render_form(update_media_item_form,
   action=url_for('datasets.update_media_item', dataset_id=dataset.id, media_item_id=media_item.id),
