@@ -372,8 +372,10 @@ def results_experiment(experiment_id):
     # {"question_id": {"question": "question_text", "num_responses":
     #   num_responses, "num_correct": num_correct], ...}
     question_stats = defaultdict(dict)
+    assignments = Assignment.query.join(ParticipantExperiment).\
+        filter(ParticipantExperiment.experiment == experiment).all()
 
-    for assignment in experiment.assignments:
+    for assignment in assignments:
         activity = assignment.activity
 
         if "question" in activity.type:

@@ -184,10 +184,8 @@ class ParticipantExperiment(Base):
         return assignment
 
     def import_dict(self, **kwargs):
-        # TODO: if we're setting experiment.assignments here anyway why do we
-        # even need it
         assignments = kwargs.pop("assignments", [])
-        experiment = kwargs.pop("experiment")
+        experiment = kwargs.get("experiment")
         for assignment in assignments:
             experiment.activities.append(assignment.activity)
 
