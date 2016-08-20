@@ -4,11 +4,10 @@ participants.
 from collections import defaultdict
 from datetime import datetime
 import json
-import os
 
 import dateutil.parser
 from flask import Blueprint, render_template, url_for, jsonify, abort, \
-    current_app, request, session
+    request, session
 from flask_security import login_required, current_user, roles_required
 from sqlalchemy.orm.exc import NoResultFound
 
@@ -438,26 +437,3 @@ def done_experiment(experiment_id):
                            addendum=addendum,
                            participant_experiment=participant_experiment,
                            scorecard_settings=experiment.scorecard_settings)
-
-
-@experiments.app_template_filter("datetime_format")
-def datetime_format_filter(value, fmt="%Y-%m-%d %H:%M:%S"):
-    """Format the value (a datetime) according to fmt with strftime.
-    """
-    return value.strftime(fmt)
-
-
-@experiments.app_template_filter("get_graph_url")
-def get_graph_url_filter(graph):
-    """Given a graph, return html to display it.
-    """
-    if os.path.isfile(graph.path):
-        filename = graph.filename()
-    else:
-        filename = current_app.config.get("EXPERIMENTS_PLACEHOLDER_GRAPH")
-
-    graph_path = url_for(
-        'static',
-        filename=os.path.join(current_app.config.get("GRAPH_DIRECTORY"),
-                              filename))
-    return graph_path

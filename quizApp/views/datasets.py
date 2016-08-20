@@ -182,6 +182,8 @@ def settings_media_item(dataset_id, media_item_id):
     """
     dataset = validate_model_id(Dataset, dataset_id)
     media_item = validate_model_id(MediaItem, media_item_id)
+    create_media_item_form = ObjectTypeForm()
+    create_media_item_form.populate_object_type(MEDIA_ITEM_TYPES)
 
     if media_item not in dataset.media_items:
         abort(404)
@@ -197,6 +199,7 @@ def settings_media_item(dataset_id, media_item_id):
         template,
         update_media_item_form=update_form_cls(obj=media_item),
         dataset=dataset,
+        create_media_item_form=create_media_item_form,
         media_item=media_item)
 
 

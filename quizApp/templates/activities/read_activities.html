@@ -28,14 +28,14 @@ id="create-activity-form") }}
         <th>Text</th>
         <th data-orderable="false">Settings</th>
         <th data-orderable="false">Delete</th>
+        <th data-orderable="false">Preview</th>
       </tr>
     </thead>
     <tbody>
       {% for activity in activities %}
       <tr data-delete-action="{{ url_for('activities.delete_activity',
       activity_id=activity.id) }}" id="activity-{{ activity.id }}">
-        <td><a href="{{ url_for('activities.read_activity',
-        activity_id=activity.id) }}">{{ activity.id }}</a></td>
+        <td>{{ activity.id }}</td>
         <td>{{ activity.category }}</td>
         <td>{{ activity.type }}</td>
         <td>{{ activity.question }}
@@ -44,13 +44,15 @@ id="create-activity-form") }}
           <a href="{{ url_for('activities.settings_activity',
           activity_id=activity.id) }}">{{ macros.render_glyphicon("cog") }}</a>
         </td>
-      <td>
-        <a href="#" class="text-danger"
+        <td>
+          <a href="#" class="text-danger"
                       data-activity-id="{{ activity.id }}"
                       data-toggle="modal"
                       data-target="#confirm-delete-activity-modal">
-          {{ macros.render_glyphicon("remove") }}</a>
-      </td>
+            {{ macros.render_glyphicon("remove") }}</a>
+        </td>
+        <td><a href="{{ url_for('activities.read_activity',
+        activity_id=activity.id) }}">{{ macros.render_glyphicon("eye-open") }}</a></td>
 
       </tr>
       {% endfor %}
