@@ -305,7 +305,6 @@ def create_assignment(question_id, experiment,
     question.experiments.append(experiment)
 
     assignment = Assignment(
-        experiment=experiment,
         participant=participant_experiment.participant,
         media_items=[Graph.query.get(graph_id)])
     assignment.activity = question

@@ -12,7 +12,7 @@ from quizApp import models
 
 from tests.auth import login_experimenter, login_participant
 from tests.factories import ActivityFactory, MediaItemFactory, \
-    create_experiment, DatasetFactory
+    create_experiment, DatasetFactory, ExperimentFactory
 from tests.helpers import json_success
 
 
@@ -63,9 +63,13 @@ def test_export_template(client, users):
 def test_import_assignments(client, users):
     login_experimenter(client)
     url = "/import"
+    experiment = ExperimentFactory(id=1)
+    db.session.add(experiment)
     for i in range(0, 4):
         media_item = MediaItemFactory(id=i)
+        activity = ActivityFactory(id=i)
         db.session.add(media_item)
+        db.session.add(activity)
     db.session.commit()
 
     response = client.post(url,
@@ -74,11 +78,9 @@ def test_import_assignments(client, users):
     assert response.status_code == 200
     assert json_success(response.data)
 
-    assert models.Experiment.query.count() == 2
-    assert models.ParticipantExperiment.query.count() == 4
-    assert models.Assignment.query.count() == 4
-    assert models.Activity.query.count() == 7
-    assert models.Choice.query.count() == 11
+    assert models.Experiment.query.count() == 1
+    assert models.ParticipantExperiment.query.count() == 3
+    assert models.Assignment.query.count() == 3
 
     response = client.post(url)
     assert response.status_code == 200

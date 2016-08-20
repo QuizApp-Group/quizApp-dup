@@ -38,10 +38,7 @@ def test_participant_experiment_validators():
     exp2 = ExperimentFactory()
 
     part_exp = ParticipantExperiment(experiment=exp1)
-    assignment = Assignment(experiment=exp2)
-
-    with pytest.raises(AssertionError):
-        part_exp.assignments.append(assignment)
+    assignment = Assignment()
 
     part1 = ParticipantFactory()
     part2 = ParticipantFactory()
@@ -71,12 +68,6 @@ def test_assignment_validators():
     activity = Activity()
     assn.experiment = exp
     activity.num_media_items = -1
-
-    with pytest.raises(AssertionError):
-        assn.activity = activity
-
-    activity.experiments.append(exp)
-    assn.activity = activity
 
     choice = ChoiceFactory()
     question = Question()
