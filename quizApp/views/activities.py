@@ -7,7 +7,6 @@ read_activity itself).
 """
 from flask import Blueprint, render_template, url_for, jsonify, abort, request
 from flask_security import roles_required
-from sqlalchemy import not_
 
 from quizApp.models import Activity, Dataset, Question, Choice
 from quizApp.forms.experiments import get_question_form
