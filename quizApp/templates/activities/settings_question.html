@@ -9,12 +9,6 @@
 {% block title %}Activity {{ question.id }} - Settings{% endblock %}
 
 {% block content %}
-<h3>Create new activity</h3>
-{{ macros.render_form(activity_type_form,
-action=url_for('activities.create_activity'),
-method="post",
-id="create-activity-form") }}
-<hr>
 {% if update_choice_form %}
 {{ macros.render_confirm_delete_modal(confirm_delete_choice_form, "choice") }}
 <div class="modal fade" id="update-choice-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel">
@@ -121,8 +115,26 @@ id="create-activity-form") }}
     </div>
   </div>
 
-
 {% endif %}
+  <div class="panel panel-default">
+    <div class="panel-heading" role="tab" id="create-heading">
+      <h4 class="panel-title">
+        <a class="collapsed" role="button" data-toggle="collapse" data-parent="#accordion" href="#create-collapse" aria-expanded="false" aria-controls="create-collaspe">
+          Create new activity
+        </a>
+      </h4>
+    </div>
+    <div id="create-collapse" class="panel-collapse collapse" role="tabpanel" aria-labelledby="create-heading">
+      <div class="panel-body">
+        <h3>Create new activity</h3>
+        {{ macros.render_form(activity_type_form,
+        action=url_for('activities.create_activity'),
+        method="post",
+        id="create-activity-form") }}
+        <a href="{{ url_for('activities.read_activities') }}" role="button" class="btn btn-primary">Back to activity listing</a>
+
+      </div>
+    </div>
 </div>
 
 {% endblock %}
