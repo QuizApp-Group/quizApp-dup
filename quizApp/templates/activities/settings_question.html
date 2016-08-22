@@ -37,7 +37,7 @@
 <h3>General</h3>
 
 {{ macros.render_form(general_form,
-action=url_for('activities.activity', activity_id=question.id),
+action=url_for('activities.activity', activity=question),
 method="put", id="update-activity-form") }}
 
 <hr>
@@ -49,7 +49,7 @@ method="put", id="update-activity-form") }}
 </div>
 
 <form action="{{ url_for('activities.update_question_datasets',
-activity_id=question.id) }}" method="patch" id="remove-dataset-form">
+question=question) }}" method="patch" id="remove-dataset-form">
   <div class="table-container">
     {{ activities_macros.dataset_table(dataset_form, remove_dataset_mapping) }}
   </div>
@@ -61,7 +61,7 @@ activity_id=question.id) }}" method="patch" id="remove-dataset-form">
 
 <h3>Datasets not associated with this activity</h3>
 <form action="{{ url_for('activities.update_question_datasets',
-activity_id=question.id) }}" method="patch" id="add-dataset-form">
+question=question) }}" method="patch" id="add-dataset-form">
   <div class="table-container">
     {{ activities_macros.dataset_table(dataset_form, add_dataset_mapping) }}
   </div>
@@ -73,7 +73,7 @@ activity_id=question.id) }}" method="patch" id="add-dataset-form">
 {% if create_choice_form %}
 
 <h3>Choices</h3>
-<form action="{{ url_for('activities.create_choice', question_id=question.id
+<form action="{{ url_for('activities.create_choice', question=question
 ) }}" method="post" id="create-choice-form">
   <div class="table-container">
     {{ activities_macros.choice_table(choices, create_choice_form) }}
@@ -89,7 +89,7 @@ activity_id=question.id) }}" method="patch" id="add-dataset-form">
   {{ macros.render_glyphicon("exclamation-sign") }}
   Warning: this cannot be undone!
 </div>
-<form action="{{ url_for('activities.activity', activity_id=question.id
+<form action="{{ url_for('activities.activity', activity=question
 ) }}" method="delete" id="delete-activity-form">
   {{ macros.render_field(delete_activity_form.submit, class_="btn-danger") }}
 </form>

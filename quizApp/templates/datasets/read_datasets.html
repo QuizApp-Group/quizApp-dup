@@ -50,7 +50,7 @@ id="create-dataset-form">
         <td>{{ dataset.uri }}</a>
         <td>
           <a href="{{ url_for('datasets.settings_dataset',
-          dataset_id=dataset.id) }}">{{ macros.render_glyphicon("cog") }}</a>
+          dataset=dataset) }}">{{ macros.render_glyphicon("cog") }}</a>
         </td>
       </tr>
       {% endfor %}

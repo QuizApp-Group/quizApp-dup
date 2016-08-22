@@ -27,14 +27,14 @@ Activity List
       {% for activity in object_list %}
       <tr>
         <td><a href="{{ url_for('activities.activity',
-        activity_id=activity.id) }}">{{ activity.id }}</a></td>
+        activity=activity) }}">{{ activity.id }}</a></td>
         <td>{{ activity.type }}</td>
         <td>{{ activity.question }}
         </td>
         <td>{{ activity.category }}</td>
         <td>
           <a href="{{ url_for('activities.settings_activity',
-          activity_id=activity.id) }}">{{ macros.render_glyphicon("cog") }}</a>
+          activity=activity) }}">{{ macros.render_glyphicon("cog") }}</a>
         </td>
       </tr>
       {% endfor %}

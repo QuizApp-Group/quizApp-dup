@@ -54,7 +54,7 @@
 
 {% macro choice_row(choice) %}
 <tr data-update-action="{{ url_for('activities.choice',
-question_id=choice.question_id, choice_id=choice.id) }}">
+question=choice.question, choice=choice) }}">
   <td class="choice-label">{{ choice.label }}</td>
   <td class="choice-choice">{{ choice.choice }}</td>
   <td class="choice-correct">{{ choice.correct }}</td>

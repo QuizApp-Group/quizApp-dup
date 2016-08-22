@@ -40,6 +40,11 @@ def create_app(config_name, overrides=None):
 
     migrate.init_app(app, db)
 
+    from quizApp.converters import CONVERTERS
+
+    for name, converter in CONVERTERS.items():
+        app.url_map.converters[name] = converter
+
     from quizApp.views.activities import activities
     from quizApp.views.core import core
     from quizApp.views.datasets import datasets

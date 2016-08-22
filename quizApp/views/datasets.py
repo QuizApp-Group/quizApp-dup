@@ -11,7 +11,7 @@ from quizApp import db
 from quizApp.forms.common import DeleteObjectForm, ObjectTypeForm
 from quizApp.forms.datasets import DatasetForm, GraphForm
 from quizApp.models import Dataset, MediaItem
-from quizApp.views.helpers import validate_model_id, validate_form_or_error
+from quizApp.views.helpers import validate_form_or_error
 from quizApp.views.common import ObjectListView, ObjectView
 
 datasets = Blueprint("datasets", __name__, url_prefix="/datasets")
@@ -19,9 +19,9 @@ datasets = Blueprint("datasets", __name__, url_prefix="/datasets")
 MEDIA_ITEM_TYPES = {
     "graph": "Graph",
 }
-DATASET_ROUTE = "/<int:dataset_id>"
+DATASET_ROUTE = "/<dataset:dataset>"
 MEDIA_ITEMS_ROUTE = os.path.join(DATASET_ROUTE + "/media_items/")
-MEDIA_ITEM_ROUTE = os.path.join(MEDIA_ITEMS_ROUTE + "<int:media_item_id>")
+MEDIA_ITEM_ROUTE = os.path.join(MEDIA_ITEMS_ROUTE + "<media_item:media_item>")
 
 
 class DatasetListView(ObjectListView):
@@ -33,7 +33,7 @@ class DatasetListView(ObjectListView):
     read_template = "datasets/read_datasets.html"
 
     def member_url(self, record):
-        return url_for("datasets.dataset", dataset_id=record.id)
+        return url_for("datasets.dataset", dataset=record)
 
 
 datasets.add_url_rule('/', view_func=DatasetListView.as_view("datasets"))
@@ -52,8 +52,8 @@ class DatasetView(ObjectView):
     def collection_url(self, **kwargs):
         return url_for("datasets.datasets")
 
-    def get_record(self, dataset_id):
-        return validate_model_id(Dataset, dataset_id)
+    def get_record(self, dataset):
+        return dataset
 
 
 datasets.add_url_rule(DATASET_ROUTE, view_func=DatasetView.as_view("dataset"))
@@ -98,22 +98,19 @@ class MediaItemView(ObjectView):
     """
     decorators = [roles_required("experimenter")]
 
-    def collection_url(self, dataset_id, **kwargs):
-        return url_for("datasets.settings_dataset", dataset_id=dataset_id)
+    def collection_url(self, dataset, **kwargs):
+        return url_for("datasets.settings_dataset", dataset=dataset)
 
-    def get_record(self, dataset_id, media_item_id):
-        dataset = validate_model_id(Dataset, dataset_id)
-        media_item = validate_model_id(MediaItem, media_item_id)
-
+    def get_record(self, dataset, media_item):
         if media_item not in dataset.media_items:
             abort(404)
 
         return media_item
 
-    def get(self, dataset_id, media_item_id):
+    def get(self, dataset, media_item):
         """Get an html representation of a particular media_item.
         """
-        media_item = self.get_record(dataset_id, media_item_id)
+        self.get_record(dataset, media_item)
 
         return render_template("datasets/read_media_item.html",
                                media_item=media_item)
@@ -135,10 +132,9 @@ datasets.add_url_rule(MEDIA_ITEM_ROUTE,
 
 @datasets.route(MEDIA_ITEMS_ROUTE, methods=["POST"])
 @roles_required("experimenter")
-def create_media_item(dataset_id):
+def create_media_item(dataset):
     """Create a new media item.
     """
-    dataset = validate_model_id(Dataset, dataset_id)
     create_media_item_form = ObjectTypeForm()
     create_media_item_form.populate_object_type(MEDIA_ITEM_TYPES)
 
@@ -158,11 +154,9 @@ def create_media_item(dataset_id):
 
 @datasets.route(DATASET_ROUTE + '/settings', methods=["GET"])
 @roles_required("experimenter")
-def settings_dataset(dataset_id):
+def settings_dataset(dataset):
     """View the configuration of a particular dataset.
     """
-    dataset = validate_model_id(Dataset, dataset_id)
-
     update_dataset_form = DatasetForm(obj=dataset)
 
     delete_dataset_form = DeleteObjectForm()
@@ -179,15 +173,12 @@ def settings_dataset(dataset_id):
 
 @datasets.route(MEDIA_ITEM_ROUTE + "/settings", methods=["GET"])
 @roles_required("experimenter")
-def settings_media_item(dataset_id, media_item_id):
+def settings_media_item(dataset, media_item):
     """View the configuration of some media item.
 
     Ultimately this view dispatches to another view for the specific type
     of media item.
     """
-    dataset = validate_model_id(Dataset, dataset_id)
-    media_item = validate_model_id(MediaItem, media_item_id)
-
     if media_item not in dataset.media_items:
         abort(404)
 

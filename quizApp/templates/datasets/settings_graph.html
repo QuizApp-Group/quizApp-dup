@@ -17,7 +17,7 @@
 <h3>General</h3>
 
 {{ macros.render_form(update_graph_form,
-  action=url_for('datasets.media_item', dataset_id=dataset.id, media_item_id=graph.id),
+  action=url_for('datasets.media_item', dataset=dataset, media_item=graph),
   method="put",
   id="update-dataset-form") }}
 

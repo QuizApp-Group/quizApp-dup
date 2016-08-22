@@ -34,7 +34,7 @@
 <h3>General</h3>
 
 {{ macros.render_form(update_dataset_form,
-action=url_for('datasets.dataset', dataset_id=dataset.id),
+action=url_for('datasets.dataset', dataset=dataset),
 method="put",
 id="update-dataset-form") }}
 
@@ -59,16 +59,16 @@ id="update-dataset-form") }}
       <td><a
           href="#" class="preview"
                    data-read-url="{{ url_for('datasets.media_item',
-                   dataset_id=dataset.id, media_item_id=media_item.id) }}"
+                   dataset=dataset, media_item=media_item) }}"
                    data-toggle="modal"
                    data-target="#preview-media-item-modal"
                    data-delete-url="{{
                    url_for('datasets.media_item',
-                   dataset_id=dataset.id, media_item_id=media_item.id) }}" >
+                   dataset=dataset, media_item=media_item) }}" >
                    {{ macros.render_glyphicon("eye-open")}}
         </a>
           <a href="{{ url_for('datasets.settings_media_item',
-          dataset_id=dataset.id, media_item_id=media_item.id) }}">
+          dataset=dataset, media_item=media_item) }}">
             {{ macros.render_glyphicon("cog") }}
           </a>
       </td>
@@ -82,7 +82,7 @@ id="update-dataset-form") }}
 {{ macros.render_form(create_media_item_form,
 id="create-media-item-form",
 method="post",
-action=url_for('datasets.create_media_item', dataset_id=dataset.id))
+action=url_for('datasets.create_media_item', dataset=dataset))
 }}
 
 
@@ -93,7 +93,7 @@ action=url_for('datasets.create_media_item', dataset_id=dataset.id))
   {{ macros.render_glyphicon("exclamation-sign") }}
   Warning: this cannot be undone!
 </div>
-<form action="{{ url_for('datasets.dataset', dataset_id=dataset.id
+<form action="{{ url_for('datasets.dataset', dataset=dataset
 ) }}" method="delete" id="delete-dataset-form">
   {{ macros.render_field(delete_dataset_form.submit, class_="btn-danger") }}
 </form>
