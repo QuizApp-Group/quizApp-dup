@@ -91,6 +91,27 @@
           {% endif %}
         </ul>
       </div>
+      
+      {% set previous_tab, next_tab = nav_tabs|prev_next_tabs %}
+ 
+      {% if previous_tab or next_tab %}
+      <div class="row">
+        <div class="col-md-6">
+          {% if previous_tab %}
+          <a href="{{ url_for(previous_tab[0]) }}" role="button" class="btn
+          btn-primary previous-button"> {{ macros.render_glyphicon("chevron-left") }} Previous</a>
+          {% endif %}
+        </div>
+        {% if next_tab %}
+        <div class="col-md-6">
+          <a href="{{ url_for(next_tab[0]) }}" role="button" class="btn
+          btn-primary next-button"> Next
+          {{ macros.render_glyphicon("chevron-right") }}</a>
+        </div>
+        {% endif %}
+      </div>
+      {% endif %}
+
       {{ macros.render_flashed_messages(["error"], "danger", "Errors ocurred") }}
       {{ macros.render_flashed_messages(["message"], "info", "Note:") }}
       <h2>{{ self.title() }}</h2>
