@@ -18,123 +18,73 @@
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
         <h4 class="modal-title" id="exampleModalLabel"></h4>
       </div>
-        <div class="modal-body">
-          {{ macros.render_form(update_choice_form, id="update-choice-form", method="put") }}
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-        </div>
+      <div class="modal-body">
+        {{ macros.render_form(update_choice_form, id="update-choice-form", method="put") }}
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
     </div>
   </div>
 </div>
 {% endif %}
-<div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
-  <div class="panel panel-default">
-    <div class="panel-heading" role="tab" id="general-heading">
-      <h4 class="panel-title">
-        <a role="button" data-toggle="collapse" data-parent="#accordion" href="#general-collapse" aria-expanded="true" aria-controls="general-collapse">
-          General
-        </a>
-      </h4>
-    </div>
-    <div id="general-collapse" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="general-heading">
-      <div class="panel-body">
-        {{ macros.render_form(general_form,
-        action=url_for('activities.update_activity', activity_id=question.id),
-        method="put", id="update-activity-form") }}
-      </div>
-    </div>
-  </div>
-  <div class="panel panel-default">
-    <div class="panel-heading" role="tab" id="datasets-heading">
-      <h4 class="panel-title">
-        <a class="collapsed" role="button" data-toggle="collapse" data-parent="#accordion" href="#datasets-collapse" aria-expanded="false" aria-controls="datasets-collapse">
-          Datasets
-        </a>
-      </h4>
-    </div>
-    <div id="datasets-collapse" class="panel-collapse collapse" role="tabpanel" aria-labelledby="datasets-heading">
-      <div class="panel-body">
-        <div class="alert alert-info" role="alert">
-          If this activity is not associated with any datasets, it may use a media item
-          from any dataset.
-        </div>
-        <table class="table" id="update-question-datasets-table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Name</th>
-              <th>Associated with this question?</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for object in dataset_form.objects %}
-            <tr
-            data-create-action="{{
-            url_for('activities.create_question_dataset',
-            activity_id=question.id) }}"
-            data-delete-action="{{
-            url_for('activities.delete_question_dataset',
-            activity_id=question.id, dataset_id=object.data) }}"
-            >
-              <td>
-                {{ dataset_form.objects_mapping[object.data].id }}
-              </td>
-              <td>
-                {{ dataset_form.objects_mapping[object.data].name }}
-              </td>
-              <td>
-                {{ object }}
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
+<form action="{{ url_for('activities.update_activity', activity_id=question.id) }}"
+      method="put" id="update-activity-form">
+  {% for field in general_form %}
+  {% if field.type != "SubmitField" %}
+  {{ macros.render_field(field) }}
+  {% endif %}
+  {% endfor %}
+</form>
+<hr>
+<h3>Datasets</h3>
+<div class="alert alert-info" role="alert">
+  If this activity is not associated with any datasets, it may use a media item
+  from any dataset.
+</div>
+<table class="table" id="update-question-datasets-table">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Name</th>
+      <th>Associated with this question?</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for object in dataset_form.objects %}
+    <tr
+                     data-create-action="{{
+                     url_for('activities.create_question_dataset',
+                     activity_id=question.id) }}"
+                     data-delete-action="{{
+                     url_for('activities.delete_question_dataset',
+                     activity_id=question.id, dataset_id=object.data) }}"
+                     >
+                     <td>
+                       {{ dataset_form.objects_mapping[object.data].id }}
+                     </td>
+      <td>
+        {{ dataset_form.objects_mapping[object.data].name }}
+      </td>
+      <td>
+        {{ object }}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
 {% if create_choice_form %}
-  <div class="panel panel-default">
-    <div class="panel-heading" role="tab" id="choices-heading">
-      <h4 class="panel-title">
-        <a class="collapsed" role="button" data-toggle="collapse" data-parent="#accordion" href="#choices-collapse" aria-expanded="false" aria-controls="choices-collaspe">
-          Choices
-        </a>
-      </h4>
-    </div>
-    <div id="choices-collapse" class="panel-collapse collapse" role="tabpanel" aria-labelledby="choices-heading">
-      <div class="panel-body">
-        <h3>Choices</h3>
-        <form action="{{ url_for('activities.create_choice', question_id=question.id
-        ) }}" method="post" id="create-choice-form">
-          <div class="table-container">
-            {{ activities_macros.choice_table(choices, create_choice_form) }}
-          </div>
-        </form>
-      </div>
-    </div>
+<hr>
+<h3>Choices</h3>
+<form action="{{ url_for('activities.create_choice', question_id=question.id
+) }}" method="post" id="create-choice-form">
+  <div class="table-container">
+    {{ activities_macros.choice_table(choices, create_choice_form) }}
   </div>
+</form>
+
+{{ macros.render_field(general_form.submit, form="update-activity-form") }}
 
 {% endif %}
-  <div class="panel panel-default">
-    <div class="panel-heading" role="tab" id="create-heading">
-      <h4 class="panel-title">
-        <a class="collapsed" role="button" data-toggle="collapse" data-parent="#accordion" href="#create-collapse" aria-expanded="false" aria-controls="create-collaspe">
-          Create new activity
-        </a>
-      </h4>
-    </div>
-    <div id="create-collapse" class="panel-collapse collapse" role="tabpanel" aria-labelledby="create-heading">
-      <div class="panel-body">
-        <h3>Create new activity</h3>
-        {{ macros.render_form(activity_type_form,
-        action=url_for('activities.create_activity'),
-        method="post",
-        id="create-activity-form") }}
-        <a href="{{ url_for('activities.read_activities') }}" role="button" class="btn btn-primary">Back to activity listing</a>
-
-      </div>
-    </div>
-</div>
 
 {% endblock %}
