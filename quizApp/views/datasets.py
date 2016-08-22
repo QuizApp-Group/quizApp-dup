@@ -5,7 +5,6 @@ import os
 from werkzeug.datastructures import CombinedMultiDict
 from flask import Blueprint, render_template, url_for, jsonify, abort, \
     request, current_app
-from flask.views import MethodView
 from flask_security import roles_required
 
 from quizApp import db
@@ -44,7 +43,10 @@ class DatasetView(ObjectView):
     """Views for manipulating a DataSet.
     """
     decorators = [roles_required("experimenter")]
-    update_form = DatasetForm
+
+    def update_form(self, record, form):
+        return DatasetForm(form)
+
     model = Dataset
 
     def collection_url(self, **kwargs):
@@ -57,10 +59,45 @@ class DatasetView(ObjectView):
 datasets.add_url_rule(DATASET_ROUTE, view_func=DatasetView.as_view("dataset"))
 
 
+def update_graph(graph):
+    """Update a graph.
+    """
+    update_graph_form = GraphForm(CombinedMultiDict((request.form,
+                                                     request.files)))
+
+    response = validate_form_or_error(update_graph_form)
+
+    if response:
+        return response
+
+    update_graph_form.populate_obj(graph)
+
+    if update_graph_form.graph.data:
+        # Replace the current graph with this
+        if os.path.isfile(graph.path):
+            # Just overwrite this
+            update_graph_form.graph.data.save(graph.path)
+        else:
+            # Need to create a new file
+            graphs_dir = os.path.join(
+                current_app.static_folder,
+                current_app.config.get("GRAPH_DIRECTORY"))
+            graph_filename = str(graph.id) + \
+                os.path.splitext(update_graph_form.graph.data.filename)[1]
+            new_graph_path = os.path.join(graphs_dir, graph_filename)
+            update_graph_form.graph.data.save(new_graph_path)
+            graph.path = new_graph_path
+
+    db.session.commit()
+
+    return jsonify({"success": 1})
+
+
 class MediaItemView(ObjectView):
     """Views for manipulating a MediaItem.
     """
     decorators = [roles_required("experimenter")]
+
     def collection_url(self, dataset_id, **kwargs):
         return url_for("datasets.settings_dataset", dataset_id=dataset_id)
 
@@ -73,7 +110,6 @@ class MediaItemView(ObjectView):
 
         return media_item
 
-
     def get(self, dataset_id, media_item_id):
         """Get an html representation of a particular media_item.
         """
@@ -82,51 +118,20 @@ class MediaItemView(ObjectView):
         return render_template("datasets/read_media_item.html",
                                media_item=media_item)
 
-    def put(self, dataset_id, media_item_id):
-        """Update a particular media item.
+    def update_form(self, record, form):
+        update_form_mapping = {
+            "graph": GraphForm(CombinedMultiDict((request.form,
+                                                  request.files))),
+        }
+        return update_form_mapping[record.type]
 
-        Dispatches to a handler for the specific kind of media item.
-        """
-        media_item = self.get_record(dataset_id, media_item_id)
-
-        if media_item.type == "graph":
-            return self.update_graph(media_item)
-
-    def update_graph(self, graph):
-        """Update a graph.
-        """
-        update_graph_form = GraphForm(CombinedMultiDict((request.form,
-                                                         request.files)))
-
-        response = validate_form_or_error(update_graph_form)
-
-        if response:
-            return response
-
-        update_graph_form.populate_obj(graph)
-
-        if update_graph_form.graph.data:
-            # Replace the current graph with this
-            if os.path.isfile(graph.path):
-                # Just overwrite this
-                update_graph_form.graph.data.save(graph.path)
-            else:
-                # Need to create a new file
-                graphs_dir = os.path.join(
-                    current_app.static_folder,
-                    current_app.config.get("GRAPH_DIRECTORY"))
-                graph_filename = str(graph.id) + \
-                    os.path.splitext(update_graph_form.graph.data.filename)[1]
-                new_graph_path = os.path.join(graphs_dir, graph_filename)
-                update_graph_form.graph.data.save(new_graph_path)
-                graph.path = new_graph_path
-
-        db.session.commit()
-
-        return jsonify({"success": 1})
+    put_mapping = {
+        "graph": update_graph,
+    }
 
 datasets.add_url_rule(MEDIA_ITEM_ROUTE,
                       view_func=MediaItemView.as_view("media_item"))
+
 
 @datasets.route(MEDIA_ITEMS_ROUTE, methods=["POST"])
 @roles_required("experimenter")

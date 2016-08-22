@@ -1,7 +1,6 @@
 """Common objects for the views.
 """
-import pdb
-from flask import render_template, jsonify, request, url_for
+from flask import render_template, jsonify, request, abort
 from flask.views import MethodView
 from quizApp import db
 
@@ -58,15 +57,11 @@ class ObjectListView(MethodView):
 
         return jsonify({"success": 1, "next_url": self.member_url(record)})
 
-class ObjectView(MethodView):
-    @property
-    def model(self):
-        """The model this collection operates on.
-        """
-        raise NotImplementedError
 
-    @property
-    def update_form(self):
+class ObjectView(MethodView):
+    """Handle a specific object in a collection.
+    """
+    def update_form(self, record, form):
         """A form used for updating models that this collection will
         operate on.
         """
@@ -83,9 +78,21 @@ class ObjectView(MethodView):
         """
         raise NotImplementedError
 
+    get_mapping = {}
+    put_mapping = {}
+
     def put(self, **kwargs):
+        """Update this object.
+        """
         record = self.get_record(**kwargs)
-        update_record_form = self.update_form(request.form)
+
+        try:
+            return self.put_mapping[record.type](record)
+        except (KeyError, AttributeError):
+            # Use default handler
+            pass
+
+        update_record_form = self.update_form(record, request.form)
 
         if not update_record_form.validate():
             return jsonify({"success": 0, "errors":
@@ -96,6 +103,8 @@ class ObjectView(MethodView):
         return jsonify({"success": 1})
 
     def delete(self, **kwargs):
+        """Delete this object.
+        """
         record = self.get_record(**kwargs)
         db.session.delete(record)
         db.session.commit()
@@ -103,4 +112,12 @@ class ObjectView(MethodView):
         return jsonify({"success": 1,
                         "next_url": self.collection_url(**kwargs)})
 
+    def get(self, **kwargs):
+        """Display this object.
+        """
+        record = self.get_record(**kwargs)
 
+        try:
+            return self.get_mapping[record.type](record)
+        except KeyError:
+            abort(405)

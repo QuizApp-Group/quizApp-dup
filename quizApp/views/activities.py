@@ -5,10 +5,8 @@ tests the kind of activity it is loading and then defers to a more specific
 function (for example, questions are read by read_question rather than
 read_activity itself).
 """
-import pdb
 from flask import Blueprint, render_template, url_for, jsonify, abort, \
     request
-from flask.views import MethodView
 from flask_security import roles_required
 from sqlalchemy import not_
 
@@ -19,7 +17,7 @@ from quizApp.forms.activities import QuestionForm, DatasetListForm,\
 from quizApp.forms.common import DeleteObjectForm, ObjectTypeForm
 from quizApp import db
 from quizApp.views.helpers import validate_model_id
-from quizApp.views.common import ObjectListView
+from quizApp.views.common import ObjectListView, ObjectView
 
 activities = Blueprint("activities", __name__, url_prefix="/activities")
 
@@ -54,62 +52,45 @@ class ActivityListView(ObjectListView):
 activities.add_url_rule('/', view_func=ActivityListView.as_view("activities"))
 
 
-class ActivityView(MethodView):
-    """View for manipulating an Activity object.
+def read_question(question):
+    """Display a given question as it would appear to a participant.
+    """
+    form = get_question_form(question)
+
+    form.populate_choices(question.choices)
+
+    return render_template("activities/read_question.html",
+                           question=question,
+                           question_form=form)
+
+
+class ActivityView(ObjectView):
+    """Views for a specific Activity.
     """
     decorators = [roles_required("experimenter")]
 
-    def get(self, activity_id):
-        """Display a given activity as it would appear to a participant.
-        """
-        activity = validate_model_id(Activity, activity_id)
+    def update_form(self, record, data):
+        update_form_mapping = {
+            "question_mc_singleselect": QuestionForm,
+            "question_mc_multiselect": QuestionForm,
+            "question_mc_singleselect_scale": QuestionForm,
+            "question_freeanswer": QuestionForm
+        }
 
-        if "question" in activity.type:
-            return self.read_question(activity)
+        return update_form_mapping[record.type](data)
 
-    def read_question(self, question):
-        """Display a given question as it would appear to a participant.
-        """
-        form = get_question_form(question)
+    def get_record(self, activity_id):
+        return validate_model_id(Activity, activity_id)
 
-        form.populate_choices(question.choices)
+    def collection_url(self, **_):
+        return url_for("activities.activities")
 
-        return render_template("activities/read_question.html",
-                               question=question,
-                               question_form=form)
-
-    def put(self, activity_id):
-        """Update the activity based on transmitted form data.
-        """
-        activity = validate_model_id(Activity, activity_id)
-
-        if "question" in activity.type:
-            return self.update_question(activity)
-
-    def update_question(self, question):
-        """Given a question, update its settings.
-        """
-        general_form = QuestionForm(request.form)
-
-        if not general_form.validate():
-            return jsonify({"success": 0, "errors": general_form.errors})
-
-        general_form.populate_obj(question)
-        db.session.commit()
-
-        return jsonify({"success": 1})
-
-    def delete(self, activity_id):
-        """Delete the given activity.
-        """
-        activity = validate_model_id(Activity, activity_id)
-
-        db.session.delete(activity)
-        db.session.commit()
-
-        next_url = url_for("activities.activities")
-
-        return jsonify({"success": 1, "next_url": next_url})
+    get_mapping = {
+        "question_mc_singleselect": read_question,
+        "question_mc_multiselect": read_question,
+        "question_mc_singleselect_scale": read_question,
+        "question_freeanswer": read_question
+    }
 
 activities.add_url_rule(ACTIVITY_ROUTE,
                         view_func=ActivityView.as_view("activity"))
@@ -209,43 +190,23 @@ def create_choice(question_id):
     return jsonify({"success": 1})
 
 
-class ChoiceView(MethodView):
-    """View for maniupulating a Choice object.
+class ChoiceView(ObjectView):
+    """Views for a specific Choice object.
     """
-    def put(self, question_id, choice_id):
-        """Update the given choice using form data.
-        """
+    def update_form(self, record, form):
+        return ChoiceForm(request.form, prefix="update")
+
+    def get_record(self, question_id, choice_id):
         question = validate_model_id(Question, question_id)
         choice = validate_model_id(Choice, choice_id)
 
-        if choice not in question.choices:
+        if choice.question != question:
             abort(404)
 
-        update_choice_form = ChoiceForm(request.form, prefix="update")
+        return choice
 
-        if not update_choice_form.validate():
-            return jsonify({"success": 0, "prefix": "update-",
-                            "errors": update_choice_form.errors})
-
-        update_choice_form.populate_obj(choice)
-
-        db.session.commit()
-
-        return jsonify({"success": 1})
-
-    def delete(self, question_id, choice_id):
-        """Delete the given choice.
-        """
-        question = validate_model_id(Question, question_id)
-        choice = validate_model_id(Choice, choice_id)
-
-        if choice not in question.choices:
-            abort(404)
-
-        db.session.delete(choice)
-        db.session.commit()
-
-        return jsonify({"success": 1})
+    def collection_url(self, question_id, **kwargs):
+        return url_for("activities.settings_activity", activity_id=question_id)
 
 activities.add_url_rule(CHOICE_ROUTE,
                         view_func=ChoiceView.as_view("choice"))
