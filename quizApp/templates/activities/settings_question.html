@@ -36,7 +36,8 @@
   {% endif %}
   {% endfor %}
 </form>
-
+<hr>
+<h3>Datasets</h3>
 <div class="alert alert-info" role="alert">
   If this activity is not associated with any datasets, it may use a media item
   from any dataset.
@@ -73,6 +74,7 @@
   </tbody>
 </table>
 {% if create_choice_form %}
+<hr>
 <h3>Choices</h3>
 <form action="{{ url_for('activities.create_choice', question_id=question.id
 ) }}" method="post" id="create-choice-form">
