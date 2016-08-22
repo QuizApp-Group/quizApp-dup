@@ -72,4 +72,3 @@ def prev_next_tabs(tablist):
         pass
 
     return prev_tab, next_tab
-
