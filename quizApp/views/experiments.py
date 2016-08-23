@@ -156,18 +156,23 @@ def read_assignment(experiment_id, a_id):
 
     activity = validate_model_id(Activity, assignment.activity_id)
 
-    if "question" in activity.type:
-        return read_question(experiment, activity, assignment)
+    read_function_mapping = {
+        "question_mc_singleselect": read_question,
+        "question_mc_multiselect": read_question,
+        "question_freeanswer": read_question,
+        "question_mc_singleselect_scale": read_question,
+    }
 
-    abort(404)
+    return read_function_mapping[activity.type](experiment, assignment)
 
 
-def read_question(experiment, question, assignment):
+def read_question(experiment, assignment):
     """Retrieve a question from the database and render its template.
 
     This function assumes that all necessary error checking has been done on
     its parameters.
     """
+    question = assignment.activity
     question_form = get_question_form(question)
     question_form.populate_choices(question.choices)
 
@@ -231,16 +236,21 @@ def update_assignment(experiment_id, a_id):
 
     this_index = part_exp.assignments.index(assignment)
 
-    if "question" in assignment.activity.type:
-        return update_question_assignment(part_exp, assignment, this_index)
+    update_function_mapping = {
+        "question_mc_singleselect": update_question_assignment,
+        "question_mc_multiselect": update_question_assignment,
+        "question_freeanswer": update_question_assignment,
+        "question_mc_singleselect_scale": update_question_assignment,
+    }
 
-    # Pass for now
-    return jsonify({"success": 1})
+    return update_function_mapping[assignment.activity.type](assignment,
+                                                             this_index)
 
 
-def update_question_assignment(part_exp, assignment, this_index):
+def update_question_assignment(assignment, this_index):
     """Update an assignment whose activity is a question.
     """
+    part_exp = assignment.participant_experiment
     question = assignment.activity
 
     question_form = get_question_form(question, request.form)

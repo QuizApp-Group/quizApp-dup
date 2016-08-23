@@ -13,12 +13,16 @@ from quizApp.models import Experiment
 
 
 def get_question_form(question, data=None):
-    """Given a question type, return the proper form.
+    """Given a question type, return the proper form that should be displayed
+    to the participant.
     """
-    if "scale" in question.type:
-        return ScaleForm(data)
-    else:
-        return MultipleChoiceForm(data)
+    form_mapping = {
+        "question_mc_singleselect": MultipleChoiceForm,
+        "question_mc_multiselect": MultipleChoiceForm,
+        "question_freeanswer": FreeAnswerForm,
+        "question_mc_singleselect_scale": ScaleForm,
+    }
+    return form_mapping[question.type](data)
 
 
 class LikertField(RadioField):
@@ -46,6 +50,12 @@ class QuestionForm(ActivityForm):
         """Child classes should implement this themselves for choice selection.
         """
         pass
+
+
+class FreeAnswerForm(QuestionForm):
+    """Form for rendering a free answer Question.
+    """
+    answer = TextAreaField()
 
 
 class MultipleChoiceForm(QuestionForm):

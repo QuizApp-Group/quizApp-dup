@@ -416,22 +416,6 @@ def test_update_assignment(client, users):
     assert response.status_code == 200
     assert not json_success(response.data)
 
-    # Test behavior for non-mc questions
-    experiment2 = create_experiment(3, 1)
-    participant_experiment2 = experiment2.participant_experiments[0]
-    participant_experiment2.complete = False
-    participant_experiment2.participant = participant
-    participant_experiment2.save()
-    experiment2.save()
-
-    assignment2 = participant_experiment2.assignments[0]
-    url = "/experiments/" + str(experiment2.id) + "/assignments/" + \
-        str(assignment2.id)
-    response = client.patch(url)
-
-    assert response.status_code == 200
-    assert json_success(response.data)
-
     # Make sure participants can't see each others' stuff
     experiment3 = create_experiment(3, 1)
     participant_experiment3 = experiment3.participant_experiments[0]
