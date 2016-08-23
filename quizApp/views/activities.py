@@ -79,6 +79,7 @@ def read_activity(activity_id):
     }
     return read_function_mapping[activity.type](activity)
 
+
 def read_question(question):
     """Display a given question as it would appear to a participant.
     """
