@@ -449,3 +449,10 @@ def done_experiment(experiment_id):
                            addendum=addendum,
                            participant_experiment=participant_experiment,
                            scorecard_settings=experiment.scorecard_settings)
+
+
+# Further endpoints:
+# /experiment/<id>/participant_experiments/ - list PEs in experiment
+# | ID | Assignments | Eye |
+# /experiment/<id>/participant_experiments/<id> - list assignments in PE
+# | ID | Activity | Media items | Eye
