@@ -190,10 +190,12 @@ def settings_media_item(dataset_id, media_item_id):
 
     template = "datasets/settings_media_item.html"
 
-    if media_item.type == "graph":
-        update_form_cls = GraphForm
-    elif media_item.type == "text":
-        update_form_cls = TextForm
+    update_form_class_mapping = {
+        "graph": GraphForm,
+        "text": TextForm,
+    }
+
+    update_form_cls = update_form_class_mapping[media_item.type]
 
     return render_template(
         template,
@@ -216,10 +218,12 @@ def update_media_item(dataset_id, media_item_id):
     if media_item not in dataset.media_items:
         abort(404)
 
-    if media_item.type == "graph":
-        return update_graph(dataset, media_item)
-    elif media_item.type == "text":
-        return update_text(dataset, media_item)
+    update_function_mapping = {
+        "graph": update_graph,
+        "text": update_text,
+    }
+
+    return update_function_mapping[media_item.type](dataset, media_item)
 
 
 def update_text(_, text):

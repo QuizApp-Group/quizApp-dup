@@ -71,9 +71,13 @@ def read_activity(activity_id):
     """
     activity = validate_model_id(Activity, activity_id)
 
-    if "question" in activity.type:
-        return read_question(activity)
-
+    read_function_mapping = {
+        "question_mc_singleselect": read_question,
+        "question_mc_multiselect": read_question,
+        "question_freeanswer": read_question,
+        "question_mc_singleselect_scale": read_question,
+    }
+    return read_function_mapping[activity.type](activity)
 
 def read_question(question):
     """Display a given question as it would appear to a participant.
@@ -94,8 +98,14 @@ def settings_activity(activity_id):
     """
     activity = validate_model_id(Activity, activity_id)
 
-    if "question" in activity.type:
-        return settings_question(activity)
+    settings_function_mapping = {
+        "question_mc_singleselect": settings_question,
+        "question_mc_multiselect": settings_question,
+        "question_freeanswer": settings_question,
+        "question_mc_singleselect_scale": settings_question,
+    }
+
+    return settings_function_mapping[activity.type](activity)
 
 
 def settings_question(question):
@@ -140,8 +150,14 @@ def update_activity(activity_id):
     """
     activity = validate_model_id(Activity, activity_id)
 
-    if "question" in activity.type:
-        return update_question(activity)
+    update_function_mapping = {
+        "question_mc_singleselect": update_question,
+        "question_mc_multiselect": update_question,
+        "question_freeanswer": update_question,
+        "question_mc_singleselect_scale": update_question,
+    }
+
+    return update_function_mapping[activity.type](activity)
 
 
 def update_question(question):
