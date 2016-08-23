@@ -6,4 +6,4 @@ generated-members=query,delete,commit,add,flush,expunge,save,filename
 ignored-modules=flask_sqlalchemy,sqlalchemy.orm.properties 
 
 [MESSAGES CONTROL]
-disable=too-few-public-methods,invalid-name,too-many-arguments,redefined-builtin,redefined-variable-type
+disable=too-few-public-methods,invalid-name,too-many-arguments,redefined-builtin,redefined-variable-type,too-many-ancestors

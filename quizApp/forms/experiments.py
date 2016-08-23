@@ -2,14 +2,17 @@
 """
 
 from datetime import datetime
+import pdb
 
 from flask_wtf import Form
-from wtforms import SubmitField, RadioField, TextAreaField, HiddenField
+from wtforms import SubmitField, RadioField, TextAreaField, HiddenField,\
+    IntegerField
 from wtforms.validators import DataRequired
 from wtforms_alchemy import ModelForm, ModelFormField
 
 from quizApp.forms.common import OrderFormMixin, ScorecardSettingsForm
-from quizApp.models import Experiment
+from quizApp.models import Experiment, MultipleChoiceQuestionResult, \
+    IntegerQuestionResult, FreeAnswerQuestionResult, Choice
 
 
 def get_question_form(question, data=None):
@@ -20,6 +23,7 @@ def get_question_form(question, data=None):
         "question_mc_singleselect": MultipleChoiceForm,
         "question_mc_multiselect": MultipleChoiceForm,
         "question_freeanswer": FreeAnswerForm,
+        "question_integer": IntegerAnswerForm,
         "question_mc_singleselect_scale": ScaleForm,
     }
     return form_mapping[question.type](data)
@@ -46,16 +50,56 @@ class QuestionForm(ActivityForm):
     submit = SubmitField("Submit")
     comment = TextAreaField()
 
-    def populate_choices(self, choice_pool):
-        """Child classes should implement this themselves for choice selection.
+    def populate_from_question(self, question):
+        """Given a question, perform any processing necessary to display the
+        question - e.g. populate a list of choices, set field validators, etc.
         """
-        pass
+        raise NotImplementedError
+
+    def populate_from_result(self, result):
+        """Given a result, populate necessary defaults for this form.
+        """
+        raise NotImplementedError
+
+    @property
+    def result(self):
+        """Generate a Result record based on this form.
+        """
+        raise NotImplementedError
+
+
+class IntegerAnswerForm(QuestionForm):
+    """Allow users to enter an integer as an answer.
+    """
+    integer = IntegerField()
+
+    def populate_from_question(self, question):
+        pdb.set_trace()
+
+    def populate_from_result(self, result):
+        self.integer.default = result.integer
+        self.process()
+
+    @property
+    def result(self):
+        return IntegerQuestionResult(integer=self.integer.data)
 
 
 class FreeAnswerForm(QuestionForm):
     """Form for rendering a free answer Question.
     """
-    answer = TextAreaField()
+    text = TextAreaField()
+
+    def populate_from_question(self, question):
+        pass
+
+    def populate_from_result(self, result):
+        self.text.default = result.text
+        self.process()
+
+    @property
+    def result(self):
+        return FreeAnswerQuestionResult(text=self.text.data)
 
 
 class MultipleChoiceForm(QuestionForm):
@@ -63,25 +107,32 @@ class MultipleChoiceForm(QuestionForm):
     """
     choices = RadioField(validators=[DataRequired()], choices=[])
 
-    def populate_choices(self, choice_pool):
+    def populate_from_question(self, question):
         """Given a pool of choices, populate the choices field.
         """
         self.choices.choices = [(str(c.id),
                                  "{} - {}".format(c.label, c.choice))
-                                for c in choice_pool]
+                                for c in question.choices]
+
+    def populate_from_result(self, result):
+        self.choices.default = str(result.choice_id)
+        self.process()
+
+    @property
+    def result(self):
+        return MultipleChoiceQuestionResult(
+            choice=Choice.query.get(self.choices.data))
 
 
-class ScaleForm(QuestionForm):
+class ScaleForm(MultipleChoiceForm):
     """Form for rendering a likert scale question.
     """
     choices = LikertField(validators=[DataRequired()])
 
-    def populate_choices(self, choice_pool):
-        """Given a pool of choices, populate the choices field.
-        """
+    def populate_from_question(self, question):
         self.choices.choices = [(str(c.id),
                                  "{}<br />{}".format(c.label, c.choice))
-                                for c in choice_pool]
+                                for c in question.choices]
 
 
 class CreateExperimentForm(OrderFormMixin, ModelForm):

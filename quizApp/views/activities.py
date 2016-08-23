@@ -85,7 +85,7 @@ def read_question(question):
     """
     form = get_question_form(question)
 
-    form.populate_choices(question.choices)
+    form.populate_from_question(question)
 
     return render_template("activities/read_question.html",
                            question=question,

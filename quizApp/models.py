@@ -319,15 +319,12 @@ class Result(Base):
 
 class IntegerQuestionResult(Result):
     """The integer entered as an answer to an Integer Question.
+
+    Attributes:
+        integer (int): The answer entered to this question.
     """
     integer = db.Column(db.Integer)
 
-    @db.event.listens_for(Result.assignment, "set", propagate=True)
-    def validate_choice(self, assignment, *_):
-        """Make sure this integer is a valid option for this Question.
-        """
-        assert assignment.activity.
-        assert self.choice in value.activity.choices
 
 class MultipleChoiceQuestionResult(Result):
     """The Choice that a Participant picked in a MultipleChoiceQuestion.
@@ -487,6 +484,8 @@ class IntegerQuestion(Question):
     """Ask participants to enter an integer, optionally bounded above/below.
     """
     class Meta(object):
+        """Specify the result class.
+        """
         result_class = IntegerQuestionResult
 
     answer = db.Column(db.Integer(), info={"label": "Correct answer"})
@@ -502,19 +501,16 @@ class IntegerQuestion(Question):
         """
         return int(result.integer == self.answer)
 
-    @validates('lower_bound')
-    def validate_lower_bound(self, _, lower_bound):
-        assert self.upper_bound is None or lower_bound < self.upper_bound
-
-    @validates('upper_bound')
-    def validate_upper_bound(self, _, upper_bound):
-        assert self.lower_bound is None or self.lower_bound < upper_bound
-
-    @validates('answer')
+    @db.validates('answer')
     def validate_answer(self, _, answer):
+        """Ensure answer is within the bounds.
+        """
         assert not self.bounded_below or answer > self.lower_bound
         assert not self.bounded_above or answer < self.upper_bound
 
+    __mapper_args__ = {
+        'polymorphic_identity': 'question_integer',
+    }
 
 
 class MultipleChoiceQuestion(Question):
