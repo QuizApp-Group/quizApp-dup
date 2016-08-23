@@ -3,14 +3,13 @@
 {% import "activities/activities_macros.html" as activities_macros %}
 
 {% block head %}
-<meta name="csrf-token" content="{{ csrf_token() }}">
-<script src="{{ url_for('static', filename='js/common_ajax.js') }}"></script>
-<script src="{{ url_for('static', filename='js/datasets_ajax.js') }}"></script>
+<script defer src="{{ url_for('static', filename='js/datasets_ajax.js') }}"></script>
 {% endblock %}
 
 {% block title %}Dataset {{ dataset.name }} - Settings{% endblock %}
 
 {% block content %}
+{{ macros.render_confirm_delete_modal(confirm_delete_media_item_form, "media-item") }}
 <div class="modal fade" id="preview-media-item-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel">
   <div class="modal-dialog" role="document">
     <div class="modal-content">
@@ -21,80 +20,100 @@
         <div class="modal-body">
         </div>
         <div class="modal-footer">
-          <form id="delete-media-item-form" method="delete">
-            <input type="submit" class="btn btn-danger"
-                                  id="delete-media-item-button" value="Delete
-                                  Media Item">
             <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-          </form>
         </div>
     </div>
   </div>
 </div>
-<h3>General</h3>
-
-{{ macros.render_form(update_dataset_form,
-action=url_for('datasets.dataset', dataset=dataset),
-method="put",
-id="update-dataset-form") }}
-
-<hr>
-
-<h3>Media items</h3>
-<table class="table">
-  <thead>
-    <tr>
-      <th>ID</th>
-      <th>Type</th>
-      <th>Name</th>
-      <th>Preview</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for media_item in dataset.media_items %}
-    <tr>
-      <td class="media-item-id">{{ media_item.id }}</td>
-      <td class="media-item-type">{{ media_item.type }}</td>
-      <td class="media-item-name">{{ media_item.name }}</td>
-      <td><a
-          href="#" class="preview"
-                   data-read-url="{{ url_for('datasets.media_item',
-                   dataset=dataset, media_item=media_item) }}"
-                   data-toggle="modal"
-                   data-target="#preview-media-item-modal"
-                   data-delete-url="{{
-                   url_for('datasets.media_item',
-                   dataset=dataset, media_item=media_item) }}" >
-                   {{ macros.render_glyphicon("eye-open")}}
+<div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+  <div class="panel panel-default">
+    <div class="panel-heading" role="tab" id="general-settings">
+      <h4 class="panel-title">
+        <a role="button" data-toggle="collapse" data-parent="#accordion" href="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+        General
         </a>
-          <a href="{{ url_for('datasets.settings_media_item',
-          dataset=dataset, media_item=media_item) }}">
-            {{ macros.render_glyphicon("cog") }}
-          </a>
-      </td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
+      </h4>
+    </div>
+    <div id="collapseOne" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="general-settings">
+      <div class="panel-body">
 
-<h4>Create new...</h4>
+        {{ macros.render_form(update_dataset_form,
+        action=url_for('datasets.update_dataset', dataset=dataset),
+        method="put",
+        id="update-dataset-form") }}
+      </div>
+    </div>
+  </div>
+  <div class="panel panel-default">
+    <div class="panel-heading" role="tab" id="media-items">
+      <h4 class="panel-title">
+        <a class="collapsed" role="button" data-toggle="collapse" data-parent="#accordion" href="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+          Media Items
+        </a>
+      </h4>
+    </div>
+    <div id="collapseTwo" class="panel-collapse collapse" role="tabpanel" aria-labelledby="media-items">
+      <div class="panel-body">
+      <h3>Media items</h3>
+      <table class="table">
+        <thead>
+          <tr>
+            <th class="col-md-1">ID</th>
+            <th>Type</th>
+            <th>Name</th>
+            <th class="col-md-1">Preview</th>
+            <th class="col-md-1">Settings</th>
+            <th class="col-md-1">Delete</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for media_item in dataset.media_items %}
+          <tr data-delete-action="{{ url_for("datasets.delete_dataset_media_item",
+          dataset=dataset, media_item=media_item) }}"
+              id="media-item-{{ media_item.id }}">
+            <td class="media-item-id">{{ media_item.id }}</td>
+            <td class="media-item-type">{{ media_item.type }}</td>
+            <td class="media-item-name name">{{ media_item.name }}</td>
+            <td><a
+                href="#" class="preview"
+                         data-read-url="{{ url_for('datasets.read_media_item',
+                         dataset=dataset, media_item=media_item) }}"
+                         data-toggle="modal"
+                         data-target="#preview-media-item-modal"
+                         data-delete-url="{{
+                         url_for('datasets.delete_dataset_media_item',
+                         dataset=dataset, media_item=media_item) }}" >
+                         {{ macros.render_glyphicon("eye-open")}}
+              </a>
+            </td>
+            <td>
+                <a href="{{ url_for('datasets.settings_media_item',
+                dataset=dataset, media_item=media_item) }}">
+                  {{ macros.render_glyphicon("cog") }}
+                </a>
+            </td>
+            <td>
+              <a href="#" class="text-danger"
+                            data-media-item-id="{{ media_item.id }}"
+                            data-toggle="modal"
+                            data-target="#confirm-delete-media-item-modal">
+                {{ macros.render_glyphicon("remove") }}</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <h4>Create new...</h4>
 
-{{ macros.render_form(create_media_item_form,
-id="create-media-item-form",
-method="post",
-action=url_for('datasets.create_media_item', dataset=dataset))
-}}
+      {{ macros.render_form(create_media_item_form,
+      id="create-media-item-form",
+      method="post",
+      action=url_for('datasets.create_media_item', dataset=dataset))
+      }}
 
 
-<hr>
-
-<h3>Delete Dataset</h3>
-<div class="alert alert-danger" role="alert">
-  {{ macros.render_glyphicon("exclamation-sign") }}
-  Warning: this cannot be undone!
+      </div>
+    </div>
+  </div>
 </div>
-<form action="{{ url_for('datasets.dataset', dataset=dataset
-) }}" method="delete" id="delete-dataset-form">
-  {{ macros.render_field(delete_dataset_form.submit, class_="btn-danger") }}
-</form>
 {% endblock %}

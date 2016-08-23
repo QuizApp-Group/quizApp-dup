@@ -157,8 +157,7 @@ class ParticipantExperiment(Base):
                                  back_populates="participant_experiments")
 
     assignments = db.relationship("Assignment",
-                                  back_populates="participant_experiment",
-                                  info={"import_include": False})
+                                  back_populates="participant_experiment")
 
     @property
     def score(self):
@@ -179,11 +178,18 @@ class ParticipantExperiment(Base):
     def validate_assignments(self, _, assignment):
         """The Assignments in this model must be related to the same Experiment
         as this model is."""
-        assert assignment.experiment == self.experiment
         assert assignment.participant == self.participant
         assert assignment.activity in self.experiment.activities or \
             not assignment.activity
         return assignment
+
+    def import_dict(self, **kwargs):
+        assignments = kwargs.pop("assignments", [])
+        experiment = kwargs.get("experiment")
+        for assignment in assignments:
+            experiment.activities.append(assignment.activity)
+
+        super(ParticipantExperiment, self).import_dict(**kwargs)
 
 assignment_media_item_table = db.Table(
     "assignment_media_item", db.metadata,
@@ -219,33 +225,29 @@ class Assignment(Base):
     skipped = db.Column(db.Boolean, info={"import_include": False})
     comment = db.Column(db.String(200), info={"import_include": False})
     choice_order = db.Column(db.String(80), info={"import_include": False})
-    time_to_submit = db.Column(db.Interval())
+    time_to_submit = db.Column(db.Interval(), info={"import_include": False})
 
     media_items = db.relationship("MediaItem",
                                   secondary=assignment_media_item_table,
-                                  back_populates="assignments",
-                                  info={"import_include": True})
+                                  back_populates="assignments")
 
     participant_id = db.Column(db.Integer, db.ForeignKey("user.id"))
     participant = db.relationship("Participant", back_populates="assignments",
                                   info={"import_include": False})
 
     activity_id = db.Column(db.Integer, db.ForeignKey("activity.id"))
-    activity = db.relationship("Activity", back_populates="assignments",
-                               info={"import_include": False})
+    activity = db.relationship("Activity", back_populates="assignments")
 
     result_id = db.Column(db.Integer, db.ForeignKey("result.id"))
     result = db.relationship("Result", back_populates="assignment",
                              info={"import_include": False}, uselist=False)
 
-    experiment_id = db.Column(db.Integer, db.ForeignKey("experiment.id"))
-    experiment = db.relationship("Experiment", back_populates="assignments",
-                                 info={"import_include": False})
-
     participant_experiment_id = db.Column(
         db.Integer,
-        db.ForeignKey("participant_experiment.id"))
+        db.ForeignKey("participant_experiment.id"),
+    )
     participant_experiment = db.relationship("ParticipantExperiment",
+                                             info={"import_include": False},
                                              back_populates="assignments")
 
     @property
@@ -259,26 +261,12 @@ class Assignment(Base):
         """
         return self.activity.get_score(self.result)
 
-    def import_dict(self, **kwargs):
-        """If we are setting assignments, we need to update experiments to
-        match.
-        """
-        if "experiments" not in kwargs:
-            participant_experiment = kwargs.pop("participant_experiment")
-            if participant_experiment.experiment:
-                self.experiment = participant_experiment.experiment
-            self.participant_experiment = participant_experiment
-
-        super(Assignment, self).import_dict(**kwargs)
-
     @db.validates("activity")
     def validate_activity(self, _, activity):
         """Make sure that the activity is part of this experiment.
         Make sure that the number of media items on the activity is the same as
         the number of media items this assignment has.
         """
-        assert self.experiment in activity.experiments
-
         try:
             assert (activity.num_media_items == len(self.media_items)) or \
                 activity.num_media_items == -1
@@ -423,8 +411,6 @@ class Activity(Base):
         if "experiments" not in kwargs:
             assignments = kwargs.pop("assignments")
             for assignment in assignments:
-                if assignment.experiment:
-                    self.experiments.append(assignment.experiment)
                 self.assignments.append(assignment)
 
         super(Activity, self).import_dict(**kwargs)
@@ -632,6 +618,20 @@ class Graph(MediaItem):
     }
 
 
+class Text(MediaItem):
+    """Text is simply a piece of text that can be used as a MediaItem.
+
+    Attributes:
+        text (str): The text of this media item.
+    """
+
+    text = db.Column(db.Text, info={"label": "Text"})
+
+    __mapper_args__ = {
+        'polymorphic_identity': 'text'
+    }
+
+
 class ScorecardSettings(Base):
     """A ScorecardSettings object represents the configuration of some kind of
     scorecard.
@@ -678,8 +678,6 @@ class Experiment(Base):
             Experiment's ParticipantExperiments
         participant_experiments (list of ParticiapntExperiment): List of
             ParticipantExperiments that are associated with this Experiment
-        assignments (list of Assignment): Assignments that are present in this
-            Experiment's ParticipantExperiments
         disable_previous (bool): If True, don't allow Participants to view and
             modify previous activities.
         show_timers (bool): If True, display a timer on each activity
@@ -709,7 +707,7 @@ class Experiment(Base):
     created = db.Column(db.DateTime, info={"import_include": False})
     start = db.Column(db.DateTime, nullable=False, info={"label": "Start"})
     stop = db.Column(db.DateTime, nullable=False, info={"label": "Stop"})
-    blurb = db.Column(db.String(500), info={"label": "Blurb"})
+    blurb = db.Column(db.Text, info={"label": "Blurb"})
     show_scores = db.Column(db.Boolean,
                             info={"label": ("Show score tally during the"
                                             " experiment")})
@@ -733,9 +731,6 @@ class Experiment(Base):
                                               back_populates="experiment",
                                               info={"import_include": False})
 
-    assignments = db.relationship("Assignment", back_populates="experiment",
-                                  info={"import_include": False})
-
     scorecard_settings_id = db.Column(db.Integer,
                                       db.ForeignKey("scorecard_settings.id"))
     scorecard_settings = db.relationship("ScorecardSettings",
@@ -754,12 +749,12 @@ class Dataset(Base):
 
     Attributes:
         name (string): The name of this dataset.
-        uri (string): A path or descriptor of where this dataset is located.
+        info (string): Some information about this dataset
         media_items (list of MediaItem): Which MediaItems this Dataset owns
         questions (list of Questions): Which Questions reference this Dataset
     """
     name = db.Column(db.String(100), nullable=False, info={"label": "Name"})
-    uri = db.Column(db.String(200), info={"label": "URI"})
+    info = db.Column(db.Text, info={"label": "Info"})
 
     media_items = db.relationship("MediaItem", back_populates="dataset")
     questions = db.relationship("Question", secondary=question_dataset_table,

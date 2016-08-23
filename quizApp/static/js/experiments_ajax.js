@@ -9,13 +9,13 @@ function question_submit_done(data) {
 }
 
 $(document).ready(function() {
-  form_ajax("#create-experiment-form", done_refresh);
+  form_ajax("#create-experiment-form", done_redirect);
   form_ajax("#update-experiment-form", done_highlight, pre_callback_message);
   form_ajax("#activity-remove-form, #activity-add-form", done_refresh);
   form_ajax("#experiment-delete-form", done_redirect);
   form_ajax("#question-submit-form", question_submit_done);
   form_ajax("#submit-experiment-form", done_redirect);
-  form_ajax("#import-assignment-form", done_redirect);
+  form_ajax("#confirm-delete-experiment-form", doneRemoveRow);
 
   media_items = $(".media-item-container");
 
@@ -26,4 +26,6 @@ $(document).ready(function() {
       media_item.delay(flash_duration).delay().hide(1);
     }
   }
+  
+  handleConfirmDeleteModal("experiment");
 });

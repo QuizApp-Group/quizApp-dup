@@ -6,12 +6,12 @@ Manage data
 {% endblock %}
 
 {% block head %}
-<meta name="csrf-token" content="{{ csrf_token() }}">
-<script src="{{ url_for('static', filename='js/common_ajax.js') }}"></script>
-<script src="{{ url_for('static', filename='js/core_ajax.js') }}"></script>
+<script src="{{ url_for('static', filename='js/core_ajax.js') }}" defer></script>
 {% endblock %}
 
 {% block content %}
+<p>This is where you can get a database dump in XLSX format as well as make
+activity assignments.</p>
 <p>For help with importing and exporting, see <a href="http://quizapp.readthedocs.io/en/latest/import_export.html">the documentation.</a></p>
 <p><a href="{{ url_for('core.export_data') }}">Export data (xlsx)</a></p>
 <p><a href="{{ url_for('core.import_template') }}">Download import template

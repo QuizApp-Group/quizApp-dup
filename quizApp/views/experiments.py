@@ -4,11 +4,10 @@ participants.
 from collections import defaultdict
 from datetime import datetime
 import json
-import os
 
 import dateutil.parser
 from flask import Blueprint, render_template, url_for, jsonify, abort, \
-    current_app, request, session
+    request, session
 from flask_security import login_required, current_user, roles_required
 from sqlalchemy.orm.exc import NoResultFound
 
@@ -16,8 +15,8 @@ from quizApp import db
 from quizApp.forms.common import DeleteObjectForm
 from quizApp.forms.experiments import CreateExperimentForm, \
     get_question_form
-from quizApp.models import Choice, Experiment, \
-    ParticipantExperiment, Activity, Participant, MultipleChoiceQuestionResult
+from quizApp.models import Choice, Experiment, Assignment,\
+    ParticipantExperiment, Participant, MultipleChoiceQuestionResult
 from quizApp.views.helpers import validate_model_id, get_first_assignment
 from quizApp.views.mturk import submit_assignment
 
@@ -56,12 +55,15 @@ def read_experiments():
     future_experiments = Experiment.query.filter(Experiment.start > now)
 
     create_form = CreateExperimentForm()
+    confirm_delete_experiment_form = DeleteObjectForm()
 
-    return render_template("experiments/read_experiments.html",
-                           past_experiments=past_experiments,
-                           present_experiments=present_experiments,
-                           future_experiments=future_experiments,
-                           create_form=create_form)
+    return render_template(
+        "experiments/read_experiments.html",
+        past_experiments=past_experiments,
+        present_experiments=present_experiments,
+        future_experiments=future_experiments,
+        confirm_delete_experiment_form=confirm_delete_experiment_form,
+        create_form=create_form)
 
 
 @experiments.route("/", methods=["POST"])
@@ -73,12 +75,16 @@ def create_experiment():
     if not form.validate():
         return jsonify({"success": 0, "errors": form.errors})
 
-    exp = Experiment()
-    form.populate_obj(exp)
-    exp.created = datetime.now()
-    exp.save()
+    experiment = Experiment()
+    form.populate_obj(experiment)
+    experiment.created = datetime.now()
+    experiment.save()
 
-    return jsonify({"success": 1})
+    return jsonify({
+        "success": 1,
+        "next_url": url_for("experiments.settings_experiment",
+                            experiment=experiment),
+    })
 
 
 @experiments.route(EXPERIMENT_ROUTE, methods=["GET"])
@@ -104,8 +110,7 @@ def delete_experiment(experiment):
     db.session.delete(experiment)
     db.session.commit()
 
-    return jsonify({"success": 1, "next_url":
-                    url_for('experiments.read_experiments')})
+    return jsonify({"success": 1})
 
 
 @experiments.route(EXPERIMENT_ROUTE, methods=["PUT"])
@@ -140,10 +145,8 @@ def read_assignment(experiment, assignment):
             part_exp.assignments.index(assignment) and not part_exp.complete:
         abort(400)
 
-    activity = validate_model_id(Activity, assignment.activity_id)
-
-    if "question" in activity.type:
-        return read_question(experiment, activity, assignment)
+    if "question" in assignment.activity.type:
+        return read_question(experiment, assignment.activity, assignment)
 
     abort(404)
 
@@ -312,12 +315,9 @@ def settings_experiment(experiment):
     """
     update_experiment_form = CreateExperimentForm(obj=experiment)
 
-    delete_experiment_form = DeleteObjectForm()
-
     return render_template("experiments/settings_experiment.html",
                            experiment=experiment,
-                           update_experiment_form=update_experiment_form,
-                           delete_experiment_form=delete_experiment_form)
+                           update_experiment_form=update_experiment_form)
 
 
 def get_question_stats(assignment, question_stats):
@@ -354,8 +354,10 @@ def results_experiment(experiment):
     # {"question_id": {"question": "question_text", "num_responses":
     #   num_responses, "num_correct": num_correct], ...}
     question_stats = defaultdict(dict)
+    assignments = Assignment.query.join(ParticipantExperiment).\
+        filter(ParticipantExperiment.experiment == experiment).all()
 
-    for assignment in experiment.assignments:
+    for assignment in assignments:
         activity = assignment.activity
 
         if "question" in activity.type:
@@ -416,26 +418,3 @@ def done_experiment(experiment):
                            addendum=addendum,
                            participant_experiment=participant_experiment,
                            scorecard_settings=experiment.scorecard_settings)
-
-
-@experiments.app_template_filter("datetime_format")
-def datetime_format_filter(value, fmt="%Y-%m-%d %H:%M:%S"):
-    """Format the value (a datetime) according to fmt with strftime.
-    """
-    return value.strftime(fmt)
-
-
-@experiments.app_template_filter("get_graph_url")
-def get_graph_url_filter(graph):
-    """Given a graph, return html to display it.
-    """
-    if os.path.isfile(graph.path):
-        filename = graph.filename()
-    else:
-        filename = current_app.config.get("EXPERIMENTS_PLACEHOLDER_GRAPH")
-
-    graph_path = url_for(
-        'static',
-        filename=os.path.join(current_app.config.get("GRAPH_DIRECTORY"),
-                              filename))
-    return graph_path

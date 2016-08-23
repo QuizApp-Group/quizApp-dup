@@ -3,7 +3,7 @@
 
 from wtforms import SubmitField, FileField
 from wtforms_alchemy import ModelForm
-from quizApp.models import Graph, Dataset
+from quizApp.models import Graph, Dataset, Text
 from quizApp.forms.common import OrderFormMixin
 
 
@@ -30,4 +30,16 @@ class GraphForm(OrderFormMixin, ModelForm):
         order = ('*', 'submit')
 
     graph = FileField("Replace graph", render_kw={"accept": "image/*"})
+    submit = SubmitField("Save")
+
+
+class TextForm(OrderFormMixin, ModelForm):
+    """Form for updating Text objects.
+    """
+    class Meta(object):
+        """Specify model and field order.
+        """
+        model = Text
+        order = ('*', 'submit')
+
     submit = SubmitField("Save")

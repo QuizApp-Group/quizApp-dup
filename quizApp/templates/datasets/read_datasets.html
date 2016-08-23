@@ -3,9 +3,7 @@
 
 {% block head %}
 {{ macros.import_datatables() }}
-<meta name="csrf-token" content="{{ csrf_token() }}">
-<script src="{{ url_for('static', filename='js/common_ajax.js') }}"></script>
-<script src="{{ url_for('static', filename='js/datasets_ajax.js') }}"></script>
+<script defer src="{{ url_for('static', filename='js/datasets_ajax.js') }}"></script>
 {% endblock %}
 
 {% block title %}
@@ -13,44 +11,52 @@ Dataset List
 {% endblock %}
 
 {% block content %}
-XXXXXXXXXXXXXXXX      {{ object_list }}XXXXXXXXXXXXXX
+{{ macros.render_confirm_delete_modal(confirm_delete_dataset_form, "dataset") }}
 <div class="alert alert-info">
   {{ macros.render_glyphicon('info-sign') }}
   To modify the media items of a dataset, click on the {{
   macros.render_glyphicon('cog') }} button in the row of the relevant
   dataset.
 </div>
-<form action="{{ url_for('datasets.datasets') }}" method="post",
+<form action="{{ url_for('datasets.read_datasets') }}" method="post",
 id="create-dataset-form">
   <table class="table table-striped data-table" id="datasets-table">
     <thead>
       <tr>
-        <th>ID</th>
-        <th>Name</th>
-        <th>URI</th>
-        <th data-orderable="false">Settings</th>
+        <th class="col-md-1">ID</th>
+        <th class="col-md-2">Name</th>
+        <th class="col-md-3">Info</th>
+        <th class="col-md-1" data-orderable="false">Settings</th>
+        <th class="col-md-1" data-orderable="false">Delete</th>
       </tr>
     </thead>
     <tfoot>
       <tr>
         <td></td>
-        <td>{{ macros.render_field(create_form.name,
+        <td>{{ macros.render_field(create_dataset_form.name,
           label_visible=False) }}</td>
-        <td>{{ macros.render_field(create_form.uri, label_visible=False) }}</td>
-        <td>{{ macros.render_field(create_form.submit, value="Create")
+        <td></td>
+        <td>{{ macros.render_field(create_dataset_form.submit, value="Create")
           }}</td>
       </tr>
     </tfoot>
     <tbody>
-      {% for dataset in object_list %}
-      <tr>
+      {% for dataset in datasets %}
+      <tr data-delete-action="{{ url_for('datasets.delete_dataset',
+      dataset=dataset) }}" id="dataset-{{ dataset.id }}">
         <td>{{ dataset.id }}</td>
-        <td>{{ dataset.name }}</a>
+        <td class="name">{{ dataset.name }}</a>
         </td>
-        <td>{{ dataset.uri }}</a>
+        <td>{{ dataset.info }}</a>
         <td>
           <a href="{{ url_for('datasets.settings_dataset',
           dataset=dataset) }}">{{ macros.render_glyphicon("cog") }}</a>
+        </td>
+        <td><a href="#" class="text-danger"
+                        data-dataset-id="{{ dataset.id }}"
+                        data-toggle="modal"
+                        data-target="#confirm-delete-dataset-modal">
+            {{ macros.render_glyphicon("remove") }}</a>
         </td>
       </tr>
       {% endfor %}

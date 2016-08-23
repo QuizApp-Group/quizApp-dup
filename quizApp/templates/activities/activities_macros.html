@@ -1,19 +1,23 @@
 {% import 'macros.html' as macros %}
 
-{% macro dataset_table(form, mapping) %}
-<table class="table">
+{% macro dataset_table(datasets, url, method) %}
+<table class="table sortable-table connected-sortable"
+       data-action="{{ url }}" data-method="{{ method }}">
   <thead>
     <tr>
-      <th>ID</th>
-      <th>Name</th>
-      <th></th>
+      <th class="col-md-1">ID</th>
+      <th class="col-md-3">Name</th>
+      <th class="col-md-1"></th>
     </tr>
   </thead>
   <tbody>
-    {% for dataset_field in form.objects %}
-    {% if mapping[dataset_field.data] %}
-      {{ dataset_row(mapping[dataset_field.data], dataset_field) }}
-    {% endif %}
+    {% for dataset in datasets %}
+    <tr data-dataset-id="{{ dataset.id }}">
+      <td>{{ dataset.id }}</td>
+      <td>{{ dataset.name }}</td>
+      <td><span class="draggable handle">{{ macros.render_glyphicon("menu-hamburger")
+          }}</span></td>
+    </tr>
     {% endfor %}
   </tbody>
 </table>
@@ -37,30 +41,44 @@
       <th>Choice</th>
       <th>Correct?</th>
       <th>Settings</th>
+      <th>Delete</th>
     </tr>
   </thead>
   <tbody>
     {% for choice in choices %}
       {{ choice_row(choice) }}
     {% endfor %}
+  </tbody>
+  <tfoot>
     <tr>
       <td>{{ macros.render_field(create_form.label, label_visible=False) }}</td>
       <td>{{ macros.render_field(create_form.choice, label_visible=False) }}</td>
       <td>{{ macros.render_field(create_form.correct, label_visible=False) }}</td>
       <td>{{ macros.render_field(create_form.submit, value="Create") }}</td>
-  </tbody>
+      <td></td>
+  </tfoot>
 </table>
 {% endmacro %}
 
 {% macro choice_row(choice) %}
-<tr data-update-action="{{ url_for('activities.choice',
-question=choice.question, choice=choice) }}">
-  <td class="choice-label">{{ choice.label }}</td>
-  <td class="choice-choice">{{ choice.choice }}</td>
-  <td class="choice-correct">{{ choice.correct }}</td>
+<tr data-update-action="{{ url_for('activities.update_choice',
+question=choice.question, choice=choice) }}"
+    data-delete-action="{{ url_for('activities.delete_choice',
+    question=choice.question, choice=choice) }}"
+    id="choice-{{ choice.id }}">
+  <td class="choice-label" data-field-name="update-label">{{ choice.label }}</td>
+  <td class="choice-choice name" data-field-name="update-choice">{{ choice.choice }}</td>
+  <td class="choice-correct" data-field-name="update-correct">{{ choice.correct }}</td>
   <td><a href="#" class="update-choice" data-choice-id="{{ choice.id }}"
                                         data-toggle="modal" data-target="#update-choice-modal">
       {{ macros.render_glyphicon("cog") }}</a>
+  </td>
+  <td>
+    <a href="#" class="text-danger"
+                data-activity-id="{{ choice.id }}"
+                data-toggle="modal"
+                data-target="#confirm-delete-choice-modal">
+      {{ macros.render_glyphicon("remove") }}</a>
   </td>
 </tr>
 {% endmacro %}

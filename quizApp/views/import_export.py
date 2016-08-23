@@ -25,10 +25,10 @@ from quizApp import models
 
 SHEET_NAME_MAPPING = OrderedDict([
     ("Experiments", models.Experiment),
+    ("Assignments", models.Assignment),
     ("Participant Experiments", models.ParticipantExperiment),
     ("Datasets", models.Dataset),
     ("Media items", models.MediaItem),
-    ("Assignments", models.Assignment),
     ("Activities", models.Activity),
     ("Choices", models.Choice),
 ])
@@ -84,14 +84,14 @@ def include_column(model, column, prop, key):
 def header_from_property(prop):
     """Given a property, return its name for use in sheet headers.
     """
-    return prop.parent.class_.__tablename__ + "_" + prop.key
+    return prop.parent.class_.__tablename__ + ":" + prop.key
 
 
 def header_to_field_name(header, model):
     """Reverse header_from_property - given a header and a model, return the
     actual name of the field.
     """
-    prefix = model.__tablename__ + "_"
+    prefix = model.__tablename__ + ":"
 
     if header[:len(prefix)] != prefix:
         # Sanity check failed
@@ -253,6 +253,7 @@ def populate_field(obj, field_name, value, pk_mapping, args):
     model = type(obj)
     field_attrs = inspect(model).attrs[field_name]
     field = getattr(model, field_name)
+
     if isinstance(field_attrs, RelationshipProperty):
         # This is a relationship
         remote_model = field.property.mapper.class_
@@ -264,16 +265,15 @@ def populate_field(obj, field_name, value, pk_mapping, args):
                 fk = int(float(fk))  # goddamn stupid excel
                 collection_item = get_object_from_id(remote_model, fk,
                                                      pk_mapping)
-                if collection_item:
-                    args[field_name].append(collection_item)
+                args[field_name].append(collection_item)
         else:
             value = int(float(value))  # goddamn stupid excel
             collection_item = get_object_from_id(remote_model, value,
                                                  pk_mapping)
-            if collection_item:
-                args[field_name] = collection_item
+            args[field_name] = collection_item
     elif field.primary_key:
-        pk_mapping[model.__tablename__][int(float(value))] = obj
+        pk = int(float(value))
+        pk_mapping[model.__tablename__][pk] = obj
     elif isinstance(field_attrs, ColumnProperty):
         args[field_name] = value
 

@@ -14,7 +14,7 @@ function form_ajax(selector, done_callback, pre_callback) {
     }
     event.preventDefault();
 
-    if($(this).find("input[type=file]")) {
+    if($(this).find("input[type=file]").length) {
       $.ajax({
         context: this,
         type: this.getAttribute("method"),
@@ -24,7 +24,14 @@ function form_ajax(selector, done_callback, pre_callback) {
         contentType: false,
         encode: true,
       })
-      .done(done_callback);
+      .done(function(data) {
+          clear_errors(this);
+          render_errors(data.errors, data.prefix);
+          if(data.success) {
+            clear_form(this);
+          }
+          done_callback.call(this, data);
+      })
     } else {
       $.ajax({
         context: this,
@@ -33,7 +40,14 @@ function form_ajax(selector, done_callback, pre_callback) {
         data: $(this).serialize(),
         encode: true,
       })
-      .done(done_callback);
+      .done(function(data) {
+          clear_errors(this);
+          render_errors(data.errors, data.prefix)
+          if(data.success) {
+            clear_form(this);
+          }
+          done_callback.call(this, data);
+      })
     }
   });
 
@@ -55,12 +69,15 @@ function done_redirect(data) {
   console.log(data);
   if(data.success) {
     window.location.href = data["next_url"]
-  } else {
-    render_errors(data.errors);
   }
-
 }
 
+function done_add_row(data) {
+  console.log(data);
+  if(data.success) {
+    $(this).find("tbody").append(data.new_row);
+  }
+}
 
 function done_highlight(data) {
   console.log(data);
@@ -96,9 +113,16 @@ function done_refresh(data) {
   console.log(data);
   if(data.success) {
     window.location.reload();
-  } else {
-    render_errors(data.errors, data.prefix);
   }
+}
+
+function clear_errors(form) {
+    $(form).find(".error-block").remove();
+    $(form).find(".has-error").removeClass("has-error");
+}
+
+function clear_form(form) {
+  $(form)[0].reset();
 }
 
 function render_errors(errors, prefix) {
@@ -112,7 +136,7 @@ function render_errors(errors, prefix) {
       var form = form_control.parents("form");
 
       if($.inArray(form.attr("id"), cleared_form_ids) == -1) {
-        form.find(".help-block").remove();
+        form.find(".error-block").remove();
         form.find(".has-error").removeClass("has-error");
         cleared_form_ids.push(form.attr("id"));
       }
@@ -125,4 +149,36 @@ function render_errors(errors, prefix) {
 
 function error_to_html(text) {
   return "<p class='help-block error-block'>" + text + "</p>";
+}
+
+function doneRemoveRow(data) {
+    if(data.success) {
+        var originRow = $(document).find("#" + $(this).data("origin-row"));
+        originRow.remove();
+    }
+}
+
+
+function handleConfirmDeleteModal(model, human_name='') {
+    var modalId = '#confirm-delete-' + model + '-modal';
+    $(modalId).find("form").submit(function(event) {
+        $(modalId).modal('hide');
+    })
+    $(modalId).on('show.bs.modal', function (event) {
+        if(!human_name.length) {
+            human_name = model;
+        }
+        var formId = "#confirm-delete-" + model + "-form";
+        var button = $(event.relatedTarget); // Button that triggered the modal
+        var row = button.parent().parent();
+        var label = $(".name", row);
+        var action = row.data("delete-action");
+
+        var modal = $(this);
+
+        modal.find(formId).data("origin-row", row.attr("id"));
+        modal.find(formId).prop("action", action);
+        modal.find('.modal-title').text('Delete ' + human_name + ' ' + label.text());
+
+    })
 }

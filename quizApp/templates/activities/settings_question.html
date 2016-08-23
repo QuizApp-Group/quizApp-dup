@@ -3,15 +3,14 @@
 {% import "activities/activities_macros.html" as activities_macros %}
 
 {% block head %}
-<meta name="csrf-token" content="{{ csrf_token() }}">
-<script src="{{ url_for('static', filename='js/common_ajax.js') }}"></script>
-<script src="{{ url_for('static', filename='js/activities_ajax.js') }}"></script>
+<script defer src="{{ url_for('static', filename='js/activities_ajax.js') }}"></script>
 {% endblock %}
 
 {% block title %}Activity {{ question.id }} - Settings{% endblock %}
 
 {% block content %}
 {% if update_choice_form %}
+{{ macros.render_confirm_delete_modal(confirm_delete_choice_form, "choice") }}
 <div class="modal fade" id="update-choice-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel">
   <div class="modal-dialog" role="document">
     <div class="modal-content">
@@ -19,59 +18,60 @@
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
         <h4 class="modal-title" id="exampleModalLabel"></h4>
       </div>
-        <div class="modal-body">
-          {{ macros.render_form(update_choice_form, id="update-choice-form", method="put") }}
-          <form id="delete-choice-form" method="delete">
-            {{ macros.render_field(delete_choice_form.submit,
-            class_="btn-danger") }}
-          </form>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-        </div>
+      <div class="modal-body">
+        {{ macros.render_form(update_choice_form, id="update-choice-form", method="put") }}
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
     </div>
   </div>
 </div>
 {% endif %}
-
-<h3>General</h3>
-
-{{ macros.render_form(general_form,
-action=url_for('activities.activity', activity=question),
-method="put", id="update-activity-form") }}
-
+<form action="{{ url_for('activities.update_activity', activity=question) }}"
+      method="put" id="update-activity-form">
+  {% for field in general_form %}
+  {% if field.type != "SubmitField" %}
+  {{ macros.render_field(field) }}
+  {% endif %}
+  {% endfor %}
+</form>
 <hr>
-
-<h3>Datasets associated with this activity</h3>
+<h3>Datasets</h3>
 <div class="alert alert-info" role="alert">
   If this activity is not associated with any datasets, it may use a media item
   from any dataset.
 </div>
-
-<form action="{{ url_for('activities.update_question_datasets',
-question=question) }}" method="patch" id="remove-dataset-form">
-  <div class="table-container">
-    {{ activities_macros.dataset_table(dataset_form, remove_dataset_mapping) }}
-  </div>
-  {{ macros.render_field(dataset_form.submit, value="Dissasociate datasets",
-  class_="btn-danger") }}
-</form>
-
-<hr>
-
-<h3>Datasets not associated with this activity</h3>
-<form action="{{ url_for('activities.update_question_datasets',
-question=question) }}" method="patch" id="add-dataset-form">
-  <div class="table-container">
-    {{ activities_macros.dataset_table(dataset_form, add_dataset_mapping) }}
-  </div>
-  {{ macros.render_field(dataset_form.submit, value="Associate datasets") }}
-</form>
-
-<hr>
-
+<table class="table" id="update-question-datasets-table">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Name</th>
+      <th>Associated with this question?</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for object in dataset_form.objects %}
+    <tr data-create-action="{{ url_for('activities.create_question_dataset',
+    activity=question) }}"
+        data-delete-action="{{
+        url_for('activities.delete_question_dataset', activity=question,
+        dataset=dataset_form.objects_mapping[object.data]) }}">
+        <td>
+          {{ dataset_form.objects_mapping[object.data].id }}
+        </td>
+      <td>
+        {{ dataset_form.objects_mapping[object.data].name }}
+      </td>
+      <td>
+        {{ object }}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
 {% if create_choice_form %}
-
+<hr>
 <h3>Choices</h3>
 <form action="{{ url_for('activities.create_choice', question=question
 ) }}" method="post" id="create-choice-form">
@@ -80,17 +80,7 @@ question=question) }}" method="patch" id="add-dataset-form">
   </div>
 </form>
 
-<hr>
+{{ macros.render_field(general_form.submit, form="update-activity-form") }}
 
 {% endif %}
-
-<h3>Delete activity</h3>
-<div class="alert alert-danger" role="alert">
-  {{ macros.render_glyphicon("exclamation-sign") }}
-  Warning: this cannot be undone!
-</div>
-<form action="{{ url_for('activities.activity', activity=question
-) }}" method="delete" id="delete-activity-form">
-  {{ macros.render_field(delete_activity_form.submit, class_="btn-danger") }}
-</form>
 {% endblock %}

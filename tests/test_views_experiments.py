@@ -10,10 +10,8 @@ from datetime import datetime, timedelta
 from quizApp import db
 from quizApp.models import ParticipantExperiment
 from quizApp.views.experiments import get_next_assignment_url, \
-    get_graph_url_filter, POST_FINALIZE_HANDLERS,\
-    get_participant_experiment_or_abort
-from tests.factories import ExperimentFactory, create_experiment, \
-    GraphFactory
+    POST_FINALIZE_HANDLERS, get_participant_experiment_or_abort
+from tests.factories import ExperimentFactory, create_experiment
 from tests.auth import login_participant, get_participant, \
     login_experimenter
 from tests.helpers import json_success
@@ -548,14 +546,6 @@ def test_done_experiment(client, users):
 
     response = client.get(url)
     assert response.status_code == 404
-
-
-def test_get_graph_url_filter():
-    graph = GraphFactory()
-
-    url = get_graph_url_filter(graph)
-
-    assert "missing" in url
 
 
 def test_confirm_done_experiment(client, users):

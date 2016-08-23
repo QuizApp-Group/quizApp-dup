@@ -57,11 +57,8 @@ def import_template():
     """
 
     sheets = OrderedDict([
-        ("Experiments", models.Experiment),
         ("Participant Experiments", models.ParticipantExperiment),
         ("Assignments", models.Assignment),
-        ("Activities", models.Activity),
-        ("Choices", models.Choice),
     ])
 
     documentation = [

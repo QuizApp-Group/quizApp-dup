@@ -3,9 +3,7 @@
 
 {% block head %}
 {{ macros.import_datatables() }}
-<meta name="csrf-token" content="{{ csrf_token() }}">
-<script src="{{ url_for('static', filename='js/common_ajax.js') }}"></script>
-<script src="{{ url_for('static', filename='js/activities_ajax.js') }}"></script>
+<script defer src="{{ url_for('static', filename='js/activities_ajax.js') }}"></script>
 {% endblock %}
 
 {% block title %}
@@ -13,36 +11,51 @@ Activity List
 {% endblock %}
 
 {% block content %}
+{{ macros.render_confirm_delete_modal(confirm_delete_activity_form, "activity") }}
+<h3>Create new activity</h3>
+{{ macros.render_form(activity_type_form,
+action=url_for('activities.create_activity'),
+method="post",
+id="create-activity-form") }}
+<hr>
+<h3>Existing activities</h3>
   <table class="table table-striped data-table" id="activities-table">
     <thead>
       <tr>
         <th>ID</th>
+        <th>Category</th>
         <th>Type</th>
         <th>Text</th>
-        <th>Category</th>
         <th data-orderable="false">Settings</th>
+        <th data-orderable="false">Delete</th>
+        <th data-orderable="false">Preview</th>
       </tr>
     </thead>
     <tbody>
-      {% for activity in object_list %}
-      <tr>
-        <td><a href="{{ url_for('activities.activity',
-        activity=activity) }}">{{ activity.id }}</a></td>
+      {% for activity in activities %}
+      <tr data-delete-action="{{ url_for('activities.delete_activity',
+      activity=activity) }}" id="activity-{{ activity.id }}">
+        <td>{{ activity.id }}</td>
+        <td>{{ activity.category }}</td>
         <td>{{ activity.type }}</td>
         <td>{{ activity.question }}
         </td>
-        <td>{{ activity.category }}</td>
         <td>
           <a href="{{ url_for('activities.settings_activity',
           activity=activity) }}">{{ macros.render_glyphicon("cog") }}</a>
         </td>
+        <td>
+          <a href="#" class="text-danger"
+                      data-activity-id="{{ activity.id }}"
+                      data-toggle="modal"
+                      data-target="#confirm-delete-activity-modal">
+            {{ macros.render_glyphicon("remove") }}</a>
+        </td>
+        <td><a href="{{ url_for('activities.read_activity',
+        activity=activity) }}">{{ macros.render_glyphicon("eye-open") }}</a></td>
+
       </tr>
       {% endfor %}
     </tbody>
   </table>
-  <h3>Create new activity</h3>
-  {{ macros.render_form(create_form,
-  action=url_for('activities.activities'),
-  method="post",
-  id="create-activity-form") }}
 {% endblock %}

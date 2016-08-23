@@ -5,10 +5,8 @@ tests the kind of activity it is loading and then defers to a more specific
 function (for example, questions are read by read_question rather than
 read_activity itself).
 """
-from flask import Blueprint, render_template, url_for, jsonify, abort, \
-    request
+from flask import Blueprint, render_template, url_for, jsonify, abort, request
 from flask_security import roles_required
-from sqlalchemy import not_
 
 from quizApp.models import Activity, Dataset, Choice
 from quizApp.forms.experiments import get_question_form
@@ -16,7 +14,7 @@ from quizApp.forms.activities import QuestionForm, DatasetListForm,\
     ChoiceForm
 from quizApp.forms.common import DeleteObjectForm, ObjectTypeForm
 from quizApp import db
-from quizApp.views.common import ObjectListView, ObjectView
+from quizApp.views.helpers import validate_model_id
 
 activities = Blueprint("activities", __name__, url_prefix="/activities")
 
@@ -26,30 +24,54 @@ ACTIVITY_TYPES = {"question_mc_singleselect": "Single select multiple choice",
                   "question_freeanswer": "Free answer"}
 
 ACTIVITY_ROUTE = "/<activity:activity>"
-QUESTION_ROUTE = "/<question:question>"
-CHOICES_ROUTE = QUESTION_ROUTE + "/choices/"
+CHOICES_ROUTE = "/<question:question>/choices/"
 CHOICE_ROUTE = CHOICES_ROUTE + "<choice:choice>"
 
 
-class ActivityListView(ObjectListView):
-    """Views for the Activity collection.
+@activities.route('/', methods=["GET"])
+@roles_required("experimenter")
+def read_activities():
+    """Display a list of all activities.
     """
-    decorators = [roles_required("experimenter")]
-    read_template = "activities/read_activities.html"
-    model = Activity
+    activities_list = Activity.query.all()
+    activity_type_form = ObjectTypeForm()
+    activity_type_form.populate_object_type(ACTIVITY_TYPES)
+    confirm_delete_activity_form = DeleteObjectForm()
 
-    def create_form(self, *_, **__):
-        """Return a create form, which needs to be populated in this case.
-        """
-        activity_type_form = ObjectTypeForm()
-        activity_type_form.populate_object_type(ACTIVITY_TYPES)
-        return activity_type_form
+    return render_template(
+        "activities/read_activities.html",
+        activities=activities_list,
+        confirm_delete_activity_form=confirm_delete_activity_form,
+        activity_type_form=activity_type_form)
 
-    def member_url(self, record):
-        return url_for("activities.settings_activity",
-                       activity=record)
 
-activities.add_url_rule('/', view_func=ActivityListView.as_view("activities"))
+@activities.route("/", methods=["POST"])
+@roles_required("experimenter")
+def create_activity():
+    """Create an activity.
+    """
+    activity_type_form = ObjectTypeForm()
+    activity_type_form.populate_object_type(ACTIVITY_TYPES)
+
+    if not activity_type_form.validate():
+        return jsonify({"success": 0, "errors": activity_type_form.errors})
+
+    activity = Activity(type=activity_type_form.object_type.data)
+    activity.save()
+
+    next_url = url_for("activities.settings_activity", activity=activity)
+
+    return jsonify({"success": 1, "next_url": next_url})
+
+
+@activities.route(ACTIVITY_ROUTE, methods=["GET"])
+@roles_required("experimenter")
+def read_activity(activity):
+    """Display a given activity as it would appear to a participant.
+    """
+
+    if "question" in activity.type:
+        return read_question(activity)
 
 
 def read_question(question):
@@ -62,38 +84,6 @@ def read_question(question):
     return render_template("activities/read_question.html",
                            question=question,
                            question_form=form)
-
-
-class ActivityView(ObjectView):
-    """Views for a specific Activity.
-    """
-    decorators = [roles_required("experimenter")]
-
-    def update_form(self, record, data):
-        update_form_mapping = {
-            "question_mc_singleselect": QuestionForm,
-            "question_mc_multiselect": QuestionForm,
-            "question_mc_singleselect_scale": QuestionForm,
-            "question_freeanswer": QuestionForm
-        }
-
-        return update_form_mapping[record.type](data)
-
-    def get_record(self, activity):
-        return activity
-
-    def collection_url(self, **_):
-        return url_for("activities.activities")
-
-    get_mapping = {
-        "question_mc_singleselect": read_question,
-        "question_mc_multiselect": read_question,
-        "question_mc_singleselect_scale": read_question,
-        "question_freeanswer": read_question
-    }
-
-activities.add_url_rule(ACTIVITY_ROUTE,
-                        view_func=ActivityView.as_view("activity"))
 
 
 @activities.route(ACTIVITY_ROUTE + "/settings", methods=["GET"])
@@ -111,12 +101,14 @@ def settings_question(question):
     """
     general_form = QuestionForm(obj=question)
 
-    dataset_form = DatasetListForm()
+    dataset_form = DatasetListForm(prefix="dataset")
     dataset_form.reset_objects()
-    remove_dataset_mapping = dataset_form.populate_objects(question.datasets)
-    add_dataset_mapping = dataset_form.populate_objects(
-        Dataset.query.
-        filter(not_(Dataset.questions.any(id=question.id))).all())
+    dataset_form.populate_objects(Dataset.query.all())
+    dataset_form.objects.default = [x.id for x in question.datasets]
+    dataset_form.process()
+
+    activity_type_form = ObjectTypeForm()
+    activity_type_form.populate_object_type(ACTIVITY_TYPES)
 
     if "mc" in question.type:
         create_choice_form = ChoiceForm(prefix="create")
@@ -125,43 +117,87 @@ def settings_question(question):
         create_choice_form = None
         update_choice_form = None
 
-    delete_activity_form = DeleteObjectForm(prefix="activity")
-    delete_choice_form = DeleteObjectForm(prefix="choice")
+    confirm_delete_choice_form = DeleteObjectForm()
 
-    return render_template("activities/settings_question.html",
-                           question=question,
-                           general_form=general_form,
-                           dataset_form=dataset_form,
-                           remove_dataset_mapping=remove_dataset_mapping,
-                           add_dataset_mapping=add_dataset_mapping,
-                           choices=question.choices,
-                           create_choice_form=create_choice_form,
-                           delete_activity_form=delete_activity_form,
-                           delete_choice_form=delete_choice_form,
-                           update_choice_form=update_choice_form)
+    return render_template(
+        "activities/settings_question.html",
+        question=question,
+        general_form=general_form,
+        activity_type_form=activity_type_form,
+        dataset_form=dataset_form,
+        choices=question.choices,
+        create_choice_form=create_choice_form,
+        confirm_delete_choice_form=confirm_delete_choice_form,
+        update_choice_form=update_choice_form)
 
 
-@activities.route(QUESTION_ROUTE + "/datasets", methods=["PATCH"])
+@activities.route(ACTIVITY_ROUTE, methods=["PUT"])
 @roles_required("experimenter")
-def update_question_datasets(question):
-    """Change the datasets that this question is associated with.
+def update_activity(activity):
+    """Update the activity based on transmitted form data.
     """
-    dataset_form = DatasetListForm(request.form)
-    dataset_mapping = dataset_form.populate_objects(Dataset.query.all())
-    if not dataset_form.validate():
-        return jsonify({"success": 0, "errors": dataset_form.errors})
+    if "question" in activity.type:
+        return update_question(activity)
 
-    for dataset_id in dataset_form.objects.data:
-        dataset = dataset_mapping[dataset_id]
 
-        if dataset in question.datasets:
-            question.datasets.remove(dataset)
-        else:
-            question.datasets.append(dataset)
+def update_question(question):
+    """Given a question, update its settings.
+    """
+    general_form = QuestionForm(request.form)
 
+    if not general_form.validate():
+        return jsonify({"success": 0, "errors": general_form.errors})
+
+    general_form.populate_obj(question)
     db.session.commit()
 
     return jsonify({"success": 1})
+
+
+@activities.route(ACTIVITY_ROUTE + "/datasets/<dataset:dataset>",
+                  methods=["DELETE"])
+@roles_required("experimenter")
+def delete_question_dataset(activity, dataset):
+    """Disassociate this question from a dataset.
+    """
+    if dataset not in activity.datasets:
+        abort(400)
+
+    activity.datasets.remove(dataset)
+    db.session.commit()
+
+    return jsonify({"success": 1})
+
+
+@activities.route(ACTIVITY_ROUTE + "/datasets/", methods=["POST"])
+@roles_required("experimenter")
+def create_question_dataset(activity):
+    """Associate this question with a dataset.
+
+    The request should contain the ID of the dataset to be associated.
+    """
+    dataset_id = request.form["dataset_id"]
+    dataset = validate_model_id(Dataset, dataset_id)
+
+    if dataset in activity.datasets:
+        abort(400)
+
+    activity.datasets.append(dataset)
+    db.session.commit()
+    return jsonify({"success": 1})
+
+
+@activities.route(ACTIVITY_ROUTE, methods=["DELETE"])
+@roles_required("experimenter")
+def delete_activity(activity):
+    """Delete the given activity.
+    """
+    db.session.delete(activity)
+    db.session.commit()
+
+    next_url = url_for("activities.read_activities")
+
+    return jsonify({"success": 1, "next_url": next_url})
 
 
 @activities.route(CHOICES_ROUTE, methods=["POST"])
@@ -183,23 +219,43 @@ def create_choice(question):
     choice.save()
     db.session.commit()
 
+    return jsonify({
+        "success": 1,
+        "new_row": render_template("activities/render_choice_row.html",
+                                   choice=choice)
+    })
+
+
+@activities.route(CHOICE_ROUTE, methods=["PUT"])
+@roles_required("experimenter")
+def update_choice(question, choice):
+    """Update the given choice using form data.
+    """
+    if choice not in question.choices:
+        abort(404)
+
+    update_choice_form = ChoiceForm(request.form, prefix="update")
+
+    if not update_choice_form.validate():
+        return jsonify({"success": 0, "prefix": "update-",
+                        "errors": update_choice_form.errors})
+
+    update_choice_form.populate_obj(choice)
+
+    db.session.commit()
+
     return jsonify({"success": 1})
 
 
-class ChoiceView(ObjectView):
-    """Views for a specific Choice object.
+@activities.route(CHOICE_ROUTE, methods=["DELETE"])
+@roles_required("experimenter")
+def delete_choice(question, choice):
+    """Delete the given choice.
     """
-    def update_form(self, record, form):
-        return ChoiceForm(request.form, prefix="update")
+    if choice not in question.choices:
+        abort(404)
 
-    def get_record(self, question, choice):
-        if choice.question != question:
-            abort(404)
+    db.session.delete(choice)
+    db.session.commit()
 
-        return choice
-
-    def collection_url(self, question, **kwargs):
-        return url_for("activities.settings_activity", activity=question)
-
-activities.add_url_rule(CHOICE_ROUTE,
-                        view_func=ChoiceView.as_view("choice"))
+    return jsonify({"success": 1})

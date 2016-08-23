@@ -116,7 +116,7 @@ class DatasetFactory(factory.Factory):
         model = models.Dataset
 
     name = factory.Faker("text", max_nb_chars=100)
-    uri = factory.Faker("uri")
+    info = factory.Faker("text")
 
     @factory.post_generation
     def media_items(self, create, extracted, **kwargs):
