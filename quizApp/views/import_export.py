@@ -11,6 +11,7 @@ info attribute). However, in some cases certain columns need to be filled out
 earlier than others. This is why we use a special method on each model to
 populate an object.
 """
+import pdb
 import os
 from collections import OrderedDict, defaultdict
 import tempfile
@@ -323,6 +324,7 @@ def import_data_from_workbook(workbook):
         headers = [header_to_field_name(c.value, model) for c in sheet.rows[0]]
 
         for row in sheet.rows[1:]:
+            pdb.set_trace()
             obj = instantiate_model(model, headers, row)
             obj_args = {}
 
