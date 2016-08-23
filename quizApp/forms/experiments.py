@@ -15,13 +15,10 @@ from quizApp.models import Experiment
 def get_question_form(question, data=None):
     """Given a question type, return the proper form.
     """
-    update_form_mapping = {
-        "question_mc_singleselect": MultipleChoiceForm,
-        "question_mc_multiselect": MultipleChoiceForm,
-        "question_mc_singleselect_scale": ScaleForm,
-        "question_freeanswer": QuestionForm
-    }
-    return update_form_mapping[question.type](data)
+    if "scale" in question.type:
+        return ScaleForm(data)
+    else:
+        return MultipleChoiceForm(data)
 
 
 class LikertField(RadioField):
