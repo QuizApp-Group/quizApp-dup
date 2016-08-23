@@ -317,6 +317,18 @@ class Result(Base):
     }
 
 
+class IntegerQuestionResult(Result):
+    """The integer entered as an answer to an Integer Question.
+    """
+    integer = db.Column(db.Integer)
+
+    @db.event.listens_for(Result.assignment, "set", propagate=True)
+    def validate_choice(self, assignment, *_):
+        """Make sure this integer is a valid option for this Question.
+        """
+        assert assignment.activity.
+        assert self.choice in value.activity.choices
+
 class MultipleChoiceQuestionResult(Result):
     """The Choice that a Participant picked in a MultipleChoiceQuestion.
     """
@@ -469,6 +481,40 @@ class Question(Activity):
     __mapper_args__ = {
         'polymorphic_identity': 'question',
     }
+
+
+class IntegerQuestion(Question):
+    """Ask participants to enter an integer, optionally bounded above/below.
+    """
+    class Meta(object):
+        result_class = IntegerQuestionResult
+
+    answer = db.Column(db.Integer(), info={"label": "Correct answer"})
+    bounded_below = db.Column(db.Boolean(),
+                              info={"label": "Enforce lower bound"})
+    lower_bound = db.Column(db.Integer, info={"label": "Lower bound"})
+    bounded_above = db.Column(db.Boolean(),
+                              info={"label": "Enforce upper bound"})
+    upper_bound = db.Column(db.Integer, info={"label": "Upper bound"})
+
+    def get_score(self, result):
+        """If the choice is the answer, one point.
+        """
+        return int(result.integer == self.answer)
+
+    @validates('lower_bound')
+    def validate_lower_bound(self, _, lower_bound):
+        assert self.upper_bound is None or lower_bound < self.upper_bound
+
+    @validates('upper_bound')
+    def validate_upper_bound(self, _, upper_bound):
+        assert self.lower_bound is None or self.lower_bound < upper_bound
+
+    @validates('answer')
+    def validate_answer(self, _, answer):
+        assert not self.bounded_below or answer > self.lower_bound
+        assert not self.bounded_above or answer < self.upper_bound
+
 
 
 class MultipleChoiceQuestion(Question):
