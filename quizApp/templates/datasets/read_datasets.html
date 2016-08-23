@@ -18,7 +18,7 @@ Dataset List
   macros.render_glyphicon('cog') }} button in the row of the relevant
   dataset.
 </div>
-<form action="{{ url_for('datasets.read_datasets') }}" method="post",
+<form action="{{ url_for('datasets.create_dataset') }}" method="post",
 id="create-dataset-form">
   <table class="table table-striped data-table" id="datasets-table">
     <thead>
@@ -43,14 +43,14 @@ id="create-dataset-form">
     <tbody>
       {% for dataset in datasets %}
       <tr data-delete-action="{{ url_for('datasets.delete_dataset',
-      dataset=dataset) }}" id="dataset-{{ dataset.id }}">
+      dataset_id=dataset.id) }}" id="dataset-{{ dataset.id }}">
         <td>{{ dataset.id }}</td>
         <td class="name">{{ dataset.name }}</a>
         </td>
         <td>{{ dataset.info }}</a>
         <td>
           <a href="{{ url_for('datasets.settings_dataset',
-          dataset=dataset) }}">{{ macros.render_glyphicon("cog") }}</a>
+          dataset_id=dataset.id) }}">{{ macros.render_glyphicon("cog") }}</a>
         </td>
         <td><a href="#" class="text-danger"
                         data-dataset-id="{{ dataset.id }}"

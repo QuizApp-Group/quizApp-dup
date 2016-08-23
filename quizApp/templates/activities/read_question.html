@@ -10,7 +10,7 @@ Activity {{ question.id }} - Preview
 {% endblock %}
 
 {% block content %}
-<a href="{{ url_for('activities.settings_activity', activity=question) }}"
+<a href="{{ url_for('activities.settings_activity', activity_id=question.id) }}"
    role="button" class="btn btn-primary">Edit</a>
 <div id='question'>
   <h3>{{ question.question }}</h3>

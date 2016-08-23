@@ -19,12 +19,12 @@ def get_or_create_participant_experiment(experiment):
     """
     try:
         participant_experiment = models.ParticipantExperiment.query.\
-            filter_by(participant=current_user).\
-            filter_by(experiment=experiment).one()
+            filter_by(participant_id=current_user.id).\
+            filter_by(experiment_id=experiment.id).one()
     except NoResultFound:
         pool = models.ParticipantExperiment.query.\
-            filter_by(participant=None).\
-            filter_by(experiment=experiment).all()
+            filter_by(participant_id=None).\
+            filter_by(experiment_id=experiment.id).all()
         try:
             participant_experiment = random.choice(pool)
         except IndexError:
