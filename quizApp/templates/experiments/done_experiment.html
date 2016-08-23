@@ -47,8 +47,8 @@ Thank you for participating.</h3>
        {% endif %}
        >
         <td><a href="{{ url_for('experiments.read_assignment',
-        experiment_id=participant_experiment.experiment.id,
-        a_id=assignment.id) }}">{{ assignment.id }}</a>
+        experiment=participant_experiment.experiment,
+        assignment=assignment) }}">{{ assignment.id }}</a>
         </td>
         {% if scorecard_settings.display_correctness %}
         <td>

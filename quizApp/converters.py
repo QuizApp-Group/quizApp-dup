@@ -37,4 +37,5 @@ CONVERTERS = {
     "media_item": model_converter_factory(models.MediaItem),
     "question": model_converter_factory(models.Question),
     "choice": model_converter_factory(models.Choice),
+    "assignment": model_converter_factory(models.Assignment),
 }

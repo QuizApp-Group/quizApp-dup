@@ -14,11 +14,11 @@ Confirm experiment submission
 <p>If you are ready to submit your answers, click the "Submit" button below.
 You will not be able to modify your answers after this.</p>
 
-<form action="{{ url_for('experiments.finalize_experiment', experiment_id=experiment.id)
+<form action="{{ url_for('experiments.finalize_experiment', experiment=experiment)
 }}" method="patch" id="submit-experiment-form">
   <input type="submit" value="Submit" class="btn btn-primary">
   {% if not experiment.disable_previous %}
-  <a href="{{ url_for('experiments.read_experiment', experiment_id=experiment.id) }}"
+  <a href="{{ url_for('experiments.read_experiment', experiment=experiment) }}"
      class="btn btn-primary" role="button">Go back to start</a>
   {% endif %}
 </form>

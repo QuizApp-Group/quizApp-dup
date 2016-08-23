@@ -32,18 +32,18 @@
 {% macro experiment_row(exp, admin_controls) -%}
 <tr>
   <td class="name">
-    <a href="{{ url_for('experiments.read_experiment', experiment_id=exp.id) }}">{{exp.name}}</a>
+    <a href="{{ url_for('experiments.read_experiment', experiment=exp) }}">{{exp.name}}</a>
   </td>
   <td class="start">{{exp.start|datetime_format}}</td>
   <td class="stop">{{exp.stop|datetime_format}}</td>
   {% if admin_controls %}
   <td>
-    <a href="{{ url_for('experiments.settings_experiment', experiment_id=exp.id) }}">
+    <a href="{{ url_for('experiments.settings_experiment', experiment=exp) }}">
       {{ macros.render_glyphicon('cog') }}
     </a>
   </td>
   <td>
-    <a href="{{ url_for('experiments.results_experiment', experiment_id=exp.id) }}">
+    <a href="{{ url_for('experiments.results_experiment', experiment=exp) }}">
       {{ macros.render_glyphicon('signal') }}
     </a>
   </td>

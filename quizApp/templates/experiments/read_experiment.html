@@ -17,7 +17,7 @@
 {% block content %}
 <p class="experiment-blurb">{{ experiment.blurb }}</p>
 {% if current_user.has_role("experimenter") %}
-<a href="{{ url_for('experiments.settings_experiment', experiment_id=experiment.id) }}"
+<a href="{{ url_for('experiments.settings_experiment', experiment=experiment) }}"
    role="button" class="btn btn-primary">Edit</a>
 <a href="{{ url_for('experiments.read_experiments') }}" class="btn btn-primary" role="button">Back to experiment listing</a>
 {% endif %}
@@ -25,8 +25,8 @@
   {% if assignment %}
   <p>Press the start button to begin.</p>
 
-  <a href="{{ url_for('experiments.read_assignment', experiment_id=experiment.id,
-  a_id=assignment.id) }}" class="btn btn-primary">Start</a>
+  <a href="{{ url_for('experiments.read_assignment', experiment=experiment,
+  assignment=assignment) }}" class="btn btn-primary">Start</a>
   {% else %}
   <p>You are done with this experiment.</p>
   {% endif %}
