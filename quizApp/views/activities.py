@@ -8,7 +8,7 @@ read_activity itself).
 from flask import Blueprint, render_template, url_for, jsonify, abort, request
 from flask_security import roles_required
 
-from quizApp.models import Activity, Dataset, Question, Choice
+from quizApp.models import Activity, Dataset, Choice
 from quizApp.forms.experiments import get_question_form
 from quizApp.forms.activities import QuestionForm, DatasetListForm,\
     ChoiceForm
@@ -23,9 +23,9 @@ ACTIVITY_TYPES = {"question_mc_singleselect": "Single select multiple choice",
                   "question_mc_singleselect_scale": "Likert scale",
                   "question_freeanswer": "Free answer"}
 
-ACTIVITY_ROUTE = "/<int:activity_id>"
-CHOICES_ROUTE = "/<int:question_id>/choices/"
-CHOICE_ROUTE = CHOICES_ROUTE + "<int:choice_id>"
+ACTIVITY_ROUTE = "/<activity:activity>"
+CHOICES_ROUTE = "/<question:question>/choices/"
+CHOICE_ROUTE = CHOICES_ROUTE + "<choice:choice>"
 
 
 @activities.route('/', methods=["GET"])
@@ -59,17 +59,16 @@ def create_activity():
     activity = Activity(type=activity_type_form.object_type.data)
     activity.save()
 
-    next_url = url_for("activities.settings_activity", activity_id=activity.id)
+    next_url = url_for("activities.settings_activity", activity=activity)
 
     return jsonify({"success": 1, "next_url": next_url})
 
 
 @activities.route(ACTIVITY_ROUTE, methods=["GET"])
 @roles_required("experimenter")
-def read_activity(activity_id):
+def read_activity(activity):
     """Display a given activity as it would appear to a participant.
     """
-    activity = validate_model_id(Activity, activity_id)
 
     if "question" in activity.type:
         return read_question(activity)
@@ -89,10 +88,9 @@ def read_question(question):
 
 @activities.route(ACTIVITY_ROUTE + "/settings", methods=["GET"])
 @roles_required("experimenter")
-def settings_activity(activity_id):
+def settings_activity(activity):
     """Display settings for a particular activity.
     """
-    activity = validate_model_id(Activity, activity_id)
 
     if "question" in activity.type:
         return settings_question(activity)
@@ -135,11 +133,9 @@ def settings_question(question):
 
 @activities.route(ACTIVITY_ROUTE, methods=["PUT"])
 @roles_required("experimenter")
-def update_activity(activity_id):
+def update_activity(activity):
     """Update the activity based on transmitted form data.
     """
-    activity = validate_model_id(Activity, activity_id)
-
     if "question" in activity.type:
         return update_question(activity)
 
@@ -158,15 +154,12 @@ def update_question(question):
     return jsonify({"success": 1})
 
 
-@activities.route(ACTIVITY_ROUTE + "/datasets/<int:dataset_id>",
+@activities.route(ACTIVITY_ROUTE + "/datasets/<dataset:dataset>",
                   methods=["DELETE"])
 @roles_required("experimenter")
-def delete_question_dataset(activity_id, dataset_id):
+def delete_question_dataset(activity, dataset):
     """Disassociate this question from a dataset.
     """
-    activity = validate_model_id(Activity, activity_id)
-    dataset = validate_model_id(Dataset, dataset_id)
-
     if dataset not in activity.datasets:
         abort(400)
 
@@ -178,12 +171,11 @@ def delete_question_dataset(activity_id, dataset_id):
 
 @activities.route(ACTIVITY_ROUTE + "/datasets/", methods=["POST"])
 @roles_required("experimenter")
-def create_question_dataset(activity_id):
+def create_question_dataset(activity):
     """Associate this question with a dataset.
 
     The request should contain the ID of the dataset to be associated.
     """
-    activity = validate_model_id(Activity, activity_id)
     dataset_id = request.form["dataset_id"]
     dataset = validate_model_id(Dataset, dataset_id)
 
@@ -197,11 +189,9 @@ def create_question_dataset(activity_id):
 
 @activities.route(ACTIVITY_ROUTE, methods=["DELETE"])
 @roles_required("experimenter")
-def delete_activity(activity_id):
+def delete_activity(activity):
     """Delete the given activity.
     """
-    activity = validate_model_id(Activity, activity_id)
-
     db.session.delete(activity)
     db.session.commit()
 
@@ -212,11 +202,9 @@ def delete_activity(activity_id):
 
 @activities.route(CHOICES_ROUTE, methods=["POST"])
 @roles_required("experimenter")
-def create_choice(question_id):
+def create_choice(question):
     """Create a choice for the given question.
     """
-    question = validate_model_id(Question, question_id)
-
     create_choice_form = ChoiceForm(request.form, prefix="create")
 
     if not create_choice_form.validate():
@@ -240,12 +228,9 @@ def create_choice(question_id):
 
 @activities.route(CHOICE_ROUTE, methods=["PUT"])
 @roles_required("experimenter")
-def update_choice(question_id, choice_id):
+def update_choice(question, choice):
     """Update the given choice using form data.
     """
-    question = validate_model_id(Question, question_id)
-    choice = validate_model_id(Choice, choice_id)
-
     if choice not in question.choices:
         abort(404)
 
@@ -264,12 +249,9 @@ def update_choice(question_id, choice_id):
 
 @activities.route(CHOICE_ROUTE, methods=["DELETE"])
 @roles_required("experimenter")
-def delete_choice(question_id, choice_id):
+def delete_choice(question, choice):
     """Delete the given choice.
     """
-    question = validate_model_id(Question, question_id)
-    choice = validate_model_id(Choice, choice_id)
-
     if choice not in question.choices:
         abort(404)
 

@@ -30,8 +30,8 @@ Time elapsed: <span class="stopwatch"></span>
 
 <div id='question'>
   <h3>{{ question.question }}</h3>
-  <form action="{{ url_for('experiments.update_assignment', experiment_id=exp.id,
-  a_id=assignment.id)}}" method="patch" id="question-submit-form"
+  <form action="{{ url_for('experiments.update_assignment', experiment=exp,
+  assignment=assignment)}}" method="patch" id="question-submit-form"
   class="timed-form">
     {{ macros.render_field(mc_form.render_time) }}
     {{ macros.render_field(mc_form.submit_time) }}
@@ -46,8 +46,8 @@ Time elapsed: <span class="stopwatch"></span>
     <div class="row">
       <div class="previous-button">
         {% if previous_assignment %}
-        <a href="{{ url_for('experiments.read_assignment', experiment_id=exp.id,
-        a_id=previous_assignment.id) }}" class="btn btn-primary"
+        <a href="{{ url_for('experiments.read_assignment', experiment=exp,
+        assignment=previous_assignment) }}" class="btn btn-primary"
                                          role="button">Previous</a>
         {% endif %}
       </div>

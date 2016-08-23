@@ -15,30 +15,30 @@ from quizApp import db
 from quizApp.forms.common import DeleteObjectForm
 from quizApp.forms.experiments import CreateExperimentForm, \
     get_question_form
-from quizApp.models import Choice, Experiment, Assignment, \
-    ParticipantExperiment, Activity, Participant, MultipleChoiceQuestionResult
+from quizApp.models import Choice, Experiment, Assignment,\
+    ParticipantExperiment, Participant, MultipleChoiceQuestionResult
 from quizApp.views.helpers import validate_model_id, get_first_assignment
 from quizApp.views.mturk import submit_assignment
 
 experiments = Blueprint("experiments", __name__, url_prefix="/experiments")
 
-EXPERIMENT_ROUTE = "/<int:experiment_id>"
+EXPERIMENT_ROUTE = "/<experiment:experiment>"
 ASSIGNMENTS_ROUTE = EXPERIMENT_ROUTE + "/assignments/"
-ASSIGNMENT_ROUTE = ASSIGNMENTS_ROUTE + "<int:a_id>"
+ASSIGNMENT_ROUTE = ASSIGNMENTS_ROUTE + "<assignment:assignment>"
 
 POST_FINALIZE_HANDLERS = {
     "mturk": submit_assignment,
 }
 
 
-def get_participant_experiment_or_abort(experiment_id, code=400):
+def get_participant_experiment_or_abort(experiment, code=400):
     """Return the ParticipantExperiment object corresponding to the current
-    user and experiment_id or abort with the given code.
+    user and experiment or abort with the given code.
     """
     try:
         return ParticipantExperiment.query.\
-            filter_by(participant_id=current_user.id).\
-            filter_by(experiment_id=experiment_id).one()
+            filter_by(participant=current_user).\
+            filter_by(experiment=experiment).one()
     except NoResultFound:
         abort(code)
 
@@ -83,17 +83,15 @@ def create_experiment():
     return jsonify({
         "success": 1,
         "next_url": url_for("experiments.settings_experiment",
-                            experiment_id=experiment.id),
+                            experiment=experiment),
     })
 
 
 @experiments.route(EXPERIMENT_ROUTE, methods=["GET"])
 @login_required
-def read_experiment(experiment_id):
+def read_experiment(experiment):
     """View the landing page of an experiment, along with the ability to start.
     """
-    experiment = validate_model_id(Experiment, experiment_id)
-
     if current_user.has_role("participant"):
         assignment = get_first_assignment(experiment)
     else:
@@ -106,12 +104,10 @@ def read_experiment(experiment_id):
 
 @experiments.route(EXPERIMENT_ROUTE, methods=["DELETE"])
 @roles_required("experimenter")
-def delete_experiment(experiment_id):
+def delete_experiment(experiment):
     """Delete an experiment.
     """
-    exp = validate_model_id(Experiment, experiment_id)
-
-    db.session.delete(exp)
+    db.session.delete(experiment)
     db.session.commit()
 
     return jsonify({"success": 1})
@@ -119,33 +115,28 @@ def delete_experiment(experiment_id):
 
 @experiments.route(EXPERIMENT_ROUTE, methods=["PUT"])
 @roles_required("experimenter")
-def update_experiment(experiment_id):
+def update_experiment(experiment):
     """Modify an experiment's properties.
     """
-    exp = validate_model_id(Experiment, experiment_id)
-
     experiment_update_form = CreateExperimentForm(request.form)
 
     if not experiment_update_form.validate():
         return jsonify({"success": 0, "errors": experiment_update_form.errors})
 
-    experiment_update_form.populate_obj(exp)
+    experiment_update_form.populate_obj(experiment)
 
-    exp.save()
+    experiment.save()
 
     return jsonify({"success": 1})
 
 
 @experiments.route(ASSIGNMENT_ROUTE, methods=["GET"])
 @roles_required("participant")
-def read_assignment(experiment_id, a_id):
+def read_assignment(experiment, assignment):
     """Given an assignment ID, retrieve it from the database and display it to
     the user.
     """
-    experiment = validate_model_id(Experiment, experiment_id)
-    assignment = validate_model_id(Assignment, a_id)
-
-    part_exp = get_participant_experiment_or_abort(experiment_id)
+    part_exp = get_participant_experiment_or_abort(experiment)
 
     if assignment not in part_exp.assignments:
         abort(400)
@@ -154,10 +145,8 @@ def read_assignment(experiment_id, a_id):
             part_exp.assignments.index(assignment) and not part_exp.complete:
         abort(400)
 
-    activity = validate_model_id(Activity, assignment.activity_id)
-
-    if "question" in activity.type:
-        return read_question(experiment, activity, assignment)
+    if "question" in assignment.activity.type:
+        return read_question(experiment, assignment.activity, assignment)
 
     abort(404)
 
@@ -212,11 +201,9 @@ def read_question(experiment, question, assignment):
 
 
 @experiments.route(ASSIGNMENT_ROUTE, methods=["PATCH"])
-def update_assignment(experiment_id, a_id):
+def update_assignment(experiment, assignment):
     """Record a user's answer to this assignment
     """
-    assignment = validate_model_id(Assignment, a_id)
-    experiment = validate_model_id(Experiment, experiment_id)
     part_exp = assignment.participant_experiment
 
     if part_exp.participant != current_user:
@@ -297,13 +284,13 @@ def get_next_assignment_url(participant_experiment, current_index):
     """Given an experiment, a participant_experiment, and the current index,
     find the url of the next assignment in the sequence.
     """
-    experiment_id = participant_experiment.experiment.id
+    experiment = participant_experiment.experiment
     try:
         # If there is a next assignment, return its url
         next_url = url_for(
             "experiments.read_assignment",
-            experiment_id=experiment_id,
-            a_id=participant_experiment.assignments[current_index + 1].id)
+            experiment=experiment,
+            assignment=participant_experiment.assignments[current_index + 1])
     except IndexError:
         next_url = None
 
@@ -312,22 +299,20 @@ def get_next_assignment_url(participant_experiment, current_index):
         if not participant_experiment.complete:
             # The experiment needs to be submitted
             next_url = url_for("experiments.confirm_done_experiment",
-                               experiment_id=experiment_id)
+                               experiment=experiment)
         else:
             # Experiment has already been submitted
             next_url = url_for("experiments.read_experiment",
-                               experiment_id=experiment_id)
+                               experiment=experiment)
 
     return next_url
 
 
 @experiments.route(EXPERIMENT_ROUTE + '/settings', methods=["GET"])
 @roles_required("experimenter")
-def settings_experiment(experiment_id):
+def settings_experiment(experiment):
     """Give information on an experiment and its activities.
     """
-    experiment = validate_model_id(Experiment, experiment_id)
-
     update_experiment_form = CreateExperimentForm(obj=experiment)
 
     return render_template("experiments/settings_experiment.html",
@@ -356,14 +341,12 @@ def get_question_stats(assignment, question_stats):
 
 @experiments.route(EXPERIMENT_ROUTE + "/results", methods=["GET"])
 @roles_required("experimenter")
-def results_experiment(experiment_id):
+def results_experiment(experiment):
     """Render some results.
     """
-    experiment = validate_model_id(Experiment, experiment_id)
-
     num_participants = Participant.query.count()
     num_finished = ParticipantExperiment.query.\
-        filter_by(experiment_id=experiment.id).\
+        filter_by(experiment=experiment).\
         filter_by(progress=-1).count()
 
     percent_finished = num_finished / float(num_participants)
@@ -390,23 +373,20 @@ def results_experiment(experiment_id):
 
 @experiments.route(EXPERIMENT_ROUTE + "/confirm_done", methods=["GET"])
 @roles_required("participant")
-def confirm_done_experiment(experiment_id):
+def confirm_done_experiment(experiment):
     """Show the user a page before finalizing their quiz answers.
     """
-    experiment = validate_model_id(Experiment, experiment_id)
-
     return render_template("experiments/confirm_done_experiment.html",
                            experiment=experiment)
 
 
 @experiments.route(EXPERIMENT_ROUTE + "/finalize", methods=["PATCH"])
 @roles_required("participant")
-def finalize_experiment(experiment_id):
+def finalize_experiment(experiment):
     """Finalize the user's answers for this experiment. They will no longer be
     able to edit them, but may view them.
     """
-    validate_model_id(Experiment, experiment_id)
-    part_exp = get_participant_experiment_or_abort(experiment_id)
+    part_exp = get_participant_experiment_or_abort(experiment)
 
     if part_exp.complete:
         abort(400)
@@ -417,16 +397,15 @@ def finalize_experiment(experiment_id):
 
     return jsonify({"success": 1,
                     "next_url": url_for('experiments.done_experiment',
-                                        experiment_id=experiment_id)})
+                                        experiment=experiment)})
 
 
 @experiments.route(EXPERIMENT_ROUTE + "/done", methods=["GET"])
 @roles_required("participant")
-def done_experiment(experiment_id):
+def done_experiment(experiment):
     """Show the user a screen indicating that they are finished.
     """
-    experiment = validate_model_id(Experiment, experiment_id)
-    participant_experiment = get_participant_experiment_or_abort(experiment_id)
+    participant_experiment = get_participant_experiment_or_abort(experiment)
 
     # Handle any post finalize actions, e.g. providing a button to submit a HIT
     post_finalize = session.pop("experiment_post_finalize_handler", None)

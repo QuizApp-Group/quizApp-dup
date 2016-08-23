@@ -14,7 +14,7 @@
 
 {{ macros.render_form(update_experiment_form,
 action=url_for('experiments.update_experiment',
-experiment_id=experiment.id),
+experiment=experiment),
 method="put",
 id="update-experiment-form") }}
 {% endblock %}

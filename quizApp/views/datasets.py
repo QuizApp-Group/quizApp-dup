@@ -11,7 +11,7 @@ from quizApp import db
 from quizApp.forms.common import DeleteObjectForm, ObjectTypeForm
 from quizApp.forms.datasets import DatasetForm, GraphForm, TextForm
 from quizApp.models import Dataset, MediaItem
-from quizApp.views.helpers import validate_model_id, validate_form_or_error
+from quizApp.views.helpers import validate_form_or_error
 
 datasets = Blueprint("datasets", __name__, url_prefix="/datasets")
 
@@ -19,9 +19,9 @@ MEDIA_ITEM_TYPES = {
     "graph": "Graph",
     "text": "Text",
 }
-DATASET_ROUTE = "/<int:dataset_id>"
+DATASET_ROUTE = "/<dataset:dataset>"
 MEDIA_ITEMS_ROUTE = os.path.join(DATASET_ROUTE + "/media_items/")
-MEDIA_ITEM_ROUTE = os.path.join(MEDIA_ITEMS_ROUTE + "<int:media_item_id>")
+MEDIA_ITEM_ROUTE = os.path.join(MEDIA_ITEMS_ROUTE + "<media_item:media_item>")
 
 
 @datasets.route("/", methods=["GET"])
@@ -57,16 +57,14 @@ def create_dataset():
 
     return jsonify({"success": 1,
                     "next_url": url_for("datasets.settings_dataset",
-                                        dataset_id=dataset.id)})
+                                        dataset=dataset)})
 
 
 @datasets.route(DATASET_ROUTE, methods=["PUT"])
 @roles_required("experimenter")
-def update_dataset(dataset_id):
+def update_dataset(dataset):
     """Change the properties of this dataset.
     """
-    dataset = validate_model_id(Dataset, dataset_id)
-
     update_dataset_form = DatasetForm(request.form)
 
     if not update_dataset_form.validate():
@@ -81,11 +79,9 @@ def update_dataset(dataset_id):
 
 @datasets.route(DATASET_ROUTE, methods=["DELETE"])
 @roles_required("experimenter")
-def delete_dataset(dataset_id):
+def delete_dataset(dataset):
     """Delete this dataset.
     """
-    dataset = validate_model_id(Dataset, dataset_id)
-
     db.session.delete(dataset)
     db.session.commit()
 
@@ -95,12 +91,9 @@ def delete_dataset(dataset_id):
 
 @datasets.route(MEDIA_ITEM_ROUTE, methods=["DELETE"])
 @roles_required("experimenter")
-def delete_dataset_media_item(dataset_id, media_item_id):
+def delete_dataset_media_item(dataset, media_item):
     """Delete a particular media_item in a particular dataset.
     """
-    dataset = validate_model_id(Dataset, dataset_id)
-    media_item = validate_model_id(MediaItem, media_item_id)
-
     if media_item not in dataset.media_items:
         abort(404)
 
@@ -112,12 +105,9 @@ def delete_dataset_media_item(dataset_id, media_item_id):
 
 @datasets.route(MEDIA_ITEM_ROUTE, methods=["GET"])
 @roles_required("experimenter")
-def read_media_item(dataset_id, media_item_id):
+def read_media_item(dataset, media_item):
     """Get an html representation of a particular media_item.
     """
-    dataset = validate_model_id(Dataset, dataset_id)
-    media_item = validate_model_id(MediaItem, media_item_id)
-
     if media_item not in dataset.media_items:
         abort(404)
 
@@ -127,11 +117,9 @@ def read_media_item(dataset_id, media_item_id):
 
 @datasets.route(DATASET_ROUTE + '/settings', methods=["GET"])
 @roles_required("experimenter")
-def settings_dataset(dataset_id):
+def settings_dataset(dataset):
     """View the configuration of a particular dataset.
     """
-    dataset = validate_model_id(Dataset, dataset_id)
-
     update_dataset_form = DatasetForm(obj=dataset)
 
     create_media_item_form = ObjectTypeForm()
@@ -148,10 +136,9 @@ def settings_dataset(dataset_id):
 
 @datasets.route(MEDIA_ITEMS_ROUTE, methods=["POST"])
 @roles_required("experimenter")
-def create_media_item(dataset_id):
+def create_media_item(dataset):
     """Create a new media item.
     """
-    dataset = validate_model_id(Dataset, dataset_id)
     create_media_item_form = ObjectTypeForm()
     create_media_item_form.populate_object_type(MEDIA_ITEM_TYPES)
 
@@ -167,21 +154,19 @@ def create_media_item(dataset_id):
     return jsonify({
         "success": 1,
         "next_url": url_for("datasets.settings_media_item",
-                            dataset_id=dataset.id,
-                            media_item_id=media_item.id),
+                            dataset=dataset,
+                            media_item=media_item),
     })
 
 
 @datasets.route(MEDIA_ITEM_ROUTE + "/settings", methods=["GET"])
 @roles_required("experimenter")
-def settings_media_item(dataset_id, media_item_id):
+def settings_media_item(dataset, media_item):
     """View the configuration of some media item.
 
     Ultimately this view dispatches to another view for the specific type
     of media item.
     """
-    dataset = validate_model_id(Dataset, dataset_id)
-    media_item = validate_model_id(MediaItem, media_item_id)
     create_media_item_form = ObjectTypeForm()
     create_media_item_form.populate_object_type(MEDIA_ITEM_TYPES)
 
@@ -205,14 +190,11 @@ def settings_media_item(dataset_id, media_item_id):
 
 @datasets.route(MEDIA_ITEM_ROUTE, methods=["PUT"])
 @roles_required("experimenter")
-def update_media_item(dataset_id, media_item_id):
+def update_media_item(dataset, media_item):
     """Update a particular media item.
 
     Dispatches to a handler for the specific kind of media item.
     """
-    dataset = validate_model_id(Dataset, dataset_id)
-    media_item = validate_model_id(MediaItem, media_item_id)
-
     if media_item not in dataset.media_items:
         abort(404)
 

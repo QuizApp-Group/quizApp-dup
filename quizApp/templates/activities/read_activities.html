@@ -34,7 +34,7 @@ id="create-activity-form") }}
     <tbody>
       {% for activity in activities %}
       <tr data-delete-action="{{ url_for('activities.delete_activity',
-      activity_id=activity.id) }}" id="activity-{{ activity.id }}">
+      activity=activity) }}" id="activity-{{ activity.id }}">
         <td>{{ activity.id }}</td>
         <td>{{ activity.category }}</td>
         <td>{{ activity.type }}</td>
@@ -42,7 +42,7 @@ id="create-activity-form") }}
         </td>
         <td>
           <a href="{{ url_for('activities.settings_activity',
-          activity_id=activity.id) }}">{{ macros.render_glyphicon("cog") }}</a>
+          activity=activity) }}">{{ macros.render_glyphicon("cog") }}</a>
         </td>
         <td>
           <a href="#" class="text-danger"
@@ -52,7 +52,7 @@ id="create-activity-form") }}
             {{ macros.render_glyphicon("remove") }}</a>
         </td>
         <td><a href="{{ url_for('activities.read_activity',
-        activity_id=activity.id) }}">{{ macros.render_glyphicon("eye-open") }}</a></td>
+        activity=activity) }}">{{ macros.render_glyphicon("eye-open") }}</a></td>
 
       </tr>
       {% endfor %}

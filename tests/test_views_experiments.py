@@ -22,7 +22,8 @@ def test_get_participant_experiment_or_abort(abort_mock, users, client):
     """Make sure get_participant_experiment_or_abort actually aborts.
     """
     login_participant(client)
-    get_participant_experiment_or_abort(5, 500)
+    experiment = ExperimentFactory()
+    get_participant_experiment_or_abort(experiment, 500)
 
     abort_mock.assert_called_once_with(500)
 

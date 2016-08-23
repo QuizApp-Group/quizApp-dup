@@ -61,8 +61,8 @@ def register():
         return render_template(
             "mturk/redirect.html",
             next_url=url_for("experiments.read_assignment",
-                             a_id=get_first_assignment(experiment).id,
-                             experiment_id=experiment.id))
+                             assignment=get_first_assignment(experiment),
+                             experiment=experiment))
 
     return render_template("mturk/register.html",
                            request=request,

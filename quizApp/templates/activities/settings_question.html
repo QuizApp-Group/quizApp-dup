@@ -28,7 +28,7 @@
   </div>
 </div>
 {% endif %}
-<form action="{{ url_for('activities.update_activity', activity_id=question.id) }}"
+<form action="{{ url_for('activities.update_activity', activity=question) }}"
       method="put" id="update-activity-form">
   {% for field in general_form %}
   {% if field.type != "SubmitField" %}
@@ -52,17 +52,14 @@
   </thead>
   <tbody>
     {% for object in dataset_form.objects %}
-    <tr
-                     data-create-action="{{
-                     url_for('activities.create_question_dataset',
-                     activity_id=question.id) }}"
-                     data-delete-action="{{
-                     url_for('activities.delete_question_dataset',
-                     activity_id=question.id, dataset_id=object.data) }}"
-                     >
-                     <td>
-                       {{ dataset_form.objects_mapping[object.data].id }}
-                     </td>
+    <tr data-create-action="{{ url_for('activities.create_question_dataset',
+    activity=question) }}"
+        data-delete-action="{{
+        url_for('activities.delete_question_dataset', activity=question,
+        dataset=dataset_form.objects_mapping[object.data]) }}">
+        <td>
+          {{ dataset_form.objects_mapping[object.data].id }}
+        </td>
       <td>
         {{ dataset_form.objects_mapping[object.data].name }}
       </td>
@@ -76,7 +73,7 @@
 {% if create_choice_form %}
 <hr>
 <h3>Choices</h3>
-<form action="{{ url_for('activities.create_choice', question_id=question.id
+<form action="{{ url_for('activities.create_choice', question=question
 ) }}" method="post" id="create-choice-form">
   <div class="table-container">
     {{ activities_macros.choice_table(choices, create_choice_form) }}
@@ -86,5 +83,4 @@
 {{ macros.render_field(general_form.submit, form="update-activity-form") }}
 
 {% endif %}
-
 {% endblock %}
