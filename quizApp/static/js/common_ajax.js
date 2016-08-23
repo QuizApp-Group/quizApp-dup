@@ -25,9 +25,10 @@ function form_ajax(selector, done_callback, pre_callback) {
         encode: true,
       })
       .done(function(data) {
+          var method = this.getAttribute("method").toLowerCase();
           clear_errors(this);
           render_errors(data.errors, data.prefix);
-          if(data.success) {
+          if(data.success && method == "post") {
             clear_form(this);
           }
           done_callback.call(this, data);
@@ -41,9 +42,10 @@ function form_ajax(selector, done_callback, pre_callback) {
         encode: true,
       })
       .done(function(data) {
+          var method = this.getAttribute("method").toLowerCase();
           clear_errors(this);
           render_errors(data.errors, data.prefix)
-          if(data.success) {
+          if(data.success && method == "post") {
             clear_form(this);
           }
           done_callback.call(this, data);
