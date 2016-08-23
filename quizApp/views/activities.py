@@ -7,7 +7,6 @@ read_activity itself).
 """
 from flask import Blueprint, render_template, url_for, jsonify, abort, request
 from flask_security import roles_required
-from sqlalchemy import not_
 
 from quizApp.models import Activity, Dataset, Question, Choice
 from quizApp.forms.experiments import get_question_form
@@ -106,11 +105,8 @@ def settings_question(question):
 
     dataset_form = DatasetListForm(prefix="dataset")
     dataset_form.reset_objects()
-    associated_datasets = question.datasets
-    unassociated_datasets = Dataset.query.\
-        filter(not_(Dataset.questions.any(id=question.id))).all()
-    dataset_form.populate_objects(associated_datasets + unassociated_datasets)
-    dataset_form.objects.default = [x.id for x in associated_datasets]
+    dataset_form.populate_objects(Dataset.query.all())
+    dataset_form.objects.default = [x.id for x in question.datasets]
     dataset_form.process()
 
     activity_type_form = ObjectTypeForm()
@@ -131,8 +127,6 @@ def settings_question(question):
         general_form=general_form,
         activity_type_form=activity_type_form,
         dataset_form=dataset_form,
-        associated_datasets=associated_datasets,
-        unassociated_datasets=unassociated_datasets,
         choices=question.choices,
         create_choice_form=create_choice_form,
         confirm_delete_choice_form=confirm_delete_choice_form,
