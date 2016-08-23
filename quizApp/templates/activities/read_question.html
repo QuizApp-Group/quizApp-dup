@@ -15,7 +15,7 @@ Activity {{ question.id }} - Preview
 <div id='question'>
   <h3>{{ question.question }}</h3>
   <form id="question-submit-form">
-    {{ macros.render_field(question_form.choices) }}
+    {% block question_form %}{% endblock %}
     {% if question.needs_comment %}
         <p>Why do you think this is the correct choice?</p>
         {{ macros.render_field(question_form.comment, rows="5") }}

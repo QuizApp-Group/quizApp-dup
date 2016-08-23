@@ -11,7 +11,7 @@ from flask_security import roles_required
 from quizApp.models import Activity, Dataset, Question, Choice
 from quizApp.forms.experiments import get_question_form
 from quizApp.forms.activities import QuestionForm, DatasetListForm,\
-    ChoiceForm
+    ChoiceForm, get_activity_form
 from quizApp.forms.common import DeleteObjectForm, ObjectTypeForm
 from quizApp import db
 from quizApp.views.helpers import validate_model_id
@@ -21,6 +21,7 @@ activities = Blueprint("activities", __name__, url_prefix="/activities")
 ACTIVITY_TYPES = {"question_mc_singleselect": "Single select multiple choice",
                   "question_mc_multiselect": "Multi select multiple choice",
                   "question_mc_singleselect_scale": "Likert scale",
+                  "question_integer": "Integer answer",
                   "question_freeanswer": "Free answer"}
 
 ACTIVITY_ROUTE = "/<int:activity_id>"
@@ -75,6 +76,7 @@ def read_activity(activity_id):
         "question_mc_singleselect": read_question,
         "question_mc_multiselect": read_question,
         "question_freeanswer": read_question,
+        "question_integer": read_question,
         "question_mc_singleselect_scale": read_question,
     }
     return read_function_mapping[activity.type](activity)
@@ -87,7 +89,15 @@ def read_question(question):
 
     form.populate_from_question(question)
 
-    return render_template("activities/read_question.html",
+    template_mapping = {
+        "question_mc_singleselect": "activities/read_mc_question.html",
+        "question_mc_multiselect": "activities/read_mc_question.html",
+        "question_freeanswer": "activities/read_freeanswer_question.html",
+        "question_integer": "activities/read_integer_question.html",
+        "question_mc_singleselect_scale": "activities/read_mc_question.html",
+    }
+
+    return render_template(template_mapping[question.type],
                            question=question,
                            question_form=form)
 
@@ -104,15 +114,13 @@ def settings_activity(activity_id):
         "question_mc_multiselect": settings_question,
         "question_freeanswer": settings_question,
         "question_mc_singleselect_scale": settings_question,
+        "question_integer": settings_question,
     }
 
     return settings_function_mapping[activity.type](activity)
 
-
 def settings_question(question):
-    """Display settings for the given question.
-    """
-    general_form = QuestionForm(obj=question)
+    general_form = get_activity_form(question, obj=question)
 
     dataset_form = DatasetListForm(prefix="dataset")
     dataset_form.reset_objects()
@@ -123,26 +131,39 @@ def settings_question(question):
     activity_type_form = ObjectTypeForm()
     activity_type_form.populate_object_type(ACTIVITY_TYPES)
 
-    if "mc" in question.type:
-        create_choice_form = ChoiceForm(prefix="create")
-        update_choice_form = ChoiceForm(prefix="update")
-    else:
-        create_choice_form = None
-        update_choice_form = None
+    template_kwargs = {
+        "question": question,
+        "general_form": general_form,
+        "activity_type_form": activity_type_form,
+        "dataset_form": dataset_form,
+    }
 
-    confirm_delete_choice_form = DeleteObjectForm()
+    settings_question_function_mapping = {
+        "question_mc_singleselect": settings_mc_question,
+        "question_mc_multiselect": settings_mc_question,
+        "question_mc_singleselect_scale": settings_mc_question,
+    }
+
+    try:
+        template_kwargs = settings_question_function_mapping[question.type](
+            question, template_kwargs)
+    except KeyError:
+        pass
 
     return render_template(
         "activities/settings_question.html",
-        question=question,
-        general_form=general_form,
-        activity_type_form=activity_type_form,
-        dataset_form=dataset_form,
-        choices=question.choices,
-        create_choice_form=create_choice_form,
-        confirm_delete_choice_form=confirm_delete_choice_form,
-        update_choice_form=update_choice_form)
+        **template_kwargs)
 
+
+def settings_mc_question(question, template_kwargs):
+    """Display settings for the given question.
+    """
+    template_kwargs["choices"] = question.choices
+    template_kwargs["create_choice_form"] = ChoiceForm(prefix="create")
+    template_kwargs["update_choice_form"] = ChoiceForm(prefix="update")
+    template_kwargs["confirm_delete_choice_form"] = DeleteObjectForm()
+
+    return template_kwargs
 
 @activities.route(ACTIVITY_ROUTE, methods=["PUT"])
 @roles_required("experimenter")
@@ -150,26 +171,12 @@ def update_activity(activity_id):
     """Update the activity based on transmitted form data.
     """
     activity = validate_model_id(Activity, activity_id)
-
-    update_function_mapping = {
-        "question_mc_singleselect": update_question,
-        "question_mc_multiselect": update_question,
-        "question_freeanswer": update_question,
-        "question_mc_singleselect_scale": update_question,
-    }
-
-    return update_function_mapping[activity.type](activity)
-
-
-def update_question(question):
-    """Given a question, update its settings.
-    """
-    general_form = QuestionForm(request.form)
+    general_form = get_activity_form(activity, request.form, obj=activity)
 
     if not general_form.validate():
         return jsonify({"success": 0, "errors": general_form.errors})
 
-    general_form.populate_obj(question)
+    general_form.populate_obj(activity)
     db.session.commit()
 
     return jsonify({"success": 1})

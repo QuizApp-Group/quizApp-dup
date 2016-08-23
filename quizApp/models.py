@@ -507,6 +507,7 @@ class IntegerQuestion(Question):
         """
         assert not self.bounded_below or answer > self.lower_bound
         assert not self.bounded_above or answer < self.upper_bound
+        return answer
 
     __mapper_args__ = {
         'polymorphic_identity': 'question_integer',
