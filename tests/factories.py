@@ -70,6 +70,15 @@ class QuestionFactory(ActivityFactory):
             self.datasets.append(DatasetFactory())
 
 
+class FreeAnswerQuestionFactory(QuestionFactory):
+    class Meta(object):
+        model = models.FreeAnswerQuestion
+
+
+class IntegerQuestionFactory(QuestionFactory):
+    class Meta(object):
+        model = models.IntegerQuestion
+
 class SingleSelectQuestionFactory(QuestionFactory):
     class Meta(object):
         model = models.SingleSelectQuestion
