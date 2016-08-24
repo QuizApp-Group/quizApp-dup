@@ -79,6 +79,7 @@ class IntegerQuestionFactory(QuestionFactory):
     class Meta(object):
         model = models.IntegerQuestion
 
+
 class SingleSelectQuestionFactory(QuestionFactory):
     class Meta(object):
         model = models.SingleSelectQuestion

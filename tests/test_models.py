@@ -204,15 +204,12 @@ def test_integer_question_validators():
     int_question = IntegerQuestion()
     int_result = IntegerQuestionResult()
 
-    int_question.bounded_below = True
     int_question.lower_bound = 1
 
     with pytest.raises(AssertionError):
         int_question.answer = 0
 
     int_question.answer = 1
-
-    int_question.bounded_above = True
     int_question.upper_bound = 2
 
     with pytest.raises(AssertionError):

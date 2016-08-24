@@ -498,11 +498,7 @@ class IntegerQuestion(Question):
         result_class = IntegerQuestionResult
 
     answer = db.Column(db.Integer(), info={"label": "Correct answer"})
-    bounded_below = db.Column(db.Boolean(),
-                              info={"label": "Enforce lower bound"})
     lower_bound = db.Column(db.Integer, info={"label": "Lower bound"})
-    bounded_above = db.Column(db.Boolean(),
-                              info={"label": "Enforce upper bound"})
     upper_bound = db.Column(db.Integer, info={"label": "Upper bound"})
 
     def get_score(self, result):
@@ -514,8 +510,8 @@ class IntegerQuestion(Question):
     def validate_answer(self, _, answer):
         """Ensure answer is within the bounds.
         """
-        assert not self.bounded_below or answer >= self.lower_bound
-        assert not self.bounded_above or answer <= self.upper_bound
+        assert self.lower_bound is None or answer >= self.lower_bound
+        assert self.upper_bound is None or answer <= self.upper_bound
         return answer
 
     __mapper_args__ = {
