@@ -11,8 +11,8 @@ from tests.factories import create_experiment
 
 def test_register(client, users):
     experiment = create_experiment(1, 1)
-    experiment.participant_experiments[0].complete = False
-    experiment.participant_experiments[0].progress = 0
+    experiment.assignment_sets[0].complete = False
+    experiment.assignment_sets[0].progress = 0
     experiment.save()
 
     response = client.get("/mturk/register?experiment_id={}".

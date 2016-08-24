@@ -63,7 +63,7 @@ def test_export_template(client, users):
 def test_import_assignments(client, users):
     login_experimenter(client)
     url = "/import"
-    experiment = ExperimentFactory(id=1)
+    experiment = ExperimentFactory(id=4)
     db.session.add(experiment)
     for i in range(1, 5):
         media_item = MediaItemFactory(id=i)
@@ -79,11 +79,11 @@ def test_import_assignments(client, users):
     assert json_success(response.data)
 
     assert models.Experiment.query.count() == 1
-    assert models.ParticipantExperiment.query.count() == 3
+    assert models.AssignmentSet.query.count() == 3
     assert models.Assignment.query.count() == 6
-    assert len(models.Experiment.query.one().participant_experiments) == 3
+    assert len(models.Experiment.query.one().assignment_sets) == 3
 
-    for pe in models.Experiment.query.one().participant_experiments:
+    for pe in models.Experiment.query.one().assignment_sets:
         assert len(pe.assignments) == 2
 
     response = client.post(url)

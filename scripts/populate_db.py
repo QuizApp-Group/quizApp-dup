@@ -14,7 +14,7 @@ import random
 from flask_security.utils import encrypt_password
 
 from scripts.clear_db import clear_db
-from quizApp.models import Question, Assignment, ParticipantExperiment, \
+from quizApp.models import Question, Assignment, AssignmentSet, \
     Participant, Graph, Experiment, Dataset, Choice
 from quizApp import db, security
 from quizApp.config import basedir
@@ -264,9 +264,9 @@ def create_participant_data(participant_question_list, test, group):
         question_list = [x[3:] for x in participant_question_list]
 
     for participant in question_list:
-        participant_experiment = ParticipantExperiment(
+        assignment_set = AssignmentSet(
             experiment=experiments[test])
-        db.session.add(participant_experiment)
+        db.session.add(assignment_set)
 
         for graph in participant:
             dataset = graph[0]
@@ -275,7 +275,7 @@ def create_participant_data(participant_question_list, test, group):
                 question_id = int(str(dataset)+str(5))
                 create_assignment(question_id,
                                   experiments[test],
-                                  participant_experiment, graph_id)
+                                  assignment_set, graph_id)
 
             else:  # training
                 if group == 'heuristic':
@@ -289,13 +289,13 @@ def create_participant_data(participant_question_list, test, group):
                     # write row to db
                     create_assignment(question_id,
                                       experiments[test],
-                                      participant_experiment, graph_id)
+                                      assignment_set, graph_id)
 
     print("Completed storing {} {} tests".format(test, group))
 
 
 def create_assignment(question_id, experiment,
-                      participant_experiment, graph_id):
+                      assignment_set, graph_id):
     """Given parameters, create an assignment, returning without doing anything
     if the question doesn't exist.
     """
@@ -305,10 +305,10 @@ def create_assignment(question_id, experiment,
     question.experiments.append(experiment)
 
     assignment = Assignment(
-        participant=participant_experiment.participant,
+        participant=assignment_set.participant,
         media_items=[Graph.query.get(graph_id)])
     assignment.activity = question
-    assignment.participant_experiment = participant_experiment
+    assignment.assignment_set = assignment_set
 
     experiment.activities.append(
         Question.query.get(question_id))
@@ -317,7 +317,7 @@ def create_assignment(question_id, experiment,
 
 
 def create_assignments():
-    """Create all necessary assignments/ParticipantExperiments.
+    """Create all necessary assignments/AssignmentSets.
     """
     for test in ['pre_test', 'test', 'post_test']:
         create_participant_data(PARTICIPANT_QUESTION_LIST, test, 'question')
