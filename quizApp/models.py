@@ -482,6 +482,15 @@ class Question(Activity):
 
 class IntegerQuestion(Question):
     """Ask participants to enter an integer, optionally bounded above/below.
+
+    All bounds are inclusive.
+
+    Attributes:
+        answer (int): The correct answer to this question
+        bounded_below (bool): If True, enforce a lower bound
+        lower_bound (int): The minimum possible answer.
+        bounded_above (bool): If True, enforce an upper bound
+        upper_bound (int): The maximum possible answer.
     """
     class Meta(object):
         """Specify the result class.
@@ -505,8 +514,8 @@ class IntegerQuestion(Question):
     def validate_answer(self, _, answer):
         """Ensure answer is within the bounds.
         """
-        assert not self.bounded_below or answer > self.lower_bound
-        assert not self.bounded_above or answer < self.upper_bound
+        assert not self.bounded_below or answer >= self.lower_bound
+        assert not self.bounded_above or answer <= self.upper_bound
         return answer
 
     __mapper_args__ = {

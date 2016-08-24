@@ -10,7 +10,8 @@ from tests.factories import ExperimentFactory, ParticipantFactory, \
     ChoiceFactory, QuestionFactory
 from quizApp.models import ParticipantExperiment, Assignment, Role, Activity, \
     Question, Graph, MultipleChoiceQuestionResult, MultipleChoiceQuestion, \
-    FreeAnswerQuestion, FreeAnswerQuestionResult, Result
+    FreeAnswerQuestion, FreeAnswerQuestionResult, Result, \
+    IntegerQuestionResult, IntegerQuestion
 
 
 def test_db_rollback1():
@@ -197,3 +198,32 @@ def test_assignment_get_score():
 
     with pytest.raises(AttributeError):
         assert assignment.get_score() is None
+
+
+def test_integer_question_validators():
+    int_question = IntegerQuestion()
+    int_result = IntegerQuestionResult()
+
+    int_question.bounded_below = True
+    int_question.lower_bound = 1
+
+    with pytest.raises(AssertionError):
+        int_question.answer = 0
+
+    int_question.answer = 1
+
+    int_question.bounded_above = True
+    int_question.upper_bound = 2
+
+    with pytest.raises(AssertionError):
+        int_question.answer = 3
+
+    int_question.answer = 2
+
+    int_result.integer = 2
+
+    assert int_question.get_score(int_result) == 1
+
+    int_result.integer = 1
+
+    assert int_question.get_score(int_result) == 0

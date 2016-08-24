@@ -7,7 +7,7 @@ import pdb
 from flask_wtf import Form
 from wtforms import SubmitField, RadioField, TextAreaField, HiddenField,\
     IntegerField
-from wtforms.validators import DataRequired
+from wtforms.validators import DataRequired, NumberRange
 from wtforms_alchemy import ModelForm, ModelFormField
 
 from quizApp.forms.common import OrderFormMixin, ScorecardSettingsForm
@@ -74,7 +74,14 @@ class IntegerAnswerForm(QuestionForm):
     integer = IntegerField()
 
     def populate_from_question(self, question):
-        pdb.set_trace()
+        min_value = max_value = None
+        if question.bounded_below:
+            min_value = question.lower_bound
+        if question.bounded_above:
+            max_value = question.upper_bound
+        self.integer.validators = [
+            NumberRange(min_value, max_value)]
+
 
     def populate_from_result(self, result):
         self.integer.default = result.integer
