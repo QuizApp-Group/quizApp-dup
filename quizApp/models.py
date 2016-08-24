@@ -504,7 +504,10 @@ class IntegerQuestion(Question):
     def get_score(self, result):
         """If the choice is the answer, one point.
         """
-        return int(result.integer == self.answer)
+        try:
+            return int(result.integer == self.answer)
+        except AttributeError:
+            return 0
 
     @db.validates('answer')
     def validate_answer(self, _, answer):

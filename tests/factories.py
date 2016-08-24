@@ -151,10 +151,13 @@ def create_experiment(num_activities, num_participants, activity_types=[]):
 
         if activity_types:
             activity_type = random.choice(activity_types)
-            if "scale" in activity_type:
-                activity = ScaleQuestionFactory()
-            elif "singleselect" in activity_type:
-                activity = SingleSelectQuestionFactory()
+            factory_mapping = {
+                "question_mc_singleselect": SingleSelectQuestionFactory,
+                "question_mc_singleselect_scale": ScaleQuestionFactory,
+                "question_integer": IntegerQuestionFactory,
+                "question_freeanswer": FreeAnswerQuestionFactory,
+            }
+            activity = factory_mapping[activity_type]()
         else:
             activity = ActivityFactory()
 

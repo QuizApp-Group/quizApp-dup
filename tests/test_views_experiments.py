@@ -347,6 +347,21 @@ def test_read_assignment(client, users):
         data = response.data.decode(response.charset)
         assert choice.choice in data
 
+    # Check that non-mc assignments are rendered OK
+    experiment3 = create_experiment(3, 1,
+                                    ["question_integer"])
+    experiment3.save()
+    participant_experiment3 = experiment3.participant_experiments[0]
+    participant_experiment3.participant = participant
+    participant_experiment3.save()
+    assignment3 = participant_experiment3.assignments[0]
+    url3 = "/experiments/" + str(experiment3.id) + "/assignments/"
+
+    response = client.get(url3 + str(assignment3.id))
+    assert response.status_code == 200
+    data = response.data.decode(response.charset)
+    assert assignment3.activity.question in data
+
 
 def test_update_assignment(client, users):
     login_participant(client)
