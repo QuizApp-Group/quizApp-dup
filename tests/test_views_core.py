@@ -65,7 +65,7 @@ def test_import_assignments(client, users):
     url = "/import"
     experiment = ExperimentFactory(id=1)
     db.session.add(experiment)
-    for i in range(0, 4):
+    for i in range(1, 5):
         media_item = MediaItemFactory(id=i)
         activity = ActivityFactory(id=i)
         db.session.add(media_item)
@@ -80,7 +80,11 @@ def test_import_assignments(client, users):
 
     assert models.Experiment.query.count() == 1
     assert models.ParticipantExperiment.query.count() == 3
-    assert models.Assignment.query.count() == 3
+    assert models.Assignment.query.count() == 6
+    assert len(models.Experiment.query.one().participant_experiments) == 3
+
+    for pe in models.Experiment.query.one().participant_experiments:
+        assert len(pe.assignments) == 2
 
     response = client.post(url)
     assert response.status_code == 200

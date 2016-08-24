@@ -31,6 +31,7 @@ SHEET_NAME_MAPPING = OrderedDict([
     ("Media items", models.MediaItem),
     ("Activities", models.Activity),
     ("Choices", models.Choice),
+    ("Results", models.Result),
 ])
 
 
@@ -140,7 +141,7 @@ def relationship_to_string(field, value):
     """
     ids = []
     direction = field.property.direction
-    if direction in (MANYTOMANY, ONETOMANY):
+    if direction in (MANYTOMANY, ONETOMANY) and field.property.uselist:
         for obj in value:
             ids.append(str(obj.id))
         return ",".join(ids)
