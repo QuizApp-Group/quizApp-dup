@@ -6,7 +6,7 @@ from wtforms_alchemy import ModelForm, ModelFormField
 
 from quizApp.forms.common import ListObjectForm, OrderFormMixin,\
     ScorecardSettingsForm
-from quizApp.models import Choice, Question, Activity, FreeAnswerQuestion,\
+from quizApp.models import Choice, Question, Activity, \
     IntegerQuestion
 
 
@@ -22,6 +22,7 @@ class ActivityForm(OrderFormMixin, ModelForm):
     scorecard_settings = ModelFormField(ScorecardSettingsForm)
     submit = SubmitField("Save")
 
+
 def get_activity_form(activity, *args, **kwargs):
     """Return the update form for the actiivty of the given type.
     """
@@ -35,6 +36,7 @@ def get_activity_form(activity, *args, **kwargs):
 
     return activity_form_mapping[activity.type](*args, **kwargs)
 
+
 class QuestionForm(ActivityForm):
     """Form that can be used for creating or updating questions.
     """
@@ -43,7 +45,10 @@ class QuestionForm(ActivityForm):
         """
         model = Question
 
+
 class IntegerQuestionForm(ActivityForm):
+    """Create or update an IntegerQuestion.
+    """
     class Meta(object):
         """Specify model and field order.
         """

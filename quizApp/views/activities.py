@@ -119,7 +119,10 @@ def settings_activity(activity_id):
 
     return settings_function_mapping[activity.type](activity)
 
+
 def settings_question(question):
+    """Return a settings page for a question.
+    """
     general_form = get_activity_form(question, obj=question)
 
     dataset_form = DatasetListForm(prefix="dataset")
@@ -131,6 +134,8 @@ def settings_question(question):
     activity_type_form = ObjectTypeForm()
     activity_type_form.populate_object_type(ACTIVITY_TYPES)
 
+    # These kwargs should be passed to all templates, regardless of the type of
+    # question.
     template_kwargs = {
         "question": question,
         "general_form": general_form,
@@ -138,6 +143,9 @@ def settings_question(question):
         "dataset_form": dataset_form,
     }
 
+    # If a type of question needs to set additional kwargs, its type should be
+    # listed here along with a function that will take in the question and
+    # ``template_kwargs`` and return an amended dict of kwargs.
     settings_question_function_mapping = {
         "question_mc_singleselect": settings_mc_question,
         "question_mc_multiselect": settings_mc_question,
@@ -153,6 +161,7 @@ def settings_question(question):
     return render_template(
         "activities/settings_question.html",
         **template_kwargs)
+# TODO: should really have separate templates for this
 
 
 def settings_mc_question(question, template_kwargs):
@@ -164,6 +173,7 @@ def settings_mc_question(question, template_kwargs):
     template_kwargs["confirm_delete_choice_form"] = DeleteObjectForm()
 
     return template_kwargs
+
 
 @activities.route(ACTIVITY_ROUTE, methods=["PUT"])
 @roles_required("experimenter")
