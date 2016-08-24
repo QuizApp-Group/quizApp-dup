@@ -143,9 +143,10 @@ def settings_question(question):
         "dataset_form": dataset_form,
     }
 
-    # If a type of question needs to set additional kwargs, its type should be
-    # listed here along with a function that will take in the question and
-    # ``template_kwargs`` and return an amended dict of kwargs.
+    # If a question needs special forms on its settings page, it should extend
+    # ``templates/activities/settings_question.html`` and add code as
+    # necessary. Then it should be added here with a handler function, which
+    # should render the template.
     settings_question_function_mapping = {
         "question_mc_singleselect": settings_mc_question,
         "question_mc_multiselect": settings_mc_question,
@@ -153,7 +154,7 @@ def settings_question(question):
     }
 
     try:
-        template_kwargs = settings_question_function_mapping[question.type](
+        return settings_question_function_mapping[question.type](
             question, template_kwargs)
     except KeyError:
         pass
@@ -161,7 +162,6 @@ def settings_question(question):
     return render_template(
         "activities/settings_question.html",
         **template_kwargs)
-# TODO: should really have separate templates for this
 
 
 def settings_mc_question(question, template_kwargs):
@@ -172,7 +172,8 @@ def settings_mc_question(question, template_kwargs):
     template_kwargs["update_choice_form"] = ChoiceForm(prefix="update")
     template_kwargs["confirm_delete_choice_form"] = DeleteObjectForm()
 
-    return template_kwargs
+    return render_template("activities/settings_mc_question.html",
+                           **template_kwargs)
 
 
 @activities.route(ACTIVITY_ROUTE, methods=["PUT"])
