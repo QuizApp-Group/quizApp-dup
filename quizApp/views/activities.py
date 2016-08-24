@@ -65,41 +65,77 @@ def create_activity():
     return jsonify({"success": 1, "next_url": next_url})
 
 
+def render_activity(activity, *args, **kwargs):
+    """Given an activity, render the template that displays this activity and
+    return it.
+
+    This function is the central place where activities are rendered.
+
+    Extra args/kwargs will be passed on to the specific rendering function for
+    the type of activity.
+    """
+
+    render_mapping = {
+        "question_mc_singleselect": render_question,
+        "question_mc_multiselect": render_question,
+        "question_freeanswer": render_question,
+        "question_integer": render_question,
+        "question_mc_singleselect_scale": render_question,
+    }
+
+    return render_mapping[activity.type](activity, *args, **kwargs)
+
+
 @activities.route(ACTIVITY_ROUTE, methods=["GET"])
 @roles_required("experimenter")
 def read_activity(activity_id):
     """Display a given activity as it would appear to a participant.
     """
     activity = validate_model_id(Activity, activity_id)
+    rendered_activity = render_activity(activity, False)
 
-    read_function_mapping = {
-        "question_mc_singleselect": read_question,
-        "question_mc_multiselect": read_question,
-        "question_freeanswer": read_question,
-        "question_integer": read_question,
-        "question_mc_singleselect_scale": read_question,
-    }
-    return read_function_mapping[activity.type](activity)
+    return render_template("activities/read_activity.html",
+                           activity=activity,
+                           rendered_activity=rendered_activity)
 
 
-def read_question(question):
+def render_question(question, disabled=False, assignment=None,
+                    render_explanation=True):
     """Display a given question as it would appear to a participant.
+
+    Arguments:
+        question (Question): The question to render
+        disabled (bool): if True, disable the form controls
+        assignment (Assignment): if given, use the assignment's result and
+            comment to populate fields prior to rendering
+        render_explanation (bool): If True, render the explanation for this
+            question
     """
     form = get_question_form(question)
-
     form.populate_from_question(question)
 
+    try:
+        form.populate_from_result(assignment.result)
+    except AttributeError:
+        pass
+
+    try:
+        form.comment.default = assignment.comment
+        form.process()
+    except AttributeError:
+        pass
+
     template_mapping = {
-        "question_mc_singleselect": "activities/read_mc_question.html",
-        "question_mc_multiselect": "activities/read_mc_question.html",
-        "question_freeanswer": "activities/read_freeanswer_question.html",
-        "question_integer": "activities/read_integer_question.html",
-        "question_mc_singleselect_scale": "activities/read_mc_question.html",
+        "question_mc_singleselect": "activities/render_mc_question.html",
+        "question_mc_multiselect": "activities/render_mc_question.html",
+        "question_freeanswer": "activities/render_freeanswer_question.html",
+        "question_integer": "activities/render_integer_question.html",
+        "question_mc_singleselect_scale": "activities/render_mc_question.html",
     }
 
     return render_template(template_mapping[question.type],
-                           question=question,
-                           question_form=form)
+                           question=question, form=form, disabled=disabled,
+                           render_explanation=render_explanation)
 
 
 @activities.route(ACTIVITY_ROUTE + "/settings", methods=["GET"])

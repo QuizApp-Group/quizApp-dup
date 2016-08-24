@@ -18,6 +18,7 @@ from quizApp.forms.experiments import CreateExperimentForm, \
 from quizApp.models import Experiment, Assignment, \
     ParticipantExperiment, Activity, Participant
 from quizApp.views.helpers import validate_model_id, get_first_assignment
+from quizApp.views.activities import render_activity
 from quizApp.views.mturk import submit_assignment
 
 experiments = Blueprint("experiments", __name__, url_prefix="/experiments")
@@ -182,10 +183,8 @@ def read_question(experiment, assignment):
 
     if not part_exp.complete:
         next_url = None
-        explanation = ""
     else:
         next_url = get_next_assignment_url(part_exp, this_index)
-        explanation = question.explanation
 
     previous_assignment = None
 
@@ -193,17 +192,18 @@ def read_question(experiment, assignment):
         previous_assignment = part_exp.assignments[this_index - 1]
 
     cumulative_score = assignment.participant_experiment.score
+    rendered_question = render_activity(question, part_exp.complete,
+                                        assignment, part_exp.complete)
 
     template_kwargs = {
         "exp": experiment,
-        "question": question,
         "assignment": assignment,
         "question_form": question_form,
         "next_url": next_url,
-        "explanation": explanation,
         "cumulative_score": cumulative_score,
         "experiment_complete": part_exp.complete,
-        "previous_assignment": previous_assignment
+        "previous_assignment": previous_assignment,
+        "rendered_question": rendered_question,
     }
 
     # This mapping is for further processing of certain question types, if
