@@ -28,39 +28,29 @@ Time elapsed: <span class="stopwatch"></span>
 </div>
 {% endfor %}
 
-<div id='question'>
-  <h3>{{ question.question }}</h3>
-  <form action="{{ url_for('experiments.update_assignment', experiment_id=exp.id,
-  a_id=assignment.id)}}" method="patch" id="question-submit-form"
-  class="timed-form">
-    {{ macros.render_field(mc_form.render_time) }}
-    {{ macros.render_field(mc_form.submit_time) }}
-    {{ macros.render_field(mc_form.choices, disabled=experiment_complete) }}
-    {% if question.needs_comment %}
-    <p>Why do you think this is the correct choice?</p>
-    {{ macros.render_field(mc_form.comment, rows="5",
-    disabled=experiment_complete) }}
-    <br />
-    {% endif %}
-    <p id="explanation-text">{{ explanation }}</p>
-    <div class="row">
-      <div class="previous-button">
-        {% if previous_assignment %}
-        <a href="{{ url_for('experiments.read_assignment', experiment_id=exp.id,
-        a_id=previous_assignment.id) }}" class="btn btn-primary"
-                                         role="button">Previous</a>
-        {% endif %}
-      </div>
-      <div class="next-button">
-        {% if experiment_complete %}
-        <a href="{{ next_url }}" role="button" class="btn btn-primary">Next</a>
-        {% else %}
-        {{ macros.render_field(mc_form.submit, value="Next") }}
-        {% endif %}
-      </div>
+<form action="{{ url_for('experiments.update_assignment', experiment_id=exp.id,
+a_id=assignment.id)}}" method="patch" id="question-submit-form"
+                                      class="timed-form">
+  {{ macros.render_field(question_form.render_time) }}
+  {{ macros.render_field(question_form.submit_time) }}
+  {{ rendered_question|safe }}
+  <div class="row">
+    <div class="previous-button">
+      {% if previous_assignment %}
+      <a href="{{ url_for('experiments.read_assignment', experiment_id=exp.id,
+      a_id=previous_assignment.id) }}" class="btn btn-primary"
+                                       role="button">Previous</a>
+      {% endif %}
     </div>
-  </form>
-  <div id="scorecard">
+    <div class="next-button">
+      {% if experiment_complete %}
+      <a href="{{ next_url }}" role="button" class="btn btn-primary">Next</a>
+      {% else %}
+      {{ macros.render_field(question_form.submit, value="Next") }}
+      {% endif %}
+    </div>
   </div>
+</form>
+<div id="scorecard">
 </div>
 {% endblock %}

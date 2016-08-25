@@ -6,7 +6,7 @@ import factory
 
 from tests.auth import login_experimenter
 from tests.factories import ActivityFactory, SingleSelectQuestionFactory, \
-    DatasetFactory, QuestionFactory, ChoiceFactory
+    DatasetFactory, QuestionFactory, ChoiceFactory, IntegerQuestionFactory
 from tests.helpers import json_success
 from quizApp import db
 from quizApp.models import Question
@@ -80,6 +80,15 @@ def test_settings_activity(client, users):
 
     for choice in question.choices:
         assert choice.choice in data
+
+    question = IntegerQuestionFactory()
+    question.save()
+    url = "/activities/" + str(question.id) + "/settings"
+    response = client.get(url)
+    data = response.data.decode(response.charset)
+    assert response.status_code == 200
+    assert question.question in data
+    assert question.explanation in data
 
 
 def test_update_activity(client, users):

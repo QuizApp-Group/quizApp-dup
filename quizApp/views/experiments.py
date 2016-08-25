@@ -15,9 +15,10 @@ from quizApp import db
 from quizApp.forms.common import DeleteObjectForm
 from quizApp.forms.experiments import CreateExperimentForm, \
     get_question_form
-from quizApp.models import Choice, Experiment, Assignment, \
-    AssignmentSet, Activity, Participant, MultipleChoiceQuestionResult
+from quizApp.models import Experiment, Assignment, \
+    AssignmentSet, Activity, Participant
 from quizApp.views.helpers import validate_model_id, get_first_assignment
+from quizApp.views.activities import render_activity
 from quizApp.views.mturk import submit_assignment
 
 experiments = Blueprint("experiments", __name__, url_prefix="/experiments")
@@ -162,29 +163,25 @@ def read_assignment(experiment_id, a_id):
         "question_mc_multiselect": read_question,
         "question_freeanswer": read_question,
         "question_mc_singleselect_scale": read_question,
+        "question_integer": read_question,
     }
 
     return read_function_mapping[activity.type](experiment, assignment)
 
 
 def read_question(experiment, assignment):
-    """Retrieve a question from the database and render its template.
-
-    This function assumes that all necessary error checking has been done on
-    its parameters.
+    """Common code for reading questions.
     """
     question = assignment.activity
     question_form = get_question_form(question)
-    question_form.populate_choices(question.choices)
-
-    if assignment.result:
-        question_form.choices.default = str(assignment.result.choice_id)
-        question_form.process()
-
     question_form.comment.data = assignment.comment
+    question_form.populate_from_question(question)
 
     assignment_set = assignment.assignment_set
     this_index = assignment_set.assignments.index(assignment)
+
+    if assignment.result:
+        question_form.populate_from_result(assignment.result)
 
     if not assignment_set.complete:
         # If the participant is not done, then save the choice order
@@ -192,11 +189,9 @@ def read_question(experiment, assignment):
         assignment.choice_order = json.dumps(choice_order)
         assignment.save()
         next_url = None
-        explanation = ""
     else:
         # If the participant is done, have a link right to the next question
         next_url = get_next_assignment_url(assignment_set, this_index)
-        explanation = question.explanation
 
     previous_assignment = None
 
@@ -204,17 +199,45 @@ def read_question(experiment, assignment):
         previous_assignment = assignment_set.assignments[this_index - 1]
 
     cumulative_score = assignment.assignment_set.score
+    rendered_question = render_activity(question, assignment_set.complete,
+                                        assignment, assignment_set.complete)
+
+    template_kwargs = {
+        "exp": experiment,
+        "assignment": assignment,
+        "question_form": question_form,
+        "next_url": next_url,
+        "cumulative_score": cumulative_score,
+        "experiment_complete": assignment_set.complete,
+        "previous_assignment": previous_assignment,
+        "rendered_question": rendered_question,
+    }
+
+    # This mapping is for further processing of certain question types, if
+    # necessary
+    read_question_function_mapping = {
+        "question_mc_singleselect": read_mc_question,
+        "question_mc_multiselect": read_mc_question,
+        "question_mc_singleselect_scale": read_mc_question,
+    }
+
+    try:
+        read_question_function_mapping[question.type](experiment, assignment)
+    except KeyError:
+        pass
 
     return render_template("experiments/read_question.html",
-                           exp=experiment,
-                           question=question,
-                           assignment=assignment,
-                           mc_form=question_form,
-                           next_url=next_url,
-                           explanation=explanation,
-                           cumulative_score=cumulative_score,
-                           experiment_complete=assignment_set.complete,
-                           previous_assignment=previous_assignment)
+                           **template_kwargs)
+
+
+def read_mc_question(_, assignment):
+    """Read a multiple choice question, making sure to save the choice order.
+    """
+    if not assignment.assignment_set.complete:
+        # If the participant is not done, then save the choice order
+        choice_order = [c.id for c in assignment.activity.choices]
+        assignment.choice_order = json.dumps(choice_order)
+        assignment.save()
 
 
 @experiments.route(ASSIGNMENT_ROUTE, methods=["PATCH"])
@@ -242,6 +265,7 @@ def update_assignment(experiment_id, a_id):
         "question_mc_multiselect": update_question_assignment,
         "question_freeanswer": update_question_assignment,
         "question_mc_singleselect_scale": update_question_assignment,
+        "question_integer": update_question_assignment,
     }
 
     return update_function_mapping[assignment.activity.type](assignment,
@@ -249,33 +273,28 @@ def update_assignment(experiment_id, a_id):
 
 
 def update_question_assignment(assignment, this_index):
-    """Update an assignment whose activity is a question.
+    """Common function for updating questions.
     """
     assignment_set = assignment.assignment_set
     question = assignment.activity
 
     question_form = get_question_form(question, request.form)
-    question_form.populate_choices(question.choices)
+    question_form.populate_from_question(question)
 
     if not question_form.validate():
         return jsonify({"success": 0, "errors": question_form.errors})
 
-    selected_choice = validate_model_id(Choice,
-                                        int(question_form.choices.data), 400)
-
-    # User has answered this question successfully
-    result = MultipleChoiceQuestionResult(
-        choice=Choice.query.get(selected_choice.id))
+    result = question_form.result
     result.assignment = assignment
-    db.session.add(result)
     assignment.comment = question_form.comment.data
+    db.session.add(result)
 
     next_url = get_next_assignment_url(assignment_set, this_index)
 
     if this_index == assignment_set.progress:
         assignment_set.progress += 1
 
-    process_assignment(question_form, assignment)
+    process_assignment(question_form, assignment, this_index)
 
     db.session.commit()
 
@@ -292,10 +311,14 @@ def update_question_assignment(assignment, this_index):
     return jsonify({"success": 1, "next_url": next_url})
 
 
-def process_assignment(activity_form, assignment):
+def process_assignment(activity_form, assignment, this_index):
     """Do some assignment processing that's common across all Activity types,
     but depends on the submission being valid.
     """
+    assignment_set = assignment.assignment_set
+    if this_index == assignment_set.progress:
+        assignment_set.progress += 1
+
     # Record time to solve
     if activity_form.render_time.data and activity_form.submit_time.data:
         render_datetime = dateutil.parser.parse(activity_form.render_time.data)

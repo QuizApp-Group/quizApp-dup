@@ -1,0 +1,6 @@
+{% extends 'activities/render_question.html' %}
+{% import 'macros.html' as macros %}
+
+{% block question_form %}
+{{ macros.render_field(form.choices, disabled=disabled) }}
+{% endblock %}
