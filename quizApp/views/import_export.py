@@ -26,7 +26,7 @@ from quizApp import models
 SHEET_NAME_MAPPING = OrderedDict([
     ("Experiments", models.Experiment),
     ("Assignments", models.Assignment),
-    ("Participant Experiments", models.ParticipantExperiment),
+    ("Assignment Sets", models.AssignmentSet),
     ("Datasets", models.Dataset),
     ("Media items", models.MediaItem),
     ("Activities", models.Activity),

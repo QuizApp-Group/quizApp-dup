@@ -16,7 +16,7 @@ Thank you for participating.</h3>
 <p>How you did:</p>
 
 {% if scorecard_settings.display_score %}
-<p>You scored a total of {{ participant_experiment.score }} points.</p>
+<p>You scored a total of {{ assignment_set.score }} points.</p>
 {% endif %}
 
 <table class="table table-striped">
@@ -35,7 +35,7 @@ Thank you for participating.</h3>
     </tr>
   </thead>
   <tbody>
-    {% for assignment in participant_experiment.assignments %}
+    {% for assignment in assignment_set.assignments %}
     {% if assignment.result %}
     <tr
        {% if scorecard_settings.display_correctness %}
@@ -47,7 +47,7 @@ Thank you for participating.</h3>
        {% endif %}
        >
         <td><a href="{{ url_for('experiments.read_assignment',
-        experiment_id=participant_experiment.experiment.id,
+        experiment_id=assignment_set.experiment.id,
         a_id=assignment.id) }}">{{ assignment.id }}</a>
         </td>
         {% if scorecard_settings.display_correctness %}
