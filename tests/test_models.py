@@ -179,7 +179,7 @@ def test_activity_get_score():
     activity = Activity()
     result = Result()
     with pytest.raises(NotImplementedError):
-        score = activity.get_score(result)
+        activity.get_score(result)
 
 
 def test_free_answer_question_get_score():
