@@ -8,9 +8,9 @@ import mock
 from datetime import datetime, timedelta
 
 from quizApp import db
-from quizApp.models import ParticipantExperiment
+from quizApp.models import AssignmentSet
 from quizApp.views.experiments import get_next_assignment_url, \
-    POST_FINALIZE_HANDLERS, get_participant_experiment_or_abort
+    POST_FINALIZE_HANDLERS, get_assignment_set_or_abort
 from tests.factories import ExperimentFactory, create_experiment
 from tests.auth import login_participant, get_participant, \
     login_experimenter
@@ -18,11 +18,11 @@ from tests.helpers import json_success
 
 
 @mock.patch('quizApp.views.experiments.abort', autospec=True)
-def test_get_participant_experiment_or_abort(abort_mock, users, client):
-    """Make sure get_participant_experiment_or_abort actually aborts.
+def test_get_assignment_set_or_abort(abort_mock, users, client):
+    """Make sure get_assignment_set_or_abort actually aborts.
     """
     login_participant(client)
-    get_participant_experiment_or_abort(5, 500)
+    get_assignment_set_or_abort(5, 500)
 
     abort_mock.assert_called_once_with(500)
 
@@ -55,9 +55,9 @@ def test_experiments_authed_participant(client, users):
     participant = get_participant()
     exp = ExperimentFactory()
     exp.save()
-    part_exp = ParticipantExperiment(experiment_id=exp.id,
-                                     participant_id=participant.id)
-    part_exp.save()
+    assignment_set = AssignmentSet(experiment_id=exp.id,
+                                   participant_id=participant.id)
+    assignment_set.save()
 
     exp_url = "/experiments/" + str(exp.id)
 
@@ -92,8 +92,8 @@ def test_experiments_authed_experimenter(client, users):
     assert "Hello experimenter" in data
 
     exp = ExperimentFactory()
-    part_exp = ParticipantExperiment()
-    exp.participant_experiments.append(part_exp)
+    assignment_set = AssignmentSet()
+    exp.assignment_sets.append(assignment_set)
     exp.save()
 
     exp_url = "/experiments/" + str(exp.id)
@@ -197,8 +197,8 @@ def test_read_experiment(client, users):
     login_participant(client)
 
     exp = create_experiment(4, 1)
-    exp.participant_experiments[0].complete = False
-    exp.participant_experiments[0].progress = 0
+    exp.assignment_sets[0].complete = False
+    exp.assignment_sets[0].progress = 0
     exp.save()
 
     url = "/experiments/" + str(exp.id)
@@ -206,19 +206,19 @@ def test_read_experiment(client, users):
     response = client.get(url)
     data = response.data.decode(response.charset)
     assert "/assignments/" + \
-        str(exp.participant_experiments[0].assignments[0].id) in \
+        str(exp.assignment_sets[0].assignments[0].id) in \
         data
 
-    exp.participant_experiments[0].progress += 1
+    exp.assignment_sets[0].progress += 1
     db.session.commit()
 
     response = client.get(url)
     data = response.data.decode(response.charset)
     assert "/assignments/" + \
-        str(exp.participant_experiments[0].assignments[0].id) not in \
+        str(exp.assignment_sets[0].assignments[0].id) not in \
         data
     assert "/assignments/" + \
-        str(exp.participant_experiments[0].assignments[1].id) in \
+        str(exp.assignment_sets[0].assignments[1].id) in \
         data
 
 
@@ -258,14 +258,14 @@ def test_read_assignment(client, users):
 
     experiment = create_experiment(3, 1,
                                    ["question_mc_singleselect"])
-    participant_experiment = experiment.participant_experiments[0]
-    participant_experiment.complete = False
-    participant_experiment.participant = participant
+    assignment_set = experiment.assignment_sets[0]
+    assignment_set.complete = False
+    assignment_set.participant = participant
     experiment.save()
 
     url = "/experiments/" + str(experiment.id) + "/assignments/"
 
-    for assignment in participant_experiment.assignments:
+    for assignment in assignment_set.assignments:
         # Verify that the question is present in the output
         question = assignment.activity
         response = client.get(url + str(assignment.id))
@@ -281,7 +281,7 @@ def test_read_assignment(client, users):
         assert response.status_code == 200
         assert json_success(response.data)
 
-    for assignment in participant_experiment.assignments:
+    for assignment in assignment_set.assignments:
         # Make sure we can read it
         question = assignment.activity
         response = client.get(url + str(assignment.id))
@@ -292,12 +292,12 @@ def test_read_assignment(client, users):
     experiment.disable_previous = True
     db.session.commit()
 
-    response = client.get(url + str(participant_experiment.assignments[0].id))
+    response = client.get(url + str(assignment_set.assignments[0].id))
     assert response.status_code == 400
 
     response = client.patch(
-        url + str(participant_experiment.assignments[0].id),
-        data={"choices": str(participant_experiment.assignments[0].
+        url + str(assignment_set.assignments[0].id),
+        data={"choices": str(assignment_set.assignments[0].
                              activity.choices[0].id)})
     assert response.status_code == 400
 
@@ -307,7 +307,7 @@ def test_read_assignment(client, users):
 
     # Once an experiment is submitted, make sure defaults are saved and we have
     # next buttons
-    for assignment in participant_experiment.assignments:
+    for assignment in assignment_set.assignments:
         response = client.get(url + str(assignment.id))
         data = response.data.decode(response.charset)
         assert response.status_code == 200
@@ -317,8 +317,8 @@ def test_read_assignment(client, users):
     # Verify that we check that the assignment is in this experiment
     experiment2 = create_experiment(3, 1)
     experiment2.save()
-    participant_experiment2 = experiment2.participant_experiments[0]
-    assignment2 = participant_experiment2.assignments[0]
+    assignment_set2 = experiment2.assignment_sets[0]
+    assignment2 = assignment_set2.assignments[0]
 
     response = client.get(url + str(assignment2.id))
     assert response.status_code == 400
@@ -334,10 +334,10 @@ def test_read_assignment(client, users):
     experiment3 = create_experiment(3, 1,
                                     ["question_mc_singleselect_scale"])
     experiment3.save()
-    participant_experiment3 = experiment3.participant_experiments[0]
-    participant_experiment3.participant = participant
-    participant_experiment3.save()
-    assignment3 = participant_experiment3.assignments[0]
+    assignment_set3 = experiment3.assignment_sets[0]
+    assignment_set3.participant = participant
+    assignment_set3.save()
+    assignment3 = assignment_set3.assignments[0]
     url3 = "/experiments/" + str(experiment3.id) + "/assignments/"
 
     response = client.get(url3 + str(assignment3.id))
@@ -351,10 +351,10 @@ def test_read_assignment(client, users):
     experiment3 = create_experiment(3, 1,
                                     ["question_integer"])
     experiment3.save()
-    participant_experiment3 = experiment3.participant_experiments[0]
-    participant_experiment3.participant = participant
-    participant_experiment3.save()
-    assignment3 = participant_experiment3.assignments[0]
+    assignment_set3 = experiment3.assignment_sets[0]
+    assignment_set3.participant = participant
+    assignment_set3.save()
+    assignment3 = assignment_set3.assignments[0]
     url3 = "/experiments/" + str(experiment3.id) + "/assignments/"
 
     response = client.get(url3 + str(assignment3.id))
@@ -370,13 +370,13 @@ def test_update_assignment(client, users):
     experiment = create_experiment(3, 1,
                                    ["question_mc_singleselect"])
 
-    participant_experiment = experiment.participant_experiments[0]
-    participant_experiment.complete = False
-    participant_experiment.progress = 1
-    participant_experiment.participant = participant
+    assignment_set = experiment.assignment_sets[0]
+    assignment_set.complete = False
+    assignment_set.progress = 1
+    assignment_set.participant = participant
     experiment.save()
 
-    assignment = participant_experiment.assignments[0]
+    assignment = assignment_set.assignments[0]
 
     url = "/experiments/" + str(experiment.id) + "/assignments/" + \
         str(assignment.id)
@@ -415,7 +415,7 @@ def test_update_assignment(client, users):
     assert "scorecard" in json.loads(data)
 
     # Make sure we can edit choices
-    participant_experiment.progress = 0
+    assignment_set.progress = 0
 
     choice = random.choice(assignment.activity.choices)
 
@@ -433,11 +433,11 @@ def test_update_assignment(client, users):
 
     # Make sure participants can't see each others' stuff
     experiment3 = create_experiment(3, 1)
-    participant_experiment3 = experiment3.participant_experiments[0]
-    participant_experiment3.complete = False
+    assignment_set3 = experiment3.assignment_sets[0]
+    assignment_set3.complete = False
     experiment3.save()
 
-    assignment3 = participant_experiment3.assignments[0]
+    assignment3 = assignment_set3.assignments[0]
     url = "/experiments/" + str(experiment3.id) + "/assignments/" + \
         str(assignment3.id)
     response = client.patch(url)
@@ -447,10 +447,10 @@ def test_update_assignment(client, users):
 
 def test_get_next_assignment_url(users):
     experiment = create_experiment(3, 1)
-    experiment.participant_experiments[0].complete = False
+    experiment.assignment_sets[0].complete = False
     experiment.save()
 
-    url = get_next_assignment_url(experiment.participant_experiments[0],
+    url = get_next_assignment_url(experiment.assignment_sets[0],
                                   2)
     assert "done" in url
 
@@ -462,10 +462,10 @@ def test_finalize_experiment(client, users):
     experiment = create_experiment(3, 1,
                                    ["question_mc_singleselect"])
     experiment.save()
-    participant_experiment = experiment.participant_experiments[0]
-    participant_experiment.participant = participant
-    participant_experiment.complete = False
-    participant_experiment.save()
+    assignment_set = experiment.assignment_sets[0]
+    assignment_set.participant = participant
+    assignment_set.complete = False
+    assignment_set.save()
 
     url = "/experiments/" + str(experiment.id) + "/finalize"
 
@@ -479,9 +479,9 @@ def test_finalize_experiment(client, users):
     assert response.status_code == 400
 
     url = "/experiments/" + str(experiment.id) + "/assignments/" + \
-        str(experiment.participant_experiments[0].assignments[0].id)
+        str(experiment.assignment_sets[0].assignments[0].id)
 
-    choice = random.choice(participant_experiment.assignments[0].
+    choice = random.choice(assignment_set.assignments[0].
                            activity.choices)
 
     response = client.patch(url,
@@ -497,10 +497,10 @@ def test_done_experiment_hook(client, users):
 
     experiment2 = create_experiment(3, 1, ["question_mc_singleselect"])
     experiment2.save()
-    participant_experiment2 = experiment2.participant_experiments[0]
-    participant_experiment2.participant = participant
-    participant_experiment2.complete = False
-    participant_experiment2.save()
+    assignment_set2 = experiment2.assignment_sets[0]
+    assignment_set2.participant = participant
+    assignment_set2.complete = False
+    assignment_set2.save()
 
     mock_handler = mock.MagicMock()
     POST_FINALIZE_HANDLERS["test_handler"] = mock_handler
@@ -523,9 +523,9 @@ def test_done_experiment(client, users):
 
     experiment = create_experiment(3, 1, ["question_mc_singleselect"])
     experiment.save()
-    participant_experiment = experiment.participant_experiments[0]
-    participant_experiment.participant = participant
-    participant_experiment.save()
+    assignment_set = experiment.assignment_sets[0]
+    assignment_set.participant = participant
+    assignment_set.save()
 
     url = "/experiments/" + str(experiment.id) + "/done"
 

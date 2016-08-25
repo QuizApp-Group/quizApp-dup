@@ -99,9 +99,9 @@ class AssignmentFactory(factory.Factory):
     choice_order = factory.Faker("text")
 
 
-class ParticipantExperimentFactory(factory.Factory):
+class AssignmentSetFactory(factory.Factory):
     class Meta(object):
-        model = models.ParticipantExperiment
+        model = models.AssignmentSet
 
     progress = factory.Faker("pyint")
     complete = factory.Faker("boolean")
@@ -139,15 +139,15 @@ class DatasetFactory(factory.Factory):
 
 def create_experiment(num_activities, num_participants, activity_types=[]):
     experiment = ExperimentFactory()
-    participant_experiments = []
+    assignment_sets = []
 
     for _ in range(0, num_participants):
-        part_exp = ParticipantExperimentFactory()
-        experiment.participant_experiments.append(part_exp)
-        participant_experiments.append(part_exp)
+        assignment_set = AssignmentSetFactory()
+        experiment.assignment_sets.append(assignment_set)
+        assignment_sets.append(assignment_set)
 
     for i in range(0, num_activities*num_participants):
-        part_exp = participant_experiments[i % num_participants]
+        assignment_set = assignment_sets[i % num_participants]
 
         if activity_types:
             activity_type = random.choice(activity_types)
@@ -169,6 +169,6 @@ def create_experiment(num_activities, num_participants, activity_types=[]):
         assignment.experiment = experiment
         assignment.activity = activity
 
-        part_exp.assignments.append(assignment)
+        assignment_set.assignments.append(assignment)
 
     return experiment

@@ -37,8 +37,8 @@ such:
 * Some fields are relations, and some relations link to multiple objects (these are called one to many or many to many).
 
   * For one to one relations, enter the `id` of the object you want to link to. For
-    example, if you want to associate a ParticipantExperiment with a specific
-    Experiment, in the `participant_experiment_experiment` column you should
+    example, if you want to associate a AssignmentSet with a specific
+    Experiment, in the `assignment_set_experiment` column you should
     have the value of the `experiment_id` column of the Experiment you want to
     link to.
   * For one to many or many to many relations, you should have a comma
@@ -50,19 +50,19 @@ possibilities here.
 
 1. You want to relate an object you are importing with another object you are
    importing (e.g. you are creating an Experiment in your import sheet and want
-   to associate a ParticipantExperiment you are creating with it).
+   to associate a AssignmentSet you are creating with it).
 
    In this case, you must assign the Experiment some id in the `experiment_id`
    column. The value of this ID is not strictly important, as long as it is
-   unique in this spreadsheet. Then, in the `participant_experiment_experiment`
+   unique in this spreadsheet. Then, in the `assignment_set_experiment`
    column, enter the ID of the experiment you want to associate with.
 
 2. You want to relate an object you are importing with an object already in the
-   database (e.g. you are creating a ParticipantExperiment and you want to add
+   database (e.g. you are creating a AssignmentSet and you want to add
    it to an existing Experiment).
 
    In this case, you must look up the ID of the experiment in the export sheet.
-   Then, you may put that id in the `participant_experiment_experiment` column
+   Then, you may put that id in the `assignment_set_experiment` column
    in your import sheet. Note that you do not need to create a row for this
    experiment in the `Experiment` tab of the import sheet because this
    experiment already exists.
@@ -70,10 +70,10 @@ possibilities here.
 Under the hood, what happens is that every row in the import sheet is added to
 both the database and an in-memory mapping that associates the ID that the
 object has in the import sheet with the object itself. Let's say the first
-object is an Experiment. Then let's say a ParticipantExperiment references an
+object is an Experiment. Then let's say a AssignmentSet references an
 Experiment by ID. QuizApp will first check the in-memory mapping to see if any
-Experiments have the ID that the ParticipantExperiment is referencing. If there
-is such an object, then the ParticipantExperiment and Experiment will be
+Experiments have the ID that the AssignmentSet is referencing. If there
+is such an object, then the AssignmentSet and Experiment will be
 associated. If there isn't, then the database will be queried to see if there
 is an Experiment with such an ID.
 

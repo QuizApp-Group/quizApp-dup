@@ -8,7 +8,7 @@ from sqlalchemy import inspect
 
 from tests.factories import ExperimentFactory, ParticipantFactory, \
     ChoiceFactory, QuestionFactory
-from quizApp.models import ParticipantExperiment, Assignment, Role, Activity, \
+from quizApp.models import AssignmentSet, Assignment, Role, Activity, \
     Question, Graph, MultipleChoiceQuestionResult, MultipleChoiceQuestion, \
     FreeAnswerQuestion, FreeAnswerQuestionResult, Result, \
     IntegerQuestionResult, IntegerQuestion
@@ -32,13 +32,13 @@ def test_db_rollback2():
     assert Role.query.filter_by(name="notaname-2").count() == 1
 
 
-def test_participant_experiment_validators():
+def test_assignment_set_validators():
     """Make sure validators are functioning correctly.
     """
     exp1 = ExperimentFactory()
     exp2 = ExperimentFactory()
 
-    part_exp = ParticipantExperiment(experiment=exp1)
+    assignment_set = AssignmentSet(experiment=exp1)
     assignment = Assignment()
 
     part1 = ParticipantFactory()
@@ -46,19 +46,19 @@ def test_participant_experiment_validators():
     part1.save()
     part2.save()
 
-    part_exp.experiment = exp2
-    part_exp.participant = part1
+    assignment_set.experiment = exp2
+    assignment_set.participant = part1
     assignment.participant = part2
 
     with pytest.raises(AssertionError):
-        part_exp.assignments.append(assignment)
+        assignment_set.assignments.append(assignment)
 
     activity = Activity()
     exp2.activities.append(activity)
     assignment.activity = activity
-    part_exp.participant = part2
+    assignment_set.participant = part2
 
-    part_exp.assignments.append(assignment)
+    assignment_set.assignments.append(assignment)
 
 
 def test_assignment_validators():

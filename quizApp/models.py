@@ -105,15 +105,15 @@ class Participant(User):
             field holds the foreign ID of this user.
         assignments (list of Assignments): List of assignments that this user
             has
-        participant_experiments (list of ParticipantExperiments): List of
-            ParticipantExperiments that this participant has
+        assignment_sets (list of AssignmentSets): List of
+            AssignmentSets that this participant has
     """
 
     opt_in = db.Column(db.Boolean)
     foreign_id = db.Column(db.String(100))
 
     assignments = db.relationship("Assignment", back_populates="participant")
-    experiments = db.relationship("ParticipantExperiment",
+    experiments = db.relationship("AssignmentSet",
                                   back_populates="participant")
 
     __mapper_args__ = {
@@ -121,7 +121,7 @@ class Participant(User):
     }
 
 
-class ParticipantExperiment(Base):
+class AssignmentSet(Base):
     """An Association Object that relates a User to an Experiment and also
     stores the progress of the User in this Experiment as well as the order of
     Questions that this user does.
@@ -154,15 +154,15 @@ class ParticipantExperiment(Base):
 
     experiment_id = db.Column(db.Integer, db.ForeignKey('experiment.id'))
     experiment = db.relationship("Experiment",
-                                 back_populates="participant_experiments")
+                                 back_populates="assignment_sets")
 
     assignments = db.relationship("Assignment",
-                                  back_populates="participant_experiment")
+                                  back_populates="assignment_set")
 
     @property
     def score(self):
         """Return the cumulative score of all assignments in this
-        ParticipantExperiment,
+        AssignmentSet,
 
         Currently this iterates through all assignments. Profiling will be
         required to see if this is too slow.
@@ -184,12 +184,13 @@ class ParticipantExperiment(Base):
         return assignment
 
     def import_dict(self, **kwargs):
-        assignments = kwargs.pop("assignments", [])
-        experiment = kwargs.get("experiment")
+        assignments = kwargs.get("assignments", [])
+        experiment = kwargs.pop("experiment")
+        self.experiment = experiment
         for assignment in assignments:
             experiment.activities.append(assignment.activity)
 
-        super(ParticipantExperiment, self).import_dict(**kwargs)
+        super(AssignmentSet, self).import_dict(**kwargs)
 
 assignment_media_item_table = db.Table(
     "assignment_media_item", db.metadata,
@@ -218,8 +219,8 @@ class Assignment(Base):
         participant (Participant): Which Participant gets this Assignment
         activity (Activity): Which Activity this Participant should see
         choice (Choice): Which Choice this Participant chose as their answer
-        participant_experiment (ParticipantExperiment): Which
-            ParticipantExperiment this Assignment belongs to
+        assignment_set (AssignmentSet): Which
+            AssignmentSet this Assignment belongs to
     """
 
     skipped = db.Column(db.Boolean, info={"import_include": False})
@@ -242,13 +243,13 @@ class Assignment(Base):
     result = db.relationship("Result", back_populates="assignment",
                              info={"import_include": False}, uselist=False)
 
-    participant_experiment_id = db.Column(
+    assignment_set_id = db.Column(
         db.Integer,
-        db.ForeignKey("participant_experiment.id"),
+        db.ForeignKey("assignment_set.id"),
     )
-    participant_experiment = db.relationship("ParticipantExperiment",
-                                             info={"import_include": False},
-                                             back_populates="assignments")
+    assignment_set = db.relationship("AssignmentSet",
+                                     info={"import_include": False},
+                                     back_populates="assignments")
 
     @property
     def score(self):
@@ -726,9 +727,9 @@ class Experiment(Base):
         start (datetime): When this experiment becomes accessible for answers
         stop (datetime): When this experiment stops accepting answers
         activities (list of Activity): What Activities are included in this
-            Experiment's ParticipantExperiments
-        participant_experiments (list of ParticiapntExperiment): List of
-            ParticipantExperiments that are associated with this Experiment
+            Experiment's AssignmentSets
+        assignment_sets (list of ParticiapntExperiment): List of
+            AssignmentSets that are associated with this Experiment
         disable_previous (bool): If True, don't allow Participants to view and
             modify previous activities.
         show_timers (bool): If True, display a timer on each activity
@@ -778,9 +779,9 @@ class Experiment(Base):
                                  back_populates="experiments",
                                  info={"import_include": False})
 
-    participant_experiments = db.relationship("ParticipantExperiment",
-                                              back_populates="experiment",
-                                              info={"import_include": False})
+    assignment_sets = db.relationship("AssignmentSet",
+                                      back_populates="experiment",
+                                      info={"import_include": False})
 
     scorecard_settings_id = db.Column(db.Integer,
                                       db.ForeignKey("scorecard_settings.id"))

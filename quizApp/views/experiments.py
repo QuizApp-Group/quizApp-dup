@@ -16,7 +16,7 @@ from quizApp.forms.common import DeleteObjectForm
 from quizApp.forms.experiments import CreateExperimentForm, \
     get_question_form
 from quizApp.models import Experiment, Assignment, \
-    ParticipantExperiment, Activity, Participant
+    AssignmentSet, Activity, Participant
 from quizApp.views.helpers import validate_model_id, get_first_assignment
 from quizApp.views.activities import render_activity
 from quizApp.views.mturk import submit_assignment
@@ -32,12 +32,12 @@ POST_FINALIZE_HANDLERS = {
 }
 
 
-def get_participant_experiment_or_abort(experiment_id, code=400):
-    """Return the ParticipantExperiment object corresponding to the current
+def get_assignment_set_or_abort(experiment_id, code=400):
+    """Return the AssignmentSet object corresponding to the current
     user and experiment_id or abort with the given code.
     """
     try:
-        return ParticipantExperiment.query.\
+        return AssignmentSet.query.\
             filter_by(participant_id=current_user.id).\
             filter_by(experiment_id=experiment_id).one()
     except NoResultFound:
@@ -146,13 +146,14 @@ def read_assignment(experiment_id, a_id):
     experiment = validate_model_id(Experiment, experiment_id)
     assignment = validate_model_id(Assignment, a_id)
 
-    part_exp = get_participant_experiment_or_abort(experiment_id)
+    assignment_set = get_assignment_set_or_abort(experiment_id)
 
-    if assignment not in part_exp.assignments:
+    if assignment not in assignment_set.assignments:
         abort(400)
 
-    if experiment.disable_previous and part_exp.progress > \
-            part_exp.assignments.index(assignment) and not part_exp.complete:
+    if experiment.disable_previous and assignment_set.progress > \
+            assignment_set.assignments.index(assignment) and \
+            not assignment_set.complete:
         abort(400)
 
     activity = validate_model_id(Activity, assignment.activity_id)
@@ -175,25 +176,31 @@ def read_question(experiment, assignment):
     question_form = get_question_form(question)
     question_form.comment.data = assignment.comment
     question_form.populate_from_question(question)
-    part_exp = assignment.participant_experiment
-    this_index = part_exp.assignments.index(assignment)
+
+    assignment_set = assignment.assignment_set
+    this_index = assignment_set.assignments.index(assignment)
 
     if assignment.result:
         question_form.populate_from_result(assignment.result)
 
-    if not part_exp.complete:
+    if not assignment_set.complete:
+        # If the participant is not done, then save the choice order
+        choice_order = [c.id for c in question.choices]
+        assignment.choice_order = json.dumps(choice_order)
+        assignment.save()
         next_url = None
     else:
-        next_url = get_next_assignment_url(part_exp, this_index)
+        # If the participant is done, have a link right to the next question
+        next_url = get_next_assignment_url(assignment_set, this_index)
 
     previous_assignment = None
 
     if this_index - 1 > -1 and not experiment.disable_previous:
-        previous_assignment = part_exp.assignments[this_index - 1]
+        previous_assignment = assignment_set.assignments[this_index - 1]
 
-    cumulative_score = assignment.participant_experiment.score
-    rendered_question = render_activity(question, part_exp.complete,
-                                        assignment, part_exp.complete)
+    cumulative_score = assignment.assignment_set.score
+    rendered_question = render_activity(question, assignment_set.complete,
+                                        assignment, assignment_set.complete)
 
     template_kwargs = {
         "exp": experiment,
@@ -201,7 +208,7 @@ def read_question(experiment, assignment):
         "question_form": question_form,
         "next_url": next_url,
         "cumulative_score": cumulative_score,
-        "experiment_complete": part_exp.complete,
+        "experiment_complete": assignment_set.complete,
         "previous_assignment": previous_assignment,
         "rendered_question": rendered_question,
     }
@@ -226,7 +233,7 @@ def read_question(experiment, assignment):
 def read_mc_question(_, assignment):
     """Read a multiple choice question, making sure to save the choice order.
     """
-    if not assignment.participant_experiment.complete:
+    if not assignment.assignment_set.complete:
         # If the participant is not done, then save the choice order
         choice_order = [c.id for c in assignment.activity.choices]
         assignment.choice_order = json.dumps(choice_order)
@@ -239,19 +246,19 @@ def update_assignment(experiment_id, a_id):
     """
     assignment = validate_model_id(Assignment, a_id)
     experiment = validate_model_id(Experiment, experiment_id)
-    part_exp = assignment.participant_experiment
+    assignment_set = assignment.assignment_set
 
-    if part_exp.participant != current_user:
+    if assignment_set.participant != current_user:
         abort(403)
 
-    if part_exp.complete:
+    if assignment_set.complete:
         abort(400)
 
-    if experiment.disable_previous and part_exp.progress > \
-            part_exp.assignments.index(assignment):
+    if experiment.disable_previous and assignment_set.progress > \
+            assignment_set.assignments.index(assignment):
         abort(400)
 
-    this_index = part_exp.assignments.index(assignment)
+    this_index = assignment_set.assignments.index(assignment)
 
     update_function_mapping = {
         "question_mc_singleselect": update_question_assignment,
@@ -268,7 +275,7 @@ def update_assignment(experiment_id, a_id):
 def update_question_assignment(assignment, this_index):
     """Common function for updating questions.
     """
-    part_exp = assignment.participant_experiment
+    assignment_set = assignment.assignment_set
     question = assignment.activity
 
     question_form = get_question_form(question, request.form)
@@ -282,7 +289,10 @@ def update_question_assignment(assignment, this_index):
     assignment.comment = question_form.comment.data
     db.session.add(result)
 
-    next_url = get_next_assignment_url(part_exp, this_index)
+    next_url = get_next_assignment_url(assignment_set, this_index)
+
+    if this_index == assignment_set.progress:
+        assignment_set.progress += 1
 
     process_assignment(question_form, assignment, this_index)
 
@@ -305,9 +315,9 @@ def process_assignment(activity_form, assignment, this_index):
     """Do some assignment processing that's common across all Activity types,
     but depends on the submission being valid.
     """
-    part_exp = assignment.participant_experiment
-    if this_index == part_exp.progress:
-        part_exp.progress += 1
+    assignment_set = assignment.assignment_set
+    if this_index == assignment_set.progress:
+        assignment_set.progress += 1
 
     # Record time to solve
     if activity_form.render_time.data and activity_form.submit_time.data:
@@ -317,23 +327,23 @@ def process_assignment(activity_form, assignment, this_index):
         assignment.time_to_submit = time_to_submit
 
 
-def get_next_assignment_url(participant_experiment, current_index):
-    """Given an experiment, a participant_experiment, and the current index,
+def get_next_assignment_url(assignment_set, current_index):
+    """Given an experiment, a assignment_set, and the current index,
     find the url of the next assignment in the sequence.
     """
-    experiment_id = participant_experiment.experiment.id
+    experiment_id = assignment_set.experiment.id
     try:
         # If there is a next assignment, return its url
         next_url = url_for(
             "experiments.read_assignment",
             experiment_id=experiment_id,
-            a_id=participant_experiment.assignments[current_index + 1].id)
+            a_id=assignment_set.assignments[current_index + 1].id)
     except IndexError:
         next_url = None
 
     if not next_url:
         # We've reached the end of the experiment
-        if not participant_experiment.complete:
+        if not assignment_set.complete:
             # The experiment needs to be submitted
             next_url = url_for("experiments.confirm_done_experiment",
                                experiment_id=experiment_id)
@@ -386,7 +396,7 @@ def results_experiment(experiment_id):
     experiment = validate_model_id(Experiment, experiment_id)
 
     num_participants = Participant.query.count()
-    num_finished = ParticipantExperiment.query.\
+    num_finished = AssignmentSet.query.\
         filter_by(experiment_id=experiment.id).\
         filter_by(progress=-1).count()
 
@@ -395,8 +405,8 @@ def results_experiment(experiment_id):
     # {"question_id": {"question": "question_text", "num_responses":
     #   num_responses, "num_correct": num_correct], ...}
     question_stats = defaultdict(dict)
-    assignments = Assignment.query.join(ParticipantExperiment).\
-        filter(ParticipantExperiment.experiment == experiment).all()
+    assignments = Assignment.query.join(AssignmentSet).\
+        filter(AssignmentSet.experiment == experiment).all()
 
     for assignment in assignments:
         activity = assignment.activity
@@ -430,12 +440,12 @@ def finalize_experiment(experiment_id):
     able to edit them, but may view them.
     """
     validate_model_id(Experiment, experiment_id)
-    part_exp = get_participant_experiment_or_abort(experiment_id)
+    assignment_set = get_assignment_set_or_abort(experiment_id)
 
-    if part_exp.complete:
+    if assignment_set.complete:
         abort(400)
 
-    part_exp.complete = True
+    assignment_set.complete = True
 
     db.session.commit()
 
@@ -450,7 +460,7 @@ def done_experiment(experiment_id):
     """Show the user a screen indicating that they are finished.
     """
     experiment = validate_model_id(Experiment, experiment_id)
-    participant_experiment = get_participant_experiment_or_abort(experiment_id)
+    assignment_set = get_assignment_set_or_abort(experiment_id)
 
     # Handle any post finalize actions, e.g. providing a button to submit a HIT
     post_finalize = session.pop("experiment_post_finalize_handler", None)
@@ -461,5 +471,5 @@ def done_experiment(experiment_id):
 
     return render_template("experiments/done_experiment.html",
                            addendum=addendum,
-                           participant_experiment=participant_experiment,
+                           assignment_set=assignment_set,
                            scorecard_settings=experiment.scorecard_settings)

@@ -91,9 +91,10 @@
           {% endif %}
         </ul>
       </div>
-      
+
+      {% if current_user.has_role("experimenter") %}
       {% set previous_tab, next_tab = nav_tabs|prev_next_tabs %}
- 
+
       {% if previous_tab or next_tab %}
       <div class="row">
         <div class="col-md-6">
@@ -110,6 +111,7 @@
         </div>
         {% endif %}
       </div>
+      {% endif %}
       {% endif %}
 
       {{ macros.render_flashed_messages(["error"], "danger", "Errors ocurred") }}

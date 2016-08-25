@@ -9,45 +9,45 @@ from quizApp import models
 from quizApp import db
 
 
-def get_or_create_participant_experiment(experiment):
-    """Attempt to retrieve the ParticipantExperiment record for the current
+def get_or_create_assignment_set(experiment):
+    """Attempt to retrieve the AssignmentSet record for the current
     user in the given Experiment.
 
-    If no such record exists, grab a random ParticipantExperiment record in the
-    experiment ParticipantExperiment pool, copy it to be the current user's
-    ParticipantExperiment record, and return that.
+    If no such record exists, grab a random AssignmentSet record in the
+    experiment AssignmentSet pool, copy it to be the current user's
+    AssignmentSet record, and return that.
     """
     try:
-        participant_experiment = models.ParticipantExperiment.query.\
+        assignment_set = models.AssignmentSet.query.\
             filter_by(participant_id=current_user.id).\
             filter_by(experiment_id=experiment.id).one()
     except NoResultFound:
-        pool = models.ParticipantExperiment.query.\
+        pool = models.AssignmentSet.query.\
             filter_by(participant_id=None).\
             filter_by(experiment_id=experiment.id).all()
         try:
-            participant_experiment = random.choice(pool)
+            assignment_set = random.choice(pool)
         except IndexError:
             return None
-        participant_experiment.participant = current_user
+        assignment_set.participant = current_user
         db.session.commit()
 
-    return participant_experiment
+    return assignment_set
 
 
 def get_first_assignment(experiment):
     """Get the first assignment for this user in this experiment.
     """
-    participant_experiment = get_or_create_participant_experiment(experiment)
-    if not participant_experiment:
+    assignment_set = get_or_create_assignment_set(experiment)
+    if not assignment_set:
         assignment = None
-    elif len(participant_experiment.assignments) == 0:
+    elif len(assignment_set.assignments) == 0:
         assignment = None
-    elif participant_experiment.complete:
-        assignment = participant_experiment.assignments[0]
+    elif assignment_set.complete:
+        assignment = assignment_set.assignments[0]
     else:
-        assignment = participant_experiment.\
-            assignments[participant_experiment.progress]
+        assignment = assignment_set.\
+            assignments[assignment_set.progress]
     return assignment
 
 
