@@ -456,7 +456,7 @@ class Question(Activity):
     """
 
     question = db.Column(db.Text, nullable=False, info={"label":
-                                                               "Question"})
+                                                        "Question"})
     explanation = db.Column(db.Text, info={"label": "Explanation"})
     num_media_items = db.Column(db.Integer,
                                 nullable=False,

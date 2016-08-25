@@ -1,10 +1,10 @@
 """This blueprint takes care of rendering static pages outside of the other
 blueprints.
 """
-import pdb
 import os
 from collections import OrderedDict
 import tempfile
+import traceback
 
 import openpyxl
 from flask import Blueprint, render_template, send_file, jsonify, redirect, \
@@ -96,11 +96,6 @@ def import_data():
     """Given an uploaded spreadsheet, import data from the spreadsheet
     into the database.
     """
-    try:
-        raise Exception("Foo")
-    except Exception as e:
-        pdb.set_trace()
-        return jsonify({"success": 0, "errors": str(e)})
     import_data_form = ImportDataForm()
 
     if not import_data_form.validate():
@@ -108,7 +103,15 @@ def import_data():
 
     workbook = openpyxl.load_workbook(import_data_form.data.data)
 
-    import_export.import_data_from_workbook(workbook)
+    try:
+        import_export.import_data_from_workbook(workbook)
+    except Exception, e:
+        # This isn't very nice, but we need a way to capture exceptions that
+        # happen during import and show them to the user. However, we also want
+        # to have the traceback for debugging purposes. So we print the
+        # traceback to stdout.
+        print(traceback.format_exc())
+        return jsonify({"success": 0, "errors": e.message})
 
     return jsonify({"success": 1})
 
