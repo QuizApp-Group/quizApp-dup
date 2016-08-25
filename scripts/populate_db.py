@@ -181,13 +181,11 @@ def get_choices():
         choice_reader = csv.DictReader(choices_csv)
         for row in choice_reader:
             choice = Choice(
-                points=1,
                 question_id=row["question_id"],
                 choice=row["answer_text"],
                 correct=row["correct"] == "yes",
                 label=row["answer_letter"])
-            if choice.correct:
-                choice.points = random.choice(list(range(1, 5)))
+            choice.points = int(choice.correct)
             db.session.add(choice)
     with open(os.path.join(DATA_ROOT, 'graph_table.csv')) as graphs_csv:
         graphs = csv.DictReader(graphs_csv)

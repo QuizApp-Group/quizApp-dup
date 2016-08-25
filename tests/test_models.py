@@ -178,8 +178,8 @@ def test_save():
 def test_activity_get_score():
     activity = Activity()
     result = Result()
-    score = activity.get_score(result)
-    assert score is None
+    with pytest.raises(NotImplementedError):
+        score = activity.get_score(result)
 
 
 def test_free_answer_question_get_score():

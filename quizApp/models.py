@@ -412,7 +412,7 @@ class Activity(Base):
         "score" the result in some way, and return an integer quantifying the
         Participant's performance.
         """
-        pass
+        raise NotImplementedError
 
     def import_dict(self, **kwargs):
         """If we are setting assignments, we need to update experiments to
