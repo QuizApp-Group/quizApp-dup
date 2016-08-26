@@ -16,8 +16,5 @@ $(document).ready(function() {
           $error_container.html("Errors ocurred: <br>" + data.errors);
           save_message.remove()
       }
-
-
-
   }
 });

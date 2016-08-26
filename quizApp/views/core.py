@@ -111,7 +111,10 @@ def import_data():
         # to have the traceback for debugging purposes. So we print the
         # traceback to stdout.
         print(traceback.format_exc())
-        return jsonify({"success": 0, "errors": e.message})
+        return jsonify({"success": 0,
+                        "errors": (type(e).__name__ + ": " + e.message + "<br>"
+                                   + traceback.format_exc().
+                                   replace("\n", "<br>"))})
 
     return jsonify({"success": 1})
 
