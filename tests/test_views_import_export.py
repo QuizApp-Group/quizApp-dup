@@ -12,3 +12,8 @@ def test_header_to_field_name():
 
     with pytest.raises(ValueError):
         import_export.header_to_field_name(header, models.Activity)
+
+
+def test_get_object_from_id():
+    with pytest.raises(ValueError):
+        import_export.get_object_from_id(models.Activity, 5, {})
