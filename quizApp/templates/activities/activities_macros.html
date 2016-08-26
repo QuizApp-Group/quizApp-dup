@@ -40,6 +40,7 @@
       <th>Label</th>
       <th>Choice</th>
       <th>Correct?</th>
+      <th>Points</th>
       <th>Settings</th>
       <th>Delete</th>
     </tr>
@@ -54,6 +55,7 @@
       <td>{{ macros.render_field(create_form.label, label_visible=False) }}</td>
       <td>{{ macros.render_field(create_form.choice, label_visible=False) }}</td>
       <td>{{ macros.render_field(create_form.correct, label_visible=False) }}</td>
+      <td>{{ macros.render_field(create_form.points, label_visible=False) }}</td>
       <td>{{ macros.render_field(create_form.submit, value="Create") }}</td>
       <td></td>
   </tfoot>
@@ -69,6 +71,7 @@ question_id=choice.question_id, choice_id=choice.id) }}"
   <td class="choice-label" data-field-name="update-label">{{ choice.label }}</td>
   <td class="choice-choice name" data-field-name="update-choice">{{ choice.choice }}</td>
   <td class="choice-correct" data-field-name="update-correct">{{ choice.correct }}</td>
+  <td class="choice-points" data-field-name="update-points">{{ choice.points }}</td>
   <td><a href="#" class="update-choice" data-choice-id="{{ choice.id }}"
                                         data-toggle="modal" data-target="#update-choice-modal">
       {{ macros.render_glyphicon("cog") }}</a>
