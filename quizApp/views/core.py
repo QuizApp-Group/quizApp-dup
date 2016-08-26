@@ -112,7 +112,7 @@ def import_data():
         # traceback to stdout.
         print(traceback.format_exc())
         return jsonify({"success": 0,
-                        "errors": (type(e).__name__ + ": " + e.message + "<br>"
+                        "errors": (type(e).__name__ + ": " + str(e) + "<br>"
                                    + traceback.format_exc().
                                    replace("\n", "<br>"))})
 
