@@ -5,6 +5,7 @@ import os
 from collections import OrderedDict
 import tempfile
 import traceback
+import markupsafe
 
 import openpyxl
 from flask import Blueprint, render_template, send_file, jsonify, redirect, \
@@ -105,16 +106,18 @@ def import_data():
 
     try:
         import_export.import_data_from_workbook(workbook)
-    except Exception as e:
+    except Exception:
         # This isn't very nice, but we need a way to capture exceptions that
         # happen during import and show them to the user. However, we also want
         # to have the traceback for debugging purposes. So we print the
         # traceback to stdout.
         print(traceback.format_exc())
-        return jsonify({"success": 0,
-                        "errors": (type(e).__name__ + ": " + str(e) + "<br>"
-                                   + traceback.format_exc().
-                                   replace("\n", "<br>"))})
+        return jsonify({
+            "success": 0,
+            "errors": (markupsafe.Markup("<br>") +
+                       markupsafe.escape(traceback.format_exc()).
+                       replace("\n", markupsafe.Markup("<br>")))
+        })
 
     return jsonify({"success": 1})
 

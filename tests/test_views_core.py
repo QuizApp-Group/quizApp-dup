@@ -64,13 +64,17 @@ def test_export_template(client, users):
 def test_import_assignments(client, users):
     login_experimenter(client)
     url = "/import"
-    experiment = ExperimentFactory(id=4)
+    experiment = ExperimentFactory(id=1)
     db.session.add(experiment)
-    for i in range(1, 5):
+
+    for i in range(1, 4):
         media_item = MediaItemFactory(id=i)
-        activity = ActivityFactory(id=i)
         db.session.add(media_item)
+
+    for i in range(1, 5):
+        activity = ActivityFactory(id=i)
         db.session.add(activity)
+
     db.session.commit()
 
     response = client.post(url,
@@ -80,12 +84,12 @@ def test_import_assignments(client, users):
     assert json_success(response.data)
 
     assert models.Experiment.query.count() == 1
-    assert models.AssignmentSet.query.count() == 3
-    assert models.Assignment.query.count() == 6
-    assert len(models.Experiment.query.one().assignment_sets) == 3
+    assert models.AssignmentSet.query.count() == 4
+    assert models.Assignment.query.count() == 12
+    assert len(models.Experiment.query.one().assignment_sets) == 4
 
     for pe in models.Experiment.query.one().assignment_sets:
-        assert len(pe.assignments) == 2
+        assert len(pe.assignments) == 3
 
     response = client.post(url)
     assert response.status_code == 200
