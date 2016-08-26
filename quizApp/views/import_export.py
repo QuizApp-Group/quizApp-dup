@@ -92,6 +92,8 @@ def header_to_field_name(header, model):
     """Reverse header_from_property - given a header and a model, return the
     actual name of the field.
     """
+    if not header or not len(header):
+        return
     prefix = model.__tablename__ + ":"
 
     if header[:len(prefix)] != prefix:
