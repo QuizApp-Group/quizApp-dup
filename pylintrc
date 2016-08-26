@@ -2,7 +2,7 @@
 ignore=tests/
 
 [TYPECHECK]
-generated-members=query,delete,commit,add,flush,expunge,save,filename
+generated-members=query,delete,commit,add,flush,expunge,save,filename,message
 ignored-modules=flask_sqlalchemy,sqlalchemy.orm.properties 
 
 [MESSAGES CONTROL]
