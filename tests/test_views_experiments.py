@@ -445,6 +445,43 @@ def test_update_assignment(client, users):
     assert response.status_code == 403
 
 
+def test_update_int_assignment(client, users):
+    login_participant(client)
+    participant = get_participant()
+
+    experiment = create_experiment(3, 1,
+                                   ["question_integer"])
+
+    assignment_set = experiment.assignment_sets[0]
+    assignment_set.complete = False
+    assignment_set.progress = 0
+    assignment_set.participant = participant
+    experiment.save()
+
+    assignment = assignment_set.assignments[0]
+
+    url = "/experiments/" + str(experiment.id) + "/assignments/" + \
+        str(assignment.id)
+
+    time_to_submit = timedelta(hours=1)
+    start_ts = datetime.now()
+    render_ts = start_ts.isoformat()
+    submit_ts = (start_ts + time_to_submit).isoformat()
+
+    response = client.patch(url,
+                            data={"integer": 5,
+                                  "render_time": render_ts,
+                                  "submit_time": submit_ts}
+                            )
+
+    db.session.refresh(assignment)
+
+    assert response.status_code == 200
+    assert assignment.time_to_submit == time_to_submit
+    assert assignment.result.integer == 5
+    assert json_success(response.data)
+
+
 def test_get_next_assignment_url(users):
     experiment = create_experiment(3, 1)
     experiment.assignment_sets[0].complete = False
