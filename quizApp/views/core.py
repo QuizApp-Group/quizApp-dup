@@ -105,7 +105,7 @@ def import_data():
 
     try:
         import_export.import_data_from_workbook(workbook)
-    except Exception, e:
+    except Exception as e:
         # This isn't very nice, but we need a way to capture exceptions that
         # happen during import and show them to the user. However, we also want
         # to have the traceback for debugging purposes. So we print the
