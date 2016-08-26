@@ -277,13 +277,11 @@ class ChoiceCollectionView(ObjectCollectionView):
     """
     decorators = [roles_required("experimenter")]
     methods = ["POST"]
+    get_members = None
 
     def resolve_kwargs(self, question_id):
         question = validate_model_id(Question, question_id)
         return {"question": question}
-
-    def get_members(self, question):
-        return question.choices
 
     def create_form(self):
         return ChoiceForm(request.form, prefix="create")
