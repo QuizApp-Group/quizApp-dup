@@ -224,7 +224,7 @@ class Assignment(Base):
     """
 
     skipped = db.Column(db.Boolean, info={"import_include": False})
-    comment = db.Column(db.String(200), info={"import_include": False})
+    comment = db.Column(db.String(500), info={"import_include": False})
     choice_order = db.Column(db.String(80), info={"import_include": False})
     time_to_submit = db.Column(db.Interval(), info={"import_include": False})
 
@@ -455,9 +455,9 @@ class Question(Activity):
             from any Dataset.
     """
 
-    question = db.Column(db.String(200), nullable=False, info={"label":
-                                                               "Question"})
-    explanation = db.Column(db.String(200), info={"label": "Explanation"})
+    question = db.Column(db.Text, nullable=False, info={"label":
+                                                        "Question"})
+    explanation = db.Column(db.Text, info={"label": "Explanation"})
     num_media_items = db.Column(db.Integer,
                                 nullable=False,
                                 info={
@@ -612,7 +612,8 @@ class Choice(Base):
     correct = db.Column(db.Boolean,
                         info={"label": "Correct"})
     points = db.Column(db.Integer,
-                       info={"label": "Point value of this choice"})
+                       info={"label": "Point value of this choice"},
+                       default=0)
 
     question_id = db.Column(db.Integer, db.ForeignKey("activity.id"))
     question = db.relationship("Question", back_populates="choices")

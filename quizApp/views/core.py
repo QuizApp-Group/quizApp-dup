@@ -4,6 +4,7 @@ blueprints.
 import os
 from collections import OrderedDict
 import tempfile
+import traceback
 
 import openpyxl
 from flask import Blueprint, render_template, send_file, jsonify, redirect, \
@@ -67,20 +68,6 @@ def import_template():
         ["Use IDs from the export sheet to populate relationship columns."],
         [("If you want multiple objects in a relation, separate the IDs using"
           " commas.")],
-        [("There is no need to modify any sheet if you are not interested in "
-          "adding in objects of that type")],
-        [("Example: To make an experiment and use existing assignments for "
-          "the experiment, fill out the Experiments, Assignment Set, "
-          "and Assignment sheets.")],
-        [("Example: To add assignments to an existing experiment, fill out "
-          "the Assignment Set and Assignment sheet. For the "
-          "assignment_set_experiment column, use the experiment_id "
-          "of the experiment you wish to modify. You can find this ID in the "
-          "export spreadsheet.")],
-        [("If you wish to do one the above as well as create new "
-          "activities, fill out the sheets mentioned above as well as the "
-          "Activities sheet. If you are making new multiple choice questions, "
-          "you'll also need to fill out the Choices sheet.")],
     ]
 
     workbook = openpyxl.Workbook()
@@ -116,7 +103,18 @@ def import_data():
 
     workbook = openpyxl.load_workbook(import_data_form.data.data)
 
-    import_export.import_data_from_workbook(workbook)
+    try:
+        import_export.import_data_from_workbook(workbook)
+    except Exception as e:
+        # This isn't very nice, but we need a way to capture exceptions that
+        # happen during import and show them to the user. However, we also want
+        # to have the traceback for debugging purposes. So we print the
+        # traceback to stdout.
+        print(traceback.format_exc())
+        return jsonify({"success": 0,
+                        "errors": (type(e).__name__ + ": " + str(e) + "<br>"
+                                   + traceback.format_exc().
+                                   replace("\n", "<br>"))})
 
     return jsonify({"success": 1})
 
