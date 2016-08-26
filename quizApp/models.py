@@ -276,15 +276,6 @@ class Assignment(Base):
 
         return activity
 
-    @db.validates("choice")
-    def validate_choice(self, _, choice):
-        """This must be a valid choice, i.e. contained in the question (if any)
-        """
-        if "question" in self.activity.type and choice is not None:
-            assert choice in self.activity.choices
-
-        return choice
-
     @db.validates("result")
     def validate_result(self, _, result):
         """Make sure that this assignment has the correct type of result.
@@ -326,6 +317,10 @@ class IntegerQuestionResult(Result):
     """
     integer = db.Column(db.Integer)
 
+    __mapper_args__ = {
+        "polymorphic_identity": "integer_question_result",
+    }
+
 
 class MultipleChoiceQuestionResult(Result):
     """The Choice that a Participant picked in a MultipleChoiceQuestion.
@@ -337,7 +332,14 @@ class MultipleChoiceQuestionResult(Result):
     def validate_choice(self, value, *_):
         """Make sure this Choice is a valid option for this Question.
         """
-        assert self.choice in value.activity.choices
+        # This is kind of ugly, but the fact is that sqlalchemy does not have a
+        # good way of validating an attribute of a parent. See this issue for
+        # more details:
+        # bitbucket.org/zzzeek/sqlalchemy/issues/2943/
+        # To work around this, we check if the class we are currently operating
+        # on is in fact a MultipleChoiceQuestionResult.
+        if self.type == "mc_question_result":
+            assert self.choice in value.activity.choices
 
     __mapper_args__ = {
         "polymorphic_identity": "mc_question_result",
@@ -348,6 +350,10 @@ class FreeAnswerQuestionResult(Result):
     """What a Participant entered into a text box.
     """
     text = db.Column(db.String(500))
+
+    __mapper_args__ = {
+        "polymorphic_identity": "free_answer_question_result",
+    }
 
 
 activity_experiment_table = db.Table(
