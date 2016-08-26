@@ -24,7 +24,7 @@
 {% block post_settings %}
 <hr>
 <h3>Choices</h3>
-<form action="{{ url_for('activities.create_choice', question_id=question.id
+<form action="{{ url_for('activities.choices', question_id=question.id
 ) }}" method="post" id="create-choice-form">
   <div class="table-container">
     {{ activities_macros.choice_table(choices, create_choice_form) }}

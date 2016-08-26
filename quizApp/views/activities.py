@@ -15,6 +15,7 @@ from quizApp.forms.activities import DatasetListForm,\
 from quizApp.forms.common import DeleteObjectForm, ObjectTypeForm
 from quizApp import db
 from quizApp.views.helpers import validate_model_id
+from quizApp.views.common import ObjectCollectionView
 
 activities = Blueprint("activities", __name__, url_prefix="/activities")
 
@@ -29,40 +30,30 @@ CHOICES_ROUTE = "/<int:question_id>/choices/"
 CHOICE_ROUTE = CHOICES_ROUTE + "<int:choice_id>"
 
 
-@activities.route('/', methods=["GET"])
-@roles_required("experimenter")
-def read_activities():
-    """Display a list of all activities.
+class ActivityCollectionView(ObjectCollectionView):
+    """View for the activity collection.
     """
-    activities_list = Activity.query.all()
-    activity_type_form = ObjectTypeForm()
-    activity_type_form.populate_object_type(ACTIVITY_TYPES)
-    confirm_delete_activity_form = DeleteObjectForm()
+    decorators = [roles_required("experimenter")]
+    methods = ["GET", "POST"]
+    resolve_kwargs = dict
+    template = "activities/read_activities.html"
 
-    return render_template(
-        "activities/read_activities.html",
-        activities=activities_list,
-        confirm_delete_activity_form=confirm_delete_activity_form,
-        activity_type_form=activity_type_form)
+    def get_members(self):
+        return Activity.query.all()
 
+    def create_form(self):
+        activity_type_form = ObjectTypeForm()
+        activity_type_form.populate_object_type(ACTIVITY_TYPES)
+        return activity_type_form
 
-@activities.route("/", methods=["POST"])
-@roles_required("experimenter")
-def create_activity():
-    """Create an activity.
-    """
-    activity_type_form = ObjectTypeForm()
-    activity_type_form.populate_object_type(ACTIVITY_TYPES)
+    def create_member(self, create_form):
+        activity = Activity(type=create_form.object_type.data)
+        activity.save()
+        return {"next_url": url_for("activities.read_activity",
+                                    activity_id=activity.id)}
 
-    if not activity_type_form.validate():
-        return jsonify({"success": 0, "errors": activity_type_form.errors})
-
-    activity = Activity(type=activity_type_form.object_type.data)
-    activity.save()
-
-    next_url = url_for("activities.settings_activity", activity_id=activity.id)
-
-    return jsonify({"success": 1, "next_url": next_url})
+activities.add_url_rule("/",
+                        view_func=ActivityCollectionView.as_view('activities'))
 
 
 def render_activity(activity, *args, **kwargs):
@@ -276,37 +267,43 @@ def delete_activity(activity_id):
     db.session.delete(activity)
     db.session.commit()
 
-    next_url = url_for("activities.read_activities")
+    next_url = url_for("activities.activities")
 
     return jsonify({"success": 1, "next_url": next_url})
 
 
-@activities.route(CHOICES_ROUTE, methods=["POST"])
-@roles_required("experimenter")
-def create_choice(question_id):
-    """Create a choice for the given question.
+class ChoiceCollectionView(ObjectCollectionView):
+    """Handle a collection of choices.
     """
-    question = validate_model_id(Question, question_id)
+    decorators = [roles_required("experimenter")]
+    methods = ["POST"]
 
-    create_choice_form = ChoiceForm(request.form, prefix="create")
+    def resolve_kwargs(self, question_id):
+        question = validate_model_id(Question, question_id)
+        return {"question": question}
 
-    if not create_choice_form.validate():
-        return jsonify({"success": 0, "prefix": "create-",
-                        "errors": create_choice_form.errors})
+    def get_members(self, question):
+        return question.choices
 
-    choice = Choice()
+    def create_form(self):
+        return ChoiceForm(request.form, prefix="create")
 
-    create_choice_form.populate_obj(choice)
-    question.choices.append(choice)
+    template = None
 
-    choice.save()
-    db.session.commit()
+    def create_member(self, create_form, question):
+        choice = Choice()
 
-    return jsonify({
-        "success": 1,
-        "new_row": render_template("activities/render_choice_row.html",
-                                   choice=choice)
-    })
+        create_form.populate_obj(choice)
+        question.choices.append(choice)
+
+        choice.save()
+        db.session.commit()
+
+        return {"new_row": render_template("activities/render_choice_row.html",
+                                           choice=choice)}
+
+activities.add_url_rule(CHOICES_ROUTE,
+                        view_func=ChoiceCollectionView.as_view('choices'))
 
 
 @activities.route(CHOICE_ROUTE, methods=["PUT"])
