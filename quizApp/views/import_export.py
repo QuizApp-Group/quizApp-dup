@@ -14,7 +14,7 @@ populate an object.
 import os
 from collections import OrderedDict, defaultdict
 import tempfile
-import cgi
+import markupsafe
 
 from openpyxl import Workbook
 from sqlalchemy import inspect
@@ -93,7 +93,7 @@ def header_to_field_name(header, model):
     """Reverse header_from_property - given a header and a model, return the
     actual name of the field.
     """
-    if not header or not len(header) or header.lower == "comment":
+    if not header or not len(header) or header.lower() == "comments":
         return
     prefix = model.__tablename__ + ":"
 
@@ -291,7 +291,7 @@ def get_object_from_id(model, obj_id, pk_mapping):
     except KeyError:
         obj = model.query.get(obj_id)
     if not obj:
-        model_type = cgi.escape(str(model))
+        model_type = markupsafe.escape(str(model))
         raise ValueError("No such object {} with ID {}".
                          format(model_type, obj_id))
     return obj
@@ -336,7 +336,7 @@ def import_data_from_workbook(workbook):
             obj_args = {}
 
             for col_index, cell in enumerate(row):
-                if not cell.value:
+                if not cell.value or headers[col_index] is None:
                     continue
                 populate_field(obj, headers[col_index],
                                cell.value, pk_mapping, obj_args)
