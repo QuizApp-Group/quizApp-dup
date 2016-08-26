@@ -14,7 +14,6 @@ populate an object.
 import os
 from collections import OrderedDict, defaultdict
 import tempfile
-import markupsafe
 
 from openpyxl import Workbook
 from sqlalchemy import inspect
@@ -291,9 +290,8 @@ def get_object_from_id(model, obj_id, pk_mapping):
     except KeyError:
         obj = model.query.get(obj_id)
     if not obj:
-        model_type = markupsafe.escape(str(model))
         raise ValueError("No such object {} with ID {}".
-                         format(model_type, obj_id))
+                         format(model, obj_id))
     return obj
 
 
