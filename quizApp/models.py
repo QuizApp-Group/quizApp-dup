@@ -224,7 +224,7 @@ class Assignment(Base):
     """
 
     skipped = db.Column(db.Boolean, info={"import_include": False})
-    comment = db.Column(db.String(200), info={"import_include": False})
+    comment = db.Column(db.String(500), info={"import_include": False})
     choice_order = db.Column(db.String(80), info={"import_include": False})
     time_to_submit = db.Column(db.Interval(), info={"import_include": False})
 
@@ -276,15 +276,6 @@ class Assignment(Base):
 
         return activity
 
-    @db.validates("choice")
-    def validate_choice(self, _, choice):
-        """This must be a valid choice, i.e. contained in the question (if any)
-        """
-        if "question" in self.activity.type and choice is not None:
-            assert choice in self.activity.choices
-
-        return choice
-
     @db.validates("result")
     def validate_result(self, _, result):
         """Make sure that this assignment has the correct type of result.
@@ -326,6 +317,10 @@ class IntegerQuestionResult(Result):
     """
     integer = db.Column(db.Integer)
 
+    __mapper_args__ = {
+        "polymorphic_identity": "integer_question_result",
+    }
+
 
 class MultipleChoiceQuestionResult(Result):
     """The Choice that a Participant picked in a MultipleChoiceQuestion.
@@ -337,7 +332,14 @@ class MultipleChoiceQuestionResult(Result):
     def validate_choice(self, value, *_):
         """Make sure this Choice is a valid option for this Question.
         """
-        assert self.choice in value.activity.choices
+        # This is kind of ugly, but the fact is that sqlalchemy does not have a
+        # good way of validating an attribute of a parent. See this issue for
+        # more details:
+        # bitbucket.org/zzzeek/sqlalchemy/issues/2943/
+        # To work around this, we check if the class we are currently operating
+        # on is in fact a MultipleChoiceQuestionResult.
+        if self.type == "mc_question_result":
+            assert self.choice in value.activity.choices
 
     __mapper_args__ = {
         "polymorphic_identity": "mc_question_result",
@@ -348,6 +350,10 @@ class FreeAnswerQuestionResult(Result):
     """What a Participant entered into a text box.
     """
     text = db.Column(db.String(500))
+
+    __mapper_args__ = {
+        "polymorphic_identity": "free_answer_question_result",
+    }
 
 
 activity_experiment_table = db.Table(
@@ -455,9 +461,9 @@ class Question(Activity):
             from any Dataset.
     """
 
-    question = db.Column(db.String(200), nullable=False, info={"label":
-                                                               "Question"})
-    explanation = db.Column(db.String(200), info={"label": "Explanation"})
+    question = db.Column(db.Text, nullable=False, info={"label":
+                                                        "Question"})
+    explanation = db.Column(db.Text, info={"label": "Explanation"})
     num_media_items = db.Column(db.Integer,
                                 nullable=False,
                                 info={
@@ -612,7 +618,8 @@ class Choice(Base):
     correct = db.Column(db.Boolean,
                         info={"label": "Correct"})
     points = db.Column(db.Integer,
-                       info={"label": "Point value of this choice"})
+                       info={"label": "Point value of this choice"},
+                       default=0)
 
     question_id = db.Column(db.Integer, db.ForeignKey("activity.id"))
     question = db.relationship("Question", back_populates="choices")

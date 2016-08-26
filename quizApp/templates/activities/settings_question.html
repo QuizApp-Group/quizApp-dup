@@ -34,17 +34,16 @@
   </thead>
   <tbody>
     {% for object in dataset_form.objects %}
-    <tr
-                     data-create-action="{{
-                     url_for('activities.create_question_dataset',
-                     activity_id=question.id) }}"
-                     data-delete-action="{{
-                     url_for('activities.delete_question_dataset',
-                     activity_id=question.id, dataset_id=object.data) }}"
-                     >
-                     <td>
-                       {{ dataset_form.objects_mapping[object.data].id }}
-                     </td>
+    <tr data-create-action="{{
+    url_for('activities.create_question_dataset',
+    activity_id=question.id) }}"
+        data-delete-action="{{
+        url_for('activities.delete_question_dataset',
+        activity_id=question.id, dataset_id=object.data) }}"
+        >
+        <td>
+          {{ dataset_form.objects_mapping[object.data].id }}
+        </td>
       <td>
         {{ dataset_form.objects_mapping[object.data].name }}
       </td>
