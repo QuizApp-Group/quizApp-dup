@@ -14,6 +14,7 @@ populate an object.
 import os
 from collections import OrderedDict, defaultdict
 import tempfile
+import cgi
 
 from openpyxl import Workbook
 from sqlalchemy import inspect
@@ -92,7 +93,7 @@ def header_to_field_name(header, model):
     """Reverse header_from_property - given a header and a model, return the
     actual name of the field.
     """
-    if not header or not len(header):
+    if not header or not len(header) or header.lower == "comment":
         return
     prefix = model.__tablename__ + ":"
 
@@ -286,9 +287,14 @@ def get_object_from_id(model, obj_id, pk_mapping):
     return it. Otherwise, query the database.
     """
     try:
-        return pk_mapping[model.__tablename__][obj_id]
+        obj = pk_mapping[model.__tablename__][obj_id]
     except KeyError:
-        return model.query.get(obj_id)
+        obj = model.query.get(obj_id)
+    if not obj:
+        model_type = cgi.escape(str(model))
+        raise ValueError("No such object {} with ID {}".
+                         format(model_type, obj_id))
+    return obj
 
 
 def instantiate_model(model, headers, row):
