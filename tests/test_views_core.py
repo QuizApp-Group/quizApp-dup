@@ -6,6 +6,7 @@ import tempfile
 
 from openpyxl import load_workbook
 from factory import create_batch
+import mock
 
 from quizApp import db
 from quizApp import models
@@ -89,6 +90,14 @@ def test_import_assignments(client, users):
     response = client.post(url)
     assert response.status_code == 200
     assert not json_success(response.data)
+
+    with mock.patch("quizApp.views.core.import_export."
+                    "import_data_from_workbook") as p:
+        p.side_effect = AttributeError("foo")
+        response = client.post(url,
+                               data={"data":
+                                     open("tests/data/import.xlsx", "rb")})
+        assert not json_success(response.data)
 
 
 def test_manage_form(client, users):
