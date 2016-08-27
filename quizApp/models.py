@@ -1,7 +1,6 @@
 """Models for the quizApp.
 """
 from __future__ import unicode_literals
-import pdb
 from builtins import object
 import os
 
@@ -569,7 +568,6 @@ class MultipleChoiceQuestion(Question):
             return 0
 
     def is_correct(self, result):
-        pdb.set_trace()
         try:
             return result.choice.correct
         except AttributeError:
