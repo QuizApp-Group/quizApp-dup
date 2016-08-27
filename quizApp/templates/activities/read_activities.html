@@ -51,7 +51,7 @@ id="create-activity-form") }}
                       data-target="#confirm-delete-activity-modal">
             {{ macros.render_glyphicon("remove") }}</a>
         </td>
-        <td><a href="{{ url_for('activities.read_activity',
+        <td><a href="{{ url_for('activities.activity',
         activity_id=activity.id) }}">{{ macros.render_glyphicon("eye-open") }}</a></td>
 
       </tr>

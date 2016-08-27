@@ -15,7 +15,7 @@ from quizApp.forms.activities import DatasetListForm,\
 from quizApp.forms.common import DeleteObjectForm, ObjectTypeForm
 from quizApp import db
 from quizApp.views.helpers import validate_model_id
-from quizApp.views.common import ObjectCollectionView
+from quizApp.views.common import ObjectCollectionView, ObjectView
 
 activities = Blueprint("activities", __name__, url_prefix="/activities")
 
@@ -49,11 +49,34 @@ class ActivityCollectionView(ObjectCollectionView):
     def create_member(self, create_form):
         activity = Activity(type=create_form.object_type.data)
         activity.save()
-        return {"next_url": url_for("activities.read_activity",
+        return {"next_url": url_for("activities.activity",
                                     activity_id=activity.id)}
 
 activities.add_url_rule("/",
                         view_func=ActivityCollectionView.as_view('activities'))
+
+
+class ActivityView(ObjectView):
+    """Views for a particular Activity.
+    """
+    methods = ["GET", "PUT"]
+    object_key = "activity"
+
+    def resolve_kwargs(self, activity_id):
+        return {"activity": validate_model_id(Activity, activity_id)}
+
+    def update_form(self, activity):
+        return get_activity_form(activity, request.form)
+
+    def get(self, activity):
+        rendered_activity = render_activity(activity, False)
+        return render_template("activities/read_activity.html",
+                               activity=activity,
+                               rendered_activity=rendered_activity)
+
+
+activities.add_url_rule(ACTIVITY_ROUTE,
+                        view_func=ActivityView.as_view('activity'))
 
 
 def render_activity(activity, *args, **kwargs):
@@ -75,19 +98,6 @@ def render_activity(activity, *args, **kwargs):
     }
 
     return render_mapping[activity.type](activity, *args, **kwargs)
-
-
-@activities.route(ACTIVITY_ROUTE, methods=["GET"])
-@roles_required("experimenter")
-def read_activity(activity_id):
-    """Display a given activity as it would appear to a participant.
-    """
-    activity = validate_model_id(Activity, activity_id)
-    rendered_activity = render_activity(activity, False)
-
-    return render_template("activities/read_activity.html",
-                           activity=activity,
-                           rendered_activity=rendered_activity)
 
 
 def render_question(question, disabled=False, assignment=None,
@@ -201,23 +211,6 @@ def settings_mc_question(question, template_kwargs):
 
     return render_template("activities/settings_mc_question.html",
                            **template_kwargs)
-
-
-@activities.route(ACTIVITY_ROUTE, methods=["PUT"])
-@roles_required("experimenter")
-def update_activity(activity_id):
-    """Update the activity based on transmitted form data.
-    """
-    activity = validate_model_id(Activity, activity_id)
-    general_form = get_activity_form(activity, request.form, obj=activity)
-
-    if not general_form.validate():
-        return jsonify({"success": 0, "errors": general_form.errors})
-
-    general_form.populate_obj(activity)
-    db.session.commit()
-
-    return jsonify({"success": 1})
 
 
 @activities.route(ACTIVITY_ROUTE + "/datasets/<int:dataset_id>",

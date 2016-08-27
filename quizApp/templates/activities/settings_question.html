@@ -10,7 +10,7 @@
 
 {% block content %}
 {% block pre_settings %}{% endblock %}
-<form action="{{ url_for('activities.update_activity', activity_id=question.id) }}"
+<form action="{{ url_for('activities.activity', activity_id=question.id) }}"
       method="put" id="update-activity-form">
   {% for field in general_form %}
   {% if field.type != "SubmitField" %}
