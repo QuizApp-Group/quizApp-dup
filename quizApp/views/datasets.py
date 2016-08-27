@@ -122,6 +122,7 @@ def update_text(_, text):
 
 def update_graph(_, graph):
     """Update a graph.
+    NOTE: should refactor this into populate_obj
     """
     update_graph_form = GraphForm(CombinedMultiDict((request.form,
                                                      request.files)))

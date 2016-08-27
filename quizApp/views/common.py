@@ -15,7 +15,7 @@ class ObjectCollectionView(View):
     to. Then override the abstract functions below to implement functionality
     for your case.
     """
-    methods = None
+    methods = []
 
     def dispatch_request(self, **kwargs):
         """If this method is supported, run its function. Otherwise abort 400.
@@ -88,7 +88,7 @@ class ObjectCollectionView(View):
 class ObjectView(View):
     """View for managing a single instance of a model.
     """
-    methods = None
+    methods = []
     get_mapping = {}
     object_key = None
     template = None
