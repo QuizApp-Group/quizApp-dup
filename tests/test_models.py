@@ -227,6 +227,11 @@ def test_integer_question_validators():
     assert int_question.get_score(int_result) == 0
 
 
+def test_activity_correct():
+    activity = Activity()
+    activity.is_correct(None)
+
+
 def test_assignment_correct():
     assignment = Assignment()
     result = Result()
