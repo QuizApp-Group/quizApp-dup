@@ -42,7 +42,7 @@ id="create-dataset-form">
     </tfoot>
     <tbody>
       {% for dataset in members %}
-      <tr data-delete-action="{{ url_for('datasets.delete_dataset',
+      <tr data-delete-action="{{ url_for('datasets.dataset',
       dataset_id=dataset.id) }}" id="dataset-{{ dataset.id }}">
         <td>{{ dataset.id }}</td>
         <td class="name">{{ dataset.name }}</a>

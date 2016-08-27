@@ -15,7 +15,7 @@
 <br>
 <h3>Settings</h3>
 {{ macros.render_form(update_media_item_form,
-action=url_for('datasets.update_media_item', dataset_id=dataset.id, media_item_id=media_item.id),
+action=url_for('datasets.media_item', dataset_id=dataset.id, media_item_id=media_item.id),
 method="put",
 id="update-media-item-form") }}
 

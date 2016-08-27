@@ -12,7 +12,7 @@ from quizApp.forms.common import DeleteObjectForm, ObjectTypeForm
 from quizApp.forms.datasets import DatasetForm, GraphForm, TextForm
 from quizApp.models import Dataset, MediaItem
 from quizApp.views.helpers import validate_model_id, validate_form_or_error
-from quizApp.views.common import ObjectCollectionView
+from quizApp.views.common import ObjectCollectionView, ObjectView
 
 datasets = Blueprint("datasets", __name__, url_prefix="/datasets")
 
@@ -50,69 +50,108 @@ datasets.add_url_rule("/",
                       view_func=DatasetCollectionView.as_view('datasets'))
 
 
-@datasets.route(DATASET_ROUTE, methods=["PUT"])
-@roles_required("experimenter")
-def update_dataset(dataset_id):
-    """Change the properties of this dataset.
+class DatasetView(ObjectView):
+    """View for handling a particular dataset.
     """
-    dataset = validate_model_id(Dataset, dataset_id)
+    methods = ["PUT", "DELETE"]
+    object_key = "dataset"
 
-    update_dataset_form = DatasetForm(request.form)
+    def resolve_kwargs(self, dataset_id):
+        return {"dataset": validate_model_id(Dataset, dataset_id)}
 
-    if not update_dataset_form.validate():
-        return jsonify({"success": 0, "errors": update_dataset_form.errors})
+    def update_form(self, **_):
+        return DatasetForm(request.form)
 
-    update_dataset_form.populate_obj(dataset)
+    def collection_url(self, **kwargs):
+        return url_for("datasets.datasets")
+
+datasets.add_url_rule(DATASET_ROUTE,
+                      view_func=DatasetView.as_view('dataset'))
+
+
+class MediaItemView(ObjectView):
+    """View for handling a particular media item
+    """
+    methods = ["DELETE", "PUT", "GET"]
+    object_key = "media_item"
+    template = "datasets/read_media_item.html"
+
+    def update_form(self, **_):
+        pass
+
+    def collection_url(self, dataset, **_):
+        return url_for("datasets.settings_dataset", dataset_id=dataset.id)
+
+    def resolve_kwargs(self, dataset_id, media_item_id):
+        dataset = validate_model_id(Dataset, dataset_id)
+        media_item = validate_model_id(MediaItem, media_item_id)
+
+        if media_item.dataset != dataset:
+            abort(404)
+
+        return {"dataset": dataset, "media_item": media_item}
+
+    def put(self, dataset, media_item):
+        update_function_mapping = {
+            "graph": update_graph,
+            "text": update_text,
+        }
+
+        return update_function_mapping[media_item.type](dataset, media_item)
+
+datasets.add_url_rule(MEDIA_ITEM_ROUTE,
+                      view_func=MediaItemView.as_view('media_item'))
+
+
+def update_text(_, text):
+    """Update a Text object.
+    """
+    update_text_form = TextForm(request.form, request.files)
+
+    response = validate_form_or_error(update_text_form)
+
+    if response:
+        return response
+
+    update_text_form.populate_obj(text)
 
     db.session.commit()
 
     return jsonify({"success": 1})
 
 
-@datasets.route(DATASET_ROUTE, methods=["DELETE"])
-@roles_required("experimenter")
-def delete_dataset(dataset_id):
-    """Delete this dataset.
+def update_graph(_, graph):
+    """Update a graph.
     """
-    dataset = validate_model_id(Dataset, dataset_id)
+    update_graph_form = GraphForm(CombinedMultiDict((request.form,
+                                                     request.files)))
 
-    db.session.delete(dataset)
-    db.session.commit()
+    response = validate_form_or_error(update_graph_form)
 
-    return jsonify({"success": 1,
-                    "next_url": url_for('datasets.datasets')})
+    if response:
+        return response
 
+    update_graph_form.populate_obj(graph)
 
-@datasets.route(MEDIA_ITEM_ROUTE, methods=["DELETE"])
-@roles_required("experimenter")
-def delete_dataset_media_item(dataset_id, media_item_id):
-    """Delete a particular media_item in a particular dataset.
-    """
-    dataset = validate_model_id(Dataset, dataset_id)
-    media_item = validate_model_id(MediaItem, media_item_id)
+    if update_graph_form.graph.data:
+        # Replace the current graph with this
+        if os.path.isfile(graph.path):
+            # Just overwrite this
+            update_graph_form.graph.data.save(graph.path)
+        else:
+            # Need to create a new file
+            graphs_dir = os.path.join(
+                current_app.static_folder,
+                current_app.config.get("GRAPH_DIRECTORY"))
+            graph_filename = str(graph.id) + \
+                os.path.splitext(update_graph_form.graph.data.filename)[1]
+            new_graph_path = os.path.join(graphs_dir, graph_filename)
+            update_graph_form.graph.data.save(new_graph_path)
+            graph.path = new_graph_path
 
-    if media_item not in dataset.media_items:
-        abort(404)
-
-    db.session.delete(media_item)
     db.session.commit()
 
     return jsonify({"success": 1})
-
-
-@datasets.route(MEDIA_ITEM_ROUTE, methods=["GET"])
-@roles_required("experimenter")
-def read_media_item(dataset_id, media_item_id):
-    """Get an html representation of a particular media_item.
-    """
-    dataset = validate_model_id(Dataset, dataset_id)
-    media_item = validate_model_id(MediaItem, media_item_id)
-
-    if media_item not in dataset.media_items:
-        abort(404)
-
-    return render_template("datasets/read_media_item.html",
-                           media_item=media_item)
 
 
 @datasets.route(DATASET_ROUTE + '/settings', methods=["GET"])
@@ -199,75 +238,3 @@ def settings_media_item(dataset_id, media_item_id):
         dataset=dataset,
         create_media_item_form=create_media_item_form,
         media_item=media_item)
-
-
-@datasets.route(MEDIA_ITEM_ROUTE, methods=["PUT"])
-@roles_required("experimenter")
-def update_media_item(dataset_id, media_item_id):
-    """Update a particular media item.
-
-    Dispatches to a handler for the specific kind of media item.
-    """
-    dataset = validate_model_id(Dataset, dataset_id)
-    media_item = validate_model_id(MediaItem, media_item_id)
-
-    if media_item not in dataset.media_items:
-        abort(404)
-
-    update_function_mapping = {
-        "graph": update_graph,
-        "text": update_text,
-    }
-
-    return update_function_mapping[media_item.type](dataset, media_item)
-
-
-def update_text(_, text):
-    """Update a Text object.
-    """
-    update_text_form = TextForm(request.form, request.files)
-
-    response = validate_form_or_error(update_text_form)
-
-    if response:
-        return response
-
-    update_text_form.populate_obj(text)
-
-    db.session.commit()
-
-    return jsonify({"success": 1})
-
-
-def update_graph(_, graph):
-    """Update a graph.
-    """
-    update_graph_form = GraphForm(CombinedMultiDict((request.form,
-                                                     request.files)))
-
-    response = validate_form_or_error(update_graph_form)
-
-    if response:
-        return response
-
-    update_graph_form.populate_obj(graph)
-
-    if update_graph_form.graph.data:
-        # Replace the current graph with this
-        if os.path.isfile(graph.path):
-            # Just overwrite this
-            update_graph_form.graph.data.save(graph.path)
-        else:
-            # Need to create a new file
-            graphs_dir = os.path.join(
-                current_app.static_folder,
-                current_app.config.get("GRAPH_DIRECTORY"))
-            graph_filename = str(graph.id) + \
-                os.path.splitext(update_graph_form.graph.data.filename)[1]
-            new_graph_path = os.path.join(graphs_dir, graph_filename)
-            update_graph_form.graph.data.save(new_graph_path)
-            graph.path = new_graph_path
-
-    db.session.commit()
-
-    return jsonify({"success": 1})

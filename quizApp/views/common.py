@@ -91,6 +91,7 @@ class ObjectView(View):
     methods = None
     get_mapping = {}
     object_key = None
+    template = None
 
     def resolve_kwargs(self, **kwargs):
         """Given a list of kwargs passed in as url arguments, perform any
@@ -107,6 +108,11 @@ class ObjectView(View):
         """
         raise NotImplementedError
 
+    def collection_url(self, **kwargs):
+        """Return the URL of the collection containing this object.
+        """
+        raise NotImplementedError
+
     def dispatch_request(self, **kwargs):
         """If this method is supported, run its function. Otherwise abort 400.
         """
@@ -115,16 +121,14 @@ class ObjectView(View):
             return getattr(self, request.method.lower())(**new_kwargs)
         abort(400)
 
-    def collection_url(self, **kwargs):
-        """Return the URL of the collection containing this object.
-        """
-        raise NotImplementedError
-
     def get(self, **kwargs):
         """Get this object.
         """
         if self.get_mapping:
             return self.get_mapping[kwargs[self.object_key]](**kwargs)
+
+        return render_template(self.template,
+                               **kwargs)
 
     def put(self, **kwargs):
         """Update this object.
