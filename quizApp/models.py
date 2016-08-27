@@ -252,6 +252,12 @@ class Assignment(Base):
                                      back_populates="assignments")
 
     @property
+    def correct(self):
+        """Check if this assignment was answered correctly.
+        """
+        return self.activity.is_correct(self.result)
+
+    @property
     def score(self):
         """Get the score for this assignment.
 
@@ -420,6 +426,15 @@ class Activity(Base):
         """
         pass
 
+    def is_correct(self, result):
+        """Given a result, return True if the answer was correct or False
+        otherwise.
+
+        If this activity does not have a concept of correct/incorrect, return
+        None.
+        """
+        pass
+
     def import_dict(self, **kwargs):
         """If we are setting assignments, we need to update experiments to
         match.
@@ -516,6 +531,12 @@ class IntegerQuestion(Question):
         except AttributeError:
             return 0
 
+    def is_correct(self, result):
+        try:
+            return result.integer == self.answer
+        except AttributeError:
+            return False
+
     @db.validates('answer')
     def validate_answer(self, _, answer):
         """Ensure answer is within the bounds.
@@ -545,6 +566,12 @@ class MultipleChoiceQuestion(Question):
             return result.choice.points
         except AttributeError:
             return 0
+
+    def is_correct(self, result):
+        try:
+            return result.choice.correct
+        except AttributeError:
+            return False
 
     __mapper_args__ = {
         'polymorphic_identity': 'question_mc',
@@ -591,9 +618,18 @@ class FreeAnswerQuestion(Question):
     def get_score(self, result):
         """If this Question was answered, return 1.
         """
-        if result.text:
-            return 1
-        return 0
+        try:
+            if result.text:
+                return 1
+            return 0
+        except AttributeError:
+            return 0
+
+    def is_correct(self, result):
+        try:
+            return bool(result.text)
+        except AttributeError:
+            return False
 
     __mapper_args__ = {
         'polymorphic_identity': 'question_freeanswer',

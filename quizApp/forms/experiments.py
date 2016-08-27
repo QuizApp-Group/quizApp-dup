@@ -115,7 +115,7 @@ class MultipleChoiceForm(QuestionForm):
                                 for c in question.choices]
 
     def populate_from_result(self, result):
-        self.choices.default = str(result.choice_id)
+        self.choices.default = str(result.choice.id)
         self.process()
 
     @property
