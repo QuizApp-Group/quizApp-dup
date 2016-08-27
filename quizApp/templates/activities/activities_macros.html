@@ -63,9 +63,9 @@
 {% endmacro %}
 
 {% macro choice_row(choice) %}
-<tr data-update-action="{{ url_for('activities.update_choice',
+<tr data-update-action="{{ url_for('activities.choice',
 question_id=choice.question_id, choice_id=choice.id) }}"
-    data-delete-action="{{ url_for('activities.delete_choice',
+    data-delete-action="{{ url_for('activities.choice',
     question_id=choice.question_id, choice_id=choice.id) }}"
     id="choice-{{ choice.id }}">
   <td class="choice-label" data-field-name="update-label">{{ choice.label }}</td>

@@ -33,7 +33,7 @@ id="create-activity-form") }}
     </thead>
     <tbody>
       {% for activity in members %}
-      <tr data-delete-action="{{ url_for('activities.delete_activity',
+      <tr data-delete-action="{{ url_for('activities.activity',
       activity_id=activity.id) }}" id="activity-{{ activity.id }}">
         <td>{{ activity.id }}</td>
         <td>{{ activity.category }}</td>

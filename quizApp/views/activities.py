@@ -59,7 +59,7 @@ activities.add_url_rule("/",
 class ActivityView(ObjectView):
     """Views for a particular Activity.
     """
-    methods = ["GET", "PUT"]
+    methods = ["GET", "PUT", "DELETE"]
     object_key = "activity"
 
     def resolve_kwargs(self, activity_id):
@@ -67,6 +67,9 @@ class ActivityView(ObjectView):
 
     def update_form(self, activity):
         return get_activity_form(activity, request.form)
+
+    def collection_url(self, **_):
+        return url_for("activities.activities")
 
     def get(self, activity):
         rendered_activity = render_activity(activity, False)
@@ -250,21 +253,6 @@ def create_question_dataset(activity_id):
     return jsonify({"success": 1})
 
 
-@activities.route(ACTIVITY_ROUTE, methods=["DELETE"])
-@roles_required("experimenter")
-def delete_activity(activity_id):
-    """Delete the given activity.
-    """
-    activity = validate_model_id(Activity, activity_id)
-
-    db.session.delete(activity)
-    db.session.commit()
-
-    next_url = url_for("activities.activities")
-
-    return jsonify({"success": 1, "next_url": next_url})
-
-
 class ChoiceCollectionView(ObjectCollectionView):
     """Handle a collection of choices.
     """
@@ -297,42 +285,27 @@ activities.add_url_rule(CHOICES_ROUTE,
                         view_func=ChoiceCollectionView.as_view('choices'))
 
 
-@activities.route(CHOICE_ROUTE, methods=["PUT"])
-@roles_required("experimenter")
-def update_choice(question_id, choice_id):
-    """Update the given choice using form data.
+class ChoiceView(ObjectView):
+    """View for handling a singular Choice object.
     """
-    question = validate_model_id(Question, question_id)
-    choice = validate_model_id(Choice, choice_id)
+    methods = ["PUT", "DELETE"]
+    object_key = "choice"
 
-    if choice not in question.choices:
-        abort(404)
+    def collection_url(self, **_):
+        return None
 
-    update_choice_form = ChoiceForm(request.form, prefix="update")
+    def resolve_kwargs(self, question_id, choice_id):
+        question = validate_model_id(Question, question_id)
+        choice = validate_model_id(Choice, choice_id)
 
-    if not update_choice_form.validate():
-        return jsonify({"success": 0, "prefix": "update-",
-                        "errors": update_choice_form.errors})
+        if choice.question != question:
+            abort(404)
 
-    update_choice_form.populate_obj(choice)
+        return {"question": question, "choice": choice}
 
-    db.session.commit()
-
-    return jsonify({"success": 1})
+    def update_form(self, **_):
+        return ChoiceForm(request.form, prefix="update")
 
 
-@activities.route(CHOICE_ROUTE, methods=["DELETE"])
-@roles_required("experimenter")
-def delete_choice(question_id, choice_id):
-    """Delete the given choice.
-    """
-    question = validate_model_id(Question, question_id)
-    choice = validate_model_id(Choice, choice_id)
-
-    if choice not in question.choices:
-        abort(404)
-
-    db.session.delete(choice)
-    db.session.commit()
-
-    return jsonify({"success": 1})
+activities.add_url_rule(CHOICE_ROUTE,
+                        view_func=ChoiceView.as_view('choice'))

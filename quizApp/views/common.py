@@ -115,6 +115,11 @@ class ObjectView(View):
             return getattr(self, request.method.lower())(**new_kwargs)
         abort(400)
 
+    def collection_url(self, **kwargs):
+        """Return the URL of the collection containing this object.
+        """
+        raise NotImplementedError
+
     def get(self, **kwargs):
         """Get this object.
         """
@@ -133,3 +138,13 @@ class ObjectView(View):
         db.session.commit()
 
         return jsonify({"success": 1})
+
+    def delete(self, **kwargs):
+        """Delete this object.
+        """
+        obj = kwargs[self.object_key]
+        db.session.delete(obj)
+        db.session.commit()
+
+        return jsonify({"success": 1,
+                        "next_url": self.collection_url(**kwargs)})
