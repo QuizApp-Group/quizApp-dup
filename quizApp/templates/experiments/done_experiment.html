@@ -39,7 +39,7 @@ Thank you for participating.</h3>
     {% if assignment.result %}
     <tr
        {% if scorecard_settings.display_correctness %}
-         class="{% if assignment.result.choice.correct %}
+         class="{% if assignment.correct %}
          success
          {% else%}
          danger
@@ -52,7 +52,7 @@ Thank you for participating.</h3>
         </td>
         {% if scorecard_settings.display_correctness %}
         <td>
-          {% if assignment.result.choice.correct %}
+          {% if assignment.correct %}
           {{ macros.render_glyphicon("ok") }} Correct
           {% else %}
           {{ macros.render_glyphicon("remove") }} Incorrect
