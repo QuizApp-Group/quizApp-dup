@@ -23,8 +23,10 @@
   {% if assignment %}
   <p>Press the start button to begin.</p>
 
-  <a href="{{ url_for('experiments.read_assignment', experiment_id=experiment.id,
-  a_id=assignment.id) }}" class="btn btn-primary">Start</a>
+  <a href="{{ url_for('experiments.read_assignment',
+  experiment_id=experiment.id,
+  assignment_set_id=assignment.assignment_set.id,
+  assignment_id=assignment.id) }}" class="btn btn-primary">Start</a>
   {% else %}
   <p>You are done with this experiment.</p>
   {% endif %}

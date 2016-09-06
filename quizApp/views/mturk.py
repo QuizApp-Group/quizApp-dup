@@ -57,11 +57,13 @@ def register():
 
         login_user(participant)
         # get first assignment and send there
+        assignment = get_first_assignment(experiment)
 
         return render_template(
             "mturk/redirect.html",
             next_url=url_for("experiments.read_assignment",
-                             a_id=get_first_assignment(experiment).id,
+                             assignment_set_id=assignment.assignment_set.id,
+                             assignment_id=assignment.id,
                              experiment_id=experiment.id))
 
     return render_template("mturk/register.html",

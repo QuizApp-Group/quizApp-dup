@@ -49,7 +49,7 @@ class ActivityCollectionView(ObjectCollectionView):
     def create_member(self, create_form):
         activity = Activity(type=create_form.object_type.data)
         activity.save()
-        return {"next_url": url_for("activities.activity",
+        return {"next_url": url_for("activities.settings_activity",
                                     activity_id=activity.id)}
 
 activities.add_url_rule("/",

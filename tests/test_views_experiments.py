@@ -263,7 +263,8 @@ def test_read_assignment(client, users):
     assignment_set.participant = participant
     experiment.save()
 
-    url = "/experiments/" + str(experiment.id) + "/assignments/"
+    url = "/experiments/{}/assignment_sets/{}/assignments/".\
+        format(experiment.id, assignment_set.id)
 
     for assignment in assignment_set.assignments:
         # Verify that the question is present in the output
@@ -323,13 +324,6 @@ def test_read_assignment(client, users):
     response = client.get(url + str(assignment2.id))
     assert response.status_code == 400
 
-    # If we can't render it return an error
-    url2 = "/experiments/" + str(experiment2.id) + "/assignments/"
-
-    response = client.get(url2 + str(assignment2.id))
-    assert response.status_code == 400
-    experiment2 = create_experiment(3, 1)
-
     # Make sure likert questions render correctly
     experiment3 = create_experiment(3, 1,
                                     ["question_mc_singleselect_scale"])
@@ -338,7 +332,8 @@ def test_read_assignment(client, users):
     assignment_set3.participant = participant
     assignment_set3.save()
     assignment3 = assignment_set3.assignments[0]
-    url3 = "/experiments/" + str(experiment3.id) + "/assignments/"
+    url3 = "/experiments/{}/assignment_sets/{}/assignments/".\
+        format(experiment3.id, assignment_set3.id)
 
     response = client.get(url3 + str(assignment3.id))
     assert response.status_code == 200
@@ -355,7 +350,8 @@ def test_read_assignment(client, users):
     assignment_set3.participant = participant
     assignment_set3.save()
     assignment3 = assignment_set3.assignments[0]
-    url3 = "/experiments/" + str(experiment3.id) + "/assignments/"
+    url3 = "/experiments/{}/assignment_sets/{}/assignments/".\
+        format(experiment3.id, assignment_set3.id)
 
     response = client.get(url3 + str(assignment3.id))
     assert response.status_code == 200
@@ -378,8 +374,8 @@ def test_update_assignment(client, users):
 
     assignment = assignment_set.assignments[0]
 
-    url = "/experiments/" + str(experiment.id) + "/assignments/" + \
-        str(assignment.id)
+    url = "/experiments/{}/assignment_sets/{}/assignments/{}".\
+        format(experiment.id, assignment_set.id, assignment.id)
 
     choice = random.choice(assignment.activity.choices)
 
@@ -438,8 +434,8 @@ def test_update_assignment(client, users):
     experiment3.save()
 
     assignment3 = assignment_set3.assignments[0]
-    url = "/experiments/" + str(experiment3.id) + "/assignments/" + \
-        str(assignment3.id)
+    url = "/experiments/{}/assignment_sets/{}/assignments/{}".\
+        format(experiment3.id, assignment_set3.id, assignment3.id)
     response = client.patch(url)
 
     assert response.status_code == 403
@@ -460,8 +456,8 @@ def test_update_int_assignment(client, users):
 
     assignment = assignment_set.assignments[0]
 
-    url = "/experiments/" + str(experiment.id) + "/assignments/" + \
-        str(assignment.id)
+    url = "/experiments/{}/assignment_sets/{}/assignments/{}".\
+        format(experiment.id, assignment_set.id, assignment.id)
 
     time_to_submit = timedelta(hours=1)
     start_ts = datetime.now()
@@ -515,8 +511,9 @@ def test_finalize_experiment(client, users):
     response = client.patch(url)
     assert response.status_code == 400
 
-    url = "/experiments/" + str(experiment.id) + "/assignments/" + \
-        str(experiment.assignment_sets[0].assignments[0].id)
+    url = "/experiments/{}/assignment_sets/{}/assignments/{}".\
+        format(experiment.id, experiment.assignment_sets[0].id,
+               experiment.assignment_sets[0].assignments[0].id)
 
     choice = random.choice(assignment_set.assignments[0].
                            activity.choices)

@@ -24,8 +24,10 @@ from quizApp.views.mturk import submit_assignment
 experiments = Blueprint("experiments", __name__, url_prefix="/experiments")
 
 EXPERIMENT_ROUTE = "/<int:experiment_id>"
-ASSIGNMENTS_ROUTE = EXPERIMENT_ROUTE + "/assignments/"
-ASSIGNMENT_ROUTE = ASSIGNMENTS_ROUTE + "<int:a_id>"
+ASSIGNMENT_SETS_ROUTE = EXPERIMENT_ROUTE + "/assignment_sets/"
+ASSIGNMENT_SET_ROUTE = ASSIGNMENT_SETS_ROUTE + "<int:assignment_set_id>"
+ASSIGNMENTS_ROUTE = ASSIGNMENT_SET_ROUTE + "/assignments/"
+ASSIGNMENT_ROUTE = ASSIGNMENTS_ROUTE + "<int:assignment_id>"
 
 POST_FINALIZE_HANDLERS = {
     "mturk": submit_assignment,
@@ -135,14 +137,13 @@ experiments.add_url_rule(
 
 @experiments.route(ASSIGNMENT_ROUTE, methods=["GET"])
 @roles_required("participant")
-def read_assignment(experiment_id, a_id):
+def read_assignment(experiment_id, assignment_set_id, assignment_id):
     """Given an assignment ID, retrieve it from the database and display it to
     the user.
     """
     experiment = validate_model_id(Experiment, experiment_id)
-    assignment = validate_model_id(Assignment, a_id)
-
-    assignment_set = get_assignment_set_or_abort(experiment_id)
+    assignment = validate_model_id(Assignment, assignment_id)
+    assignment_set = validate_model_id(AssignmentSet, assignment_set_id)
 
     if assignment not in assignment_set.assignments:
         abort(400)
@@ -237,12 +238,12 @@ def read_mc_question(_, assignment):
 
 
 @experiments.route(ASSIGNMENT_ROUTE, methods=["PATCH"])
-def update_assignment(experiment_id, a_id):
+def update_assignment(experiment_id, assignment_set_id, assignment_id):
     """Record a user's answer to this assignment
     """
-    assignment = validate_model_id(Assignment, a_id)
     experiment = validate_model_id(Experiment, experiment_id)
-    assignment_set = assignment.assignment_set
+    assignment = validate_model_id(Assignment, assignment_id)
+    assignment_set = validate_model_id(AssignmentSet, assignment_set_id)
 
     if assignment_set.participant != current_user:
         abort(403)
@@ -333,7 +334,8 @@ def get_next_assignment_url(assignment_set, current_index):
         next_url = url_for(
             "experiments.read_assignment",
             experiment_id=experiment_id,
-            a_id=assignment_set.assignments[current_index + 1].id)
+            assignment_set_id=assignment_set.id,
+            assignment_id=assignment_set.assignments[current_index + 1].id)
     except IndexError:
         next_url = None
 
