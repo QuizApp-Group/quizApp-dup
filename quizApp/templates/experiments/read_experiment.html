@@ -17,7 +17,7 @@
 {% if current_user.has_role("experimenter") %}
 <a href="{{ url_for('experiments.settings_experiment', experiment_id=experiment.id) }}"
    role="button" class="btn btn-primary">Edit</a>
-<a href="{{ url_for('experiments.read_experiments') }}" class="btn btn-primary" role="button">Back to experiment listing</a>
+<a href="{{ url_for('experiments.experiments') }}" class="btn btn-primary" role="button">Back to experiment listing</a>
 {% endif %}
 {% if current_user.has_role("participant") %}
   {% if assignment %}

@@ -13,21 +13,21 @@ Experiment List
 
 {% block content %}
 {% if current_user.has_role("experimenter") %}
-{{ macros.render_confirm_delete_modal(confirm_delete_experiment_form, "experiment") }}
+{{ macros.render_confirm_delete_modal(confirm_delete_form, "experiment") }}
 <h3>Future experiments</h3>
-{{ exp_macros.experiment_table(future_experiments, False,
+{{ exp_macros.experiment_table(members["future_experiments"], False,
 "future_experiment_table", current_user.has_role("experimenter")) }}
 <hr>
 {% endif %}
 <h3>Present experiments</h3>
 <form id="create-experiment-form" method="post">
-  {{ exp_macros.experiment_table(present_experiments, create_form,
+  {{ exp_macros.experiment_table(members["present_experiments"], create_form,
   "present_experiment_table", current_user.has_role("experimenter")) }}
 </form>
 {% if current_user.has_role("experimenter") %}
 <hr>
 <h3>Past experiments</h3>
-{{ exp_macros.experiment_table(past_experiments, False,
+{{ exp_macros.experiment_table(members["past_experiments"], False,
 "past_experiment_table", current_user.has_role("experimenter")) }}
 {% endif %}
 {% endblock %}

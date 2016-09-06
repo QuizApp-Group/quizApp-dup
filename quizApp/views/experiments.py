@@ -12,10 +12,9 @@ from flask_security import login_required, current_user, roles_required
 from sqlalchemy.orm.exc import NoResultFound
 
 from quizApp import db
-from quizApp.forms.common import DeleteObjectForm
 from quizApp.forms.experiments import CreateExperimentForm, \
     get_question_form
-from quizApp.views.common import ObjectCollectionView
+from quizApp.views.common import ObjectCollectionView, ObjectView
 from quizApp.models import Experiment, Assignment, \
     AssignmentSet, Activity, Participant
 from quizApp.views.helpers import validate_model_id, get_first_assignment
@@ -49,10 +48,12 @@ class ExperimentCollectionView(ObjectCollectionView):
     decorators = [login_required]
     methods = ["GET", "POST"]
     template = "experiments/read_experiments.html"
-    create_form = CreateExperimentForm
+
+    def create_form(self):
+        return CreateExperimentForm(request.form)
 
     def resolve_kwargs(self, **kwargs):
-        pass
+        return {}
 
     def get_members(self):
         now = datetime.now()
@@ -71,65 +72,61 @@ class ExperimentCollectionView(ObjectCollectionView):
         experiment.created = datetime.now()
         experiment.save()
 
-        return jsonify({
+        return {
             "next_url": url_for("experiments.settings_experiment",
                                 experiment_id=experiment.id),
-        })
+        }
 
     def post(self):
         if current_user.has_role("experimenter"):
             return super(ExperimentCollectionView, self).post()
+        abort(403)
 
-experiments.add_url_rule("/",
-                         view_func=ExperimentCollectionView.as_view('experiments'))
-
-@experiments.route(EXPERIMENT_ROUTE, methods=["GET"])
-@login_required
-def read_experiment(experiment_id):
-    """View the landing page of an experiment, along with the ability to start.
-    """
-    experiment = validate_model_id(Experiment, experiment_id)
-
-    if current_user.has_role("participant"):
-        assignment = get_first_assignment(experiment)
-    else:
-        assignment = None
-
-    return render_template("experiments/read_experiment.html",
-                           experiment=experiment,
-                           assignment=assignment)
+experiments.add_url_rule(
+    "/",
+    view_func=ExperimentCollectionView.as_view('experiments'))
 
 
-@experiments.route(EXPERIMENT_ROUTE, methods=["DELETE"])
-@roles_required("experimenter")
-def delete_experiment(experiment_id):
-    """Delete an experiment.
-    """
-    exp = validate_model_id(Experiment, experiment_id)
+class ExperimentView(ObjectView):
+    decorators = [login_required]
+    methods = ["GET", "PUT", "DELETE"]
+    object_key = "experiment"
+    template = "experiments/read_experiment.html"
 
-    db.session.delete(exp)
-    db.session.commit()
+    def resolve_kwargs(self, experiment_id):
+        return {"experiment": validate_model_id(Experiment, experiment_id)}
 
-    return jsonify({"success": 1})
+    def update_form(self, **_):
+        return CreateExperimentForm(request.form)
 
+    def collection_url(self, **_):
+        return url_for("experiments.experiments")
 
-@experiments.route(EXPERIMENT_ROUTE, methods=["PUT"])
-@roles_required("experimenter")
-def update_experiment(experiment_id):
-    """Modify an experiment's properties.
-    """
-    exp = validate_model_id(Experiment, experiment_id)
+    def get(self, experiment):
+        """View the landing page of an experiment, along with the ability to start.
+        """
+        if current_user.has_role("participant"):
+            assignment = get_first_assignment(experiment)
+        else:
+            assignment = None
 
-    experiment_update_form = CreateExperimentForm(request.form)
+        return render_template("experiments/read_experiment.html",
+                               experiment=experiment,
+                               assignment=assignment)
 
-    if not experiment_update_form.validate():
-        return jsonify({"success": 0, "errors": experiment_update_form.errors})
+    def delete(self, experiment):
+        if current_user.has_role("experimenter"):
+            return super(ExperimentView, self).delete()
+        abort(403)
 
-    experiment_update_form.populate_obj(exp)
+    def put(self, experiment):
+        if current_user.has_role("experimenter"):
+            return super(ExperimentView, self).put()
+        abort(403)
 
-    exp.save()
-
-    return jsonify({"success": 1})
+experiments.add_url_rule(
+    "/experiments/<int:experiment_id>",
+    view_func=ExperimentView.as_view('experiment'))
 
 
 @experiments.route(ASSIGNMENT_ROUTE, methods=["GET"])
