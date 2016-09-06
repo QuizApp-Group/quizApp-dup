@@ -15,6 +15,7 @@ from quizApp import db
 from quizApp.forms.common import DeleteObjectForm
 from quizApp.forms.experiments import CreateExperimentForm, \
     get_question_form
+from quizApp.views.common import ObjectCollectionView
 from quizApp.models import Experiment, Assignment, \
     AssignmentSet, Activity, Participant
 from quizApp.views.helpers import validate_model_id, get_first_assignment
@@ -44,49 +45,43 @@ def get_assignment_set_or_abort(experiment_id, code=400):
         abort(code)
 
 
-@experiments.route('/', methods=["GET"])
-@login_required
-def read_experiments():
-    """List experiments.
-    """
-    now = datetime.now()
-    past_experiments = Experiment.query.filter(Experiment.stop < now).all()
-    present_experiments = Experiment.query.filter(Experiment.stop > now).\
-        filter(Experiment.start < now).all()
-    future_experiments = Experiment.query.filter(Experiment.start > now)
+class ExperimentCollectionView(ObjectCollectionView):
+    decorators = [login_required]
+    methods = ["GET", "POST"]
+    template = "experiments/read_experiments.html"
+    create_form = CreateExperimentForm
 
-    create_form = CreateExperimentForm()
-    confirm_delete_experiment_form = DeleteObjectForm()
+    def resolve_kwargs(self, **kwargs):
+        pass
 
-    return render_template(
-        "experiments/read_experiments.html",
-        past_experiments=past_experiments,
-        present_experiments=present_experiments,
-        future_experiments=future_experiments,
-        confirm_delete_experiment_form=confirm_delete_experiment_form,
-        create_form=create_form)
+    def get_members(self):
+        now = datetime.now()
+        return {
+            "past_experiments": Experiment.query.filter(
+                Experiment.stop < now).all(),
+            "present_experiments": Experiment.query.filter(
+                Experiment.stop > now).filter(Experiment.start < now).all(),
+            "future_experiments": Experiment.query.filter(
+                Experiment.start > now),
+        }
 
+    def create_member(self, create_form):
+        experiment = Experiment()
+        create_form.populate_obj(experiment)
+        experiment.created = datetime.now()
+        experiment.save()
 
-@experiments.route("/", methods=["POST"])
-@roles_required("experimenter")
-def create_experiment():
-    """Create an experiment and save it to the database.
-    """
-    form = CreateExperimentForm(request.form)
-    if not form.validate():
-        return jsonify({"success": 0, "errors": form.errors})
+        return jsonify({
+            "next_url": url_for("experiments.settings_experiment",
+                                experiment_id=experiment.id),
+        })
 
-    experiment = Experiment()
-    form.populate_obj(experiment)
-    experiment.created = datetime.now()
-    experiment.save()
+    def post(self):
+        if current_user.has_role("experimenter"):
+            return super(ExperimentCollectionView, self).post()
 
-    return jsonify({
-        "success": 1,
-        "next_url": url_for("experiments.settings_experiment",
-                            experiment_id=experiment.id),
-    })
-
+experiments.add_url_rule("/",
+                         view_func=ExperimentCollectionView.as_view('experiments'))
 
 @experiments.route(EXPERIMENT_ROUTE, methods=["GET"])
 @login_required

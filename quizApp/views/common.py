@@ -124,6 +124,7 @@ class ObjectView(View):
     def get(self, **kwargs):
         """Get this object.
         """
+        # TODO: still not sold on the get mapping thing here
         if self.get_mapping:
             return self.get_mapping[kwargs[self.object_key]](**kwargs)
 
