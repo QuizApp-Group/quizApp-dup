@@ -292,7 +292,8 @@ def test_read_assignment(client, users):
                              activity.choices[0].id)})
     assert response.status_code == 400
 
-    response = client.patch("/experiments/" + str(experiment.id) + "/finalize")
+    response = client.patch("/experiments/{}/assignment_sets/{}/finalize".
+                            format(experiment.id, assignment_set.id))
     assert response.status_code == 200
     assert json_success(response.data)
 
@@ -490,13 +491,13 @@ def test_finalize_experiment(client, users):
     assignment_set.complete = False
     assignment_set.save()
 
-    url = "/experiments/" + str(experiment.id) + "/finalize"
+    url_template = "/experiments/{}/assignment_sets/{}/finalize"
+
+    url = url_template.format(experiment.id, assignment_set.id)
 
     response = client.patch(url)
     assert response.status_code == 200
     assert json_success(response.data)
-
-    url = "/experiments/" + str(experiment.id) + "/finalize"
 
     response = client.patch(url)
     assert response.status_code == 400
@@ -529,7 +530,9 @@ def test_done_experiment_hook(client, users):
     mock_handler = mock.MagicMock()
     POST_FINALIZE_HANDLERS["test_handler"] = mock_handler
 
-    url = "/experiments/" + str(experiment2.id) + "/done"
+    url_template = "/experiments/{}/assignment_sets/{}/done"
+
+    url = url_template.format(experiment2.id, assignment_set2.id)
     with client.session_transaction() as sess:
         sess["experiment_post_finalize_handler"] = "test_handler"
     response = client.get(url)
@@ -548,10 +551,13 @@ def test_done_experiment(client, users):
     experiment = create_experiment(3, 1, ["question_mc_singleselect"])
     experiment.save()
     assignment_set = experiment.assignment_sets[0]
+    assignment_set.complete = False
     assignment_set.participant = participant
     assignment_set.save()
 
-    url = "/experiments/" + str(experiment.id) + "/done"
+    url_template = "/experiments/{}/assignment_sets/{}/done"
+
+    url = url_template.format(experiment.id, assignment_set.id)
 
     response = client.get(url)
     assert response.status_code == 200
@@ -559,12 +565,13 @@ def test_done_experiment(client, users):
     experiment2 = create_experiment(3, 1)
     experiment2.save()
 
-    url = "/experiments/" + str(experiment2.id) + "/done"
+    url = url_template.format(experiment2.id,
+                              experiment2.assignment_sets[0].id)
 
     response = client.get(url)
-    assert response.status_code == 400
+    assert response.status_code == 403
 
-    url = "/experiments/" + str(experiment2.id + 34) + "/done"
+    url = url_template.format(experiment.id + 4, assignment_set.id)
 
     response = client.get(url)
     assert response.status_code == 404
@@ -572,15 +579,20 @@ def test_done_experiment(client, users):
 
 def test_confirm_done_experiment(client, users):
     login_participant(client)
+    participant = get_participant()
     experiment = create_experiment(1, 1)
+    experiment.assignment_sets[0].participant = participant
     experiment.save()
 
-    url = "/experiments/" + str(experiment.id) + "/confirm_done"
+    url_template = "/experiments/{}/assignment_sets/{}/confirm_done"
+
+    url = url_template.format(experiment.id, experiment.assignment_sets[0].id)
 
     response = client.get(url)
     assert response.status_code == 200
 
-    url = "/experiments/" + str(experiment.id + 4) + "/confirm_done"
+    url = url_template.format(experiment.id + 4,
+                              experiment.assignment_sets[0].id)
 
     response = client.get(url)
     assert response.status_code == 404

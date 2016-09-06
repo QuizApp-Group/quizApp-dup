@@ -9,7 +9,6 @@ import dateutil.parser
 from flask import Blueprint, render_template, url_for, jsonify, abort, \
     request, session
 from flask_security import login_required, current_user, roles_required
-from sqlalchemy.orm.exc import NoResultFound
 
 from quizApp import db
 from quizApp.forms.experiments import CreateExperimentForm, \
@@ -332,6 +331,7 @@ def get_next_assignment_url(assignment_set, current_index):
         if not assignment_set.complete:
             # The experiment needs to be submitted
             next_url = url_for("experiments.confirm_done_experiment",
+                               assignment_set_id=assignment_set.id,
                                experiment_id=experiment_id)
         else:
             # Experiment has already been submitted
@@ -422,8 +422,8 @@ def confirm_done_experiment(experiment_id, assignment_set_id):
     if assignment_set.participant != current_user:
         abort(403)
 
-
     return render_template("experiments/confirm_done_experiment.html",
+                           assignment_set=assignment_set,
                            experiment=experiment)
 
 
@@ -451,6 +451,7 @@ def finalize_experiment(experiment_id, assignment_set_id):
 
     return jsonify({"success": 1,
                     "next_url": url_for('experiments.done_experiment',
+                                        assignment_set_id=assignment_set.id,
                                         experiment_id=experiment_id)})
 
 
