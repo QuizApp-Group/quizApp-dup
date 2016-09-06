@@ -168,4 +168,4 @@ def post_login():
     if current_user.has_role("experimenter"):
         return redirect(url_for("core.getting_started"))
     else:
-        return redirect(url_for("experiments.read_experiments"))
+        return redirect(url_for("experiments.experiments"))

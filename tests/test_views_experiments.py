@@ -76,10 +76,10 @@ def test_experiments_authed_participant(client, users):
     assert response.status_code == 302
 
     response = client.delete(exp_url)
-    assert response.status_code == 302
+    assert response.status_code == 403
 
     response = client.put(exp_url)
-    assert response.status_code == 302
+    assert response.status_code == 403
 
 
 def test_experiments_authed_experimenter(client, users):

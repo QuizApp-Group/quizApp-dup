@@ -15,6 +15,7 @@ from quizApp.forms.activities import DatasetListForm,\
 from quizApp.forms.common import DeleteObjectForm, ObjectTypeForm
 from quizApp import db
 from quizApp.views.helpers import validate_model_id
+from quizApp.views.common import ObjectCollectionView, ObjectView
 
 activities = Blueprint("activities", __name__, url_prefix="/activities")
 
@@ -29,40 +30,56 @@ CHOICES_ROUTE = "/<int:question_id>/choices/"
 CHOICE_ROUTE = CHOICES_ROUTE + "<int:choice_id>"
 
 
-@activities.route('/', methods=["GET"])
-@roles_required("experimenter")
-def read_activities():
-    """Display a list of all activities.
+class ActivityCollectionView(ObjectCollectionView):
+    """View for the activity collection.
     """
-    activities_list = Activity.query.all()
-    activity_type_form = ObjectTypeForm()
-    activity_type_form.populate_object_type(ACTIVITY_TYPES)
-    confirm_delete_activity_form = DeleteObjectForm()
+    decorators = [roles_required("experimenter")]
+    methods = ["GET", "POST"]
+    resolve_kwargs = dict
+    template = "activities/read_activities.html"
 
-    return render_template(
-        "activities/read_activities.html",
-        activities=activities_list,
-        confirm_delete_activity_form=confirm_delete_activity_form,
-        activity_type_form=activity_type_form)
+    def get_members(self):
+        return Activity.query.all()
+
+    def create_form(self):
+        activity_type_form = ObjectTypeForm()
+        activity_type_form.populate_object_type(ACTIVITY_TYPES)
+        return activity_type_form
+
+    def create_member(self, create_form):
+        activity = Activity(type=create_form.object_type.data)
+        activity.save()
+        return {"next_url": url_for("activities.activity",
+                                    activity_id=activity.id)}
+
+activities.add_url_rule("/",
+                        view_func=ActivityCollectionView.as_view('activities'))
 
 
-@activities.route("/", methods=["POST"])
-@roles_required("experimenter")
-def create_activity():
-    """Create an activity.
+class ActivityView(ObjectView):
+    """Views for a particular Activity.
     """
-    activity_type_form = ObjectTypeForm()
-    activity_type_form.populate_object_type(ACTIVITY_TYPES)
+    methods = ["GET", "PUT", "DELETE"]
+    object_key = "activity"
 
-    if not activity_type_form.validate():
-        return jsonify({"success": 0, "errors": activity_type_form.errors})
+    def resolve_kwargs(self, activity_id):
+        return {"activity": validate_model_id(Activity, activity_id)}
 
-    activity = Activity(type=activity_type_form.object_type.data)
-    activity.save()
+    def update_form(self, activity):
+        return get_activity_form(activity, request.form)
 
-    next_url = url_for("activities.settings_activity", activity_id=activity.id)
+    def collection_url(self, **_):
+        return url_for("activities.activities")
 
-    return jsonify({"success": 1, "next_url": next_url})
+    def get(self, activity):
+        rendered_activity = render_activity(activity, False)
+        return render_template("activities/read_activity.html",
+                               activity=activity,
+                               rendered_activity=rendered_activity)
+
+
+activities.add_url_rule(ACTIVITY_ROUTE,
+                        view_func=ActivityView.as_view('activity'))
 
 
 def render_activity(activity, *args, **kwargs):
@@ -84,19 +101,6 @@ def render_activity(activity, *args, **kwargs):
     }
 
     return render_mapping[activity.type](activity, *args, **kwargs)
-
-
-@activities.route(ACTIVITY_ROUTE, methods=["GET"])
-@roles_required("experimenter")
-def read_activity(activity_id):
-    """Display a given activity as it would appear to a participant.
-    """
-    activity = validate_model_id(Activity, activity_id)
-    rendered_activity = render_activity(activity, False)
-
-    return render_template("activities/read_activity.html",
-                           activity=activity,
-                           rendered_activity=rendered_activity)
 
 
 def render_question(question, disabled=False, assignment=None,
@@ -212,23 +216,6 @@ def settings_mc_question(question, template_kwargs):
                            **template_kwargs)
 
 
-@activities.route(ACTIVITY_ROUTE, methods=["PUT"])
-@roles_required("experimenter")
-def update_activity(activity_id):
-    """Update the activity based on transmitted form data.
-    """
-    activity = validate_model_id(Activity, activity_id)
-    general_form = get_activity_form(activity, request.form, obj=activity)
-
-    if not general_form.validate():
-        return jsonify({"success": 0, "errors": general_form.errors})
-
-    general_form.populate_obj(activity)
-    db.session.commit()
-
-    return jsonify({"success": 1})
-
-
 @activities.route(ACTIVITY_ROUTE + "/datasets/<int:dataset_id>",
                   methods=["DELETE"])
 @roles_required("experimenter")
@@ -266,85 +253,59 @@ def create_question_dataset(activity_id):
     return jsonify({"success": 1})
 
 
-@activities.route(ACTIVITY_ROUTE, methods=["DELETE"])
-@roles_required("experimenter")
-def delete_activity(activity_id):
-    """Delete the given activity.
+class ChoiceCollectionView(ObjectCollectionView):
+    """Handle a collection of choices.
     """
-    activity = validate_model_id(Activity, activity_id)
+    decorators = [roles_required("experimenter")]
+    methods = ["POST"]
+    get_members = None
 
-    db.session.delete(activity)
-    db.session.commit()
+    def resolve_kwargs(self, question_id):
+        question = validate_model_id(Question, question_id)
+        return {"question": question}
 
-    next_url = url_for("activities.read_activities")
+    def create_form(self):
+        return ChoiceForm(request.form, prefix="create")
 
-    return jsonify({"success": 1, "next_url": next_url})
+    template = None
+
+    def create_member(self, create_form, question):
+        choice = Choice()
+
+        create_form.populate_obj(choice)
+        question.choices.append(choice)
+
+        choice.save()
+        db.session.commit()
+
+        return {"new_row": render_template("activities/render_choice_row.html",
+                                           choice=choice)}
+
+activities.add_url_rule(CHOICES_ROUTE,
+                        view_func=ChoiceCollectionView.as_view('choices'))
 
 
-@activities.route(CHOICES_ROUTE, methods=["POST"])
-@roles_required("experimenter")
-def create_choice(question_id):
-    """Create a choice for the given question.
+class ChoiceView(ObjectView):
+    """View for handling a singular Choice object.
     """
-    question = validate_model_id(Question, question_id)
+    methods = ["PUT", "DELETE"]
+    object_key = "choice"
 
-    create_choice_form = ChoiceForm(request.form, prefix="create")
+    def collection_url(self, **_):
+        return None
 
-    if not create_choice_form.validate():
-        return jsonify({"success": 0, "prefix": "create-",
-                        "errors": create_choice_form.errors})
+    def resolve_kwargs(self, question_id, choice_id):
+        question = validate_model_id(Question, question_id)
+        choice = validate_model_id(Choice, choice_id)
 
-    choice = Choice()
+        if choice.question != question:
+            abort(404)
 
-    create_choice_form.populate_obj(choice)
-    question.choices.append(choice)
+        return {"question": question, "choice": choice}
 
-    choice.save()
-    db.session.commit()
-
-    return jsonify({
-        "success": 1,
-        "new_row": render_template("activities/render_choice_row.html",
-                                   choice=choice)
-    })
+    def update_form(self, **_):
+        return ChoiceForm(request.form, prefix="update")
 
 
-@activities.route(CHOICE_ROUTE, methods=["PUT"])
-@roles_required("experimenter")
-def update_choice(question_id, choice_id):
-    """Update the given choice using form data.
-    """
-    question = validate_model_id(Question, question_id)
-    choice = validate_model_id(Choice, choice_id)
-
-    if choice not in question.choices:
-        abort(404)
-
-    update_choice_form = ChoiceForm(request.form, prefix="update")
-
-    if not update_choice_form.validate():
-        return jsonify({"success": 0, "prefix": "update-",
-                        "errors": update_choice_form.errors})
-
-    update_choice_form.populate_obj(choice)
-
-    db.session.commit()
-
-    return jsonify({"success": 1})
-
-
-@activities.route(CHOICE_ROUTE, methods=["DELETE"])
-@roles_required("experimenter")
-def delete_choice(question_id, choice_id):
-    """Delete the given choice.
-    """
-    question = validate_model_id(Question, question_id)
-    choice = validate_model_id(Choice, choice_id)
-
-    if choice not in question.choices:
-        abort(404)
-
-    db.session.delete(choice)
-    db.session.commit()
-
-    return jsonify({"success": 1})
+activities.add_url_rule(CHOICE_ROUTE,
+                        view_func=ChoiceView.as_view('choice'))
