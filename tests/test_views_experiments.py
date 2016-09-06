@@ -6,15 +6,30 @@ import json
 import random
 import mock
 from datetime import datetime, timedelta
+from mock import patch
 
 from quizApp import db
 from quizApp.models import AssignmentSet
 from quizApp.views.experiments import get_next_assignment_url, \
-    POST_FINALIZE_HANDLERS
+    POST_FINALIZE_HANDLERS, validate_assignment_set
 from tests.factories import ExperimentFactory, create_experiment
 from tests.auth import login_participant, get_participant, \
     login_experimenter
 from tests.helpers import json_success
+
+
+@patch('quizApp.views.experiments.abort', autospec=True)
+def test_validate_assignment_set(abort_mock):
+    exp = create_experiment(4, 1)
+    assignment_set = exp.assignment_sets[0]
+    assignment_set.experiment = None
+    exp.save()
+    assignment_set.save()
+
+    abort_mock.reset_mock()
+    validate_assignment_set(exp.id, assignment_set.id)
+
+    abort_mock.assert_called()
 
 
 def test_experiments(client):

@@ -478,9 +478,6 @@ def done_assignment_set(experiment_id, assignment_set_id):
     experiment, assignment_set = validate_assignment_set(experiment_id,
                                                          assignment_set_id)
 
-    if assignment_set.complete:
-        abort(400)
-
     # Handle any post finalize actions, e.g. providing a button to submit a HIT
     post_finalize = session.pop("experiment_post_finalize_handler", None)
     addendum = None
