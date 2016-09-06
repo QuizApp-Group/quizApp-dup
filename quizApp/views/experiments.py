@@ -33,6 +33,37 @@ POST_FINALIZE_HANDLERS = {
 }
 
 
+def validate_assignment_set(experiment_id, assignment_set_id):
+    """Check if this experiment and assignment set exist, if this assignment
+    set is part of this experiment, and if the current user owns the assignment
+    set.
+    """
+    experiment = validate_model_id(Experiment, experiment_id)
+    assignment_set = validate_model_id(AssignmentSet, assignment_set_id)
+
+    if assignment_set.experiment != experiment:
+        abort(404)
+
+    if assignment_set.participant != current_user:
+        abort(403)
+
+    return (experiment, assignment_set)
+
+
+def validate_assignment(experiment_id, assignment_set_id, assignment_id):
+    """Do everything ``validate_assignment_set`` does, but also check that the
+    assignment exists and that it's part of the given assignment set.
+    """
+    experiment, assignment_set = validate_assignment_set(experiment_id,
+                                                         assignment_set_id)
+    assignment = validate_model_id(Assignment, assignment_id)
+
+    if assignment.assignment_set != assignment_set:
+        abort(404)
+
+    return (experiment, assignment_set, assignment)
+
+
 class ExperimentCollectionView(ObjectCollectionView):
     """View for a collection of Experiments.
     """
@@ -128,12 +159,10 @@ def read_assignment(experiment_id, assignment_set_id, assignment_id):
     """Given an assignment ID, retrieve it from the database and display it to
     the user.
     """
-    experiment = validate_model_id(Experiment, experiment_id)
-    assignment = validate_model_id(Assignment, assignment_id)
-    assignment_set = validate_model_id(AssignmentSet, assignment_set_id)
-
-    if assignment not in assignment_set.assignments:
-        abort(400)
+    experiment, assignment_set, assignment = validate_assignment(
+        experiment_id,
+        assignment_set_id,
+        assignment_id)
 
     if experiment.disable_previous and assignment_set.progress > \
             assignment_set.assignments.index(assignment) and \
@@ -228,12 +257,10 @@ def read_mc_question(_, assignment):
 def update_assignment(experiment_id, assignment_set_id, assignment_id):
     """Record a user's answer to this assignment
     """
-    experiment = validate_model_id(Experiment, experiment_id)
-    assignment = validate_model_id(Assignment, assignment_id)
-    assignment_set = validate_model_id(AssignmentSet, assignment_set_id)
-
-    if assignment_set.participant != current_user:
-        abort(403)
+    experiment, assignment_set, assignment = validate_assignment(
+        experiment_id,
+        assignment_set_id,
+        assignment_id)
 
     if assignment_set.complete:
         abort(400)
@@ -413,14 +440,8 @@ def results_experiment(experiment_id):
 def confirm_done_experiment(experiment_id, assignment_set_id):
     """Show the user a page before finalizing their quiz answers.
     """
-    experiment = validate_model_id(Experiment, experiment_id)
-    assignment_set = validate_model_id(AssignmentSet, assignment_set_id)
-
-    if assignment_set.experiment != experiment:
-        abort(404)
-
-    if assignment_set.participant != current_user:
-        abort(403)
+    experiment, assignment_set = validate_assignment_set(experiment_id,
+                                                         assignment_set_id)
 
     return render_template("experiments/confirm_done_experiment.html",
                            assignment_set=assignment_set,
@@ -433,14 +454,8 @@ def finalize_experiment(experiment_id, assignment_set_id):
     """Finalize the user's answers for this experiment. They will no longer be
     able to edit them, but may view them.
     """
-    experiment = validate_model_id(Experiment, experiment_id)
-    assignment_set = validate_model_id(AssignmentSet, assignment_set_id)
-
-    if assignment_set.experiment != experiment:
-        abort(404)
-
-    if assignment_set.participant != current_user:
-        abort(403)
+    experiment, assignment_set = validate_assignment_set(experiment_id,
+                                                         assignment_set_id)
 
     if assignment_set.complete:
         abort(400)
@@ -452,7 +467,7 @@ def finalize_experiment(experiment_id, assignment_set_id):
     return jsonify({"success": 1,
                     "next_url": url_for('experiments.done_experiment',
                                         assignment_set_id=assignment_set.id,
-                                        experiment_id=experiment_id)})
+                                        experiment_id=experiment.id)})
 
 
 @experiments.route(ASSIGNMENT_SET_ROUTE + "/done", methods=["GET"])
@@ -460,14 +475,8 @@ def finalize_experiment(experiment_id, assignment_set_id):
 def done_experiment(experiment_id, assignment_set_id):
     """Show the user a screen indicating that they are finished.
     """
-    experiment = validate_model_id(Experiment, experiment_id)
-    assignment_set = validate_model_id(AssignmentSet, assignment_set_id)
-
-    if assignment_set.experiment != experiment:
-        abort(404)
-
-    if assignment_set.participant != current_user:
-        abort(403)
+    experiment, assignment_set = validate_assignment_set(experiment_id,
+                                                         assignment_set_id)
 
     if assignment_set.complete:
         abort(400)

@@ -313,7 +313,7 @@ def test_read_assignment(client, users):
     assignment2 = assignment_set2.assignments[0]
 
     response = client.get(url + str(assignment2.id))
-    assert response.status_code == 400
+    assert response.status_code == 404
 
     # Make sure likert questions render correctly
     experiment3 = create_experiment(3, 1,
