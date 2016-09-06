@@ -3,15 +3,14 @@
 import os
 
 from werkzeug.datastructures import CombinedMultiDict
-from flask import Blueprint, render_template, url_for, jsonify, abort, \
-    request, current_app
+from flask import Blueprint, render_template, url_for, abort, \
+    request
 from flask_security import roles_required
 
-from quizApp import db
 from quizApp.forms.common import DeleteObjectForm, ObjectTypeForm
 from quizApp.forms.datasets import DatasetForm, GraphForm, TextForm
 from quizApp.models import Dataset, MediaItem
-from quizApp.views.helpers import validate_model_id, validate_form_or_error
+from quizApp.views.helpers import validate_model_id
 from quizApp.views.common import ObjectCollectionView, ObjectView
 
 datasets = Blueprint("datasets", __name__, url_prefix="/datasets")
@@ -76,8 +75,13 @@ class MediaItemView(ObjectView):
     object_key = "media_item"
     template = "datasets/read_media_item.html"
 
-    def update_form(self, **_):
-        pass
+    def update_form(self, media_item, **_):
+        update_form_mapping = {
+            "graph": GraphForm(CombinedMultiDict((request.form,
+                                                  request.files))),
+            "text": TextForm(request.form),
+        }
+        return update_form_mapping[media_item.type]
 
     def collection_url(self, dataset, **_):
         return url_for("datasets.settings_dataset", dataset_id=dataset.id)
@@ -91,68 +95,9 @@ class MediaItemView(ObjectView):
 
         return {"dataset": dataset, "media_item": media_item}
 
-    def put(self, dataset, media_item):
-        update_function_mapping = {
-            "graph": update_graph,
-            "text": update_text,
-        }
-
-        return update_function_mapping[media_item.type](dataset, media_item)
 
 datasets.add_url_rule(MEDIA_ITEM_ROUTE,
                       view_func=MediaItemView.as_view('media_item'))
-
-
-def update_text(_, text):
-    """Update a Text object.
-    """
-    update_text_form = TextForm(request.form, request.files)
-
-    response = validate_form_or_error(update_text_form)
-
-    if response:
-        return response
-
-    update_text_form.populate_obj(text)
-
-    db.session.commit()
-
-    return jsonify({"success": 1})
-
-
-def update_graph(_, graph):
-    """Update a graph.
-    NOTE: should refactor this into populate_obj
-    """
-    update_graph_form = GraphForm(CombinedMultiDict((request.form,
-                                                     request.files)))
-
-    response = validate_form_or_error(update_graph_form)
-
-    if response:
-        return response
-
-    update_graph_form.populate_obj(graph)
-
-    if update_graph_form.graph.data:
-        # Replace the current graph with this
-        if os.path.isfile(graph.path):
-            # Just overwrite this
-            update_graph_form.graph.data.save(graph.path)
-        else:
-            # Need to create a new file
-            graphs_dir = os.path.join(
-                current_app.static_folder,
-                current_app.config.get("GRAPH_DIRECTORY"))
-            graph_filename = str(graph.id) + \
-                os.path.splitext(update_graph_form.graph.data.filename)[1]
-            new_graph_path = os.path.join(graphs_dir, graph_filename)
-            update_graph_form.graph.data.save(new_graph_path)
-            graph.path = new_graph_path
-
-    db.session.commit()
-
-    return jsonify({"success": 1})
 
 
 @datasets.route(DATASET_ROUTE + '/settings', methods=["GET"])
