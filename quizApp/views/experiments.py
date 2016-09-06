@@ -34,18 +34,6 @@ POST_FINALIZE_HANDLERS = {
 }
 
 
-def get_assignment_set_or_abort(experiment_id, code=400):
-    """Return the AssignmentSet object corresponding to the current
-    user and experiment_id or abort with the given code.
-    """
-    try:
-        return AssignmentSet.query.\
-            filter_by(participant_id=current_user.id).\
-            filter_by(experiment_id=experiment_id).one()
-    except NoResultFound:
-        abort(code)
-
-
 class ExperimentCollectionView(ObjectCollectionView):
     """View for a collection of Experiments.
     """
@@ -420,25 +408,39 @@ def results_experiment(experiment_id):
                            question_stats=question_stats)
 
 
-@experiments.route(EXPERIMENT_ROUTE + "/confirm_done", methods=["GET"])
+@experiments.route(ASSIGNMENT_SET_ROUTE + "/confirm_done", methods=["GET"])
 @roles_required("participant")
-def confirm_done_experiment(experiment_id):
+def confirm_done_experiment(experiment_id, assignment_set_id):
     """Show the user a page before finalizing their quiz answers.
     """
     experiment = validate_model_id(Experiment, experiment_id)
+    assignment_set = validate_model_id(AssignmentSet, assignment_set_id)
+
+    if assignment_set.experiment != experiment:
+        abort(404)
+
+    if assignment_set.participant != current_user:
+        abort(403)
+
 
     return render_template("experiments/confirm_done_experiment.html",
                            experiment=experiment)
 
 
-@experiments.route(EXPERIMENT_ROUTE + "/finalize", methods=["PATCH"])
+@experiments.route(ASSIGNMENT_SET_ROUTE + "/finalize", methods=["PATCH"])
 @roles_required("participant")
-def finalize_experiment(experiment_id):
+def finalize_experiment(experiment_id, assignment_set_id):
     """Finalize the user's answers for this experiment. They will no longer be
     able to edit them, but may view them.
     """
-    validate_model_id(Experiment, experiment_id)
-    assignment_set = get_assignment_set_or_abort(experiment_id)
+    experiment = validate_model_id(Experiment, experiment_id)
+    assignment_set = validate_model_id(AssignmentSet, assignment_set_id)
+
+    if assignment_set.experiment != experiment:
+        abort(404)
+
+    if assignment_set.participant != current_user:
+        abort(403)
 
     if assignment_set.complete:
         abort(400)
@@ -452,13 +454,22 @@ def finalize_experiment(experiment_id):
                                         experiment_id=experiment_id)})
 
 
-@experiments.route(EXPERIMENT_ROUTE + "/done", methods=["GET"])
+@experiments.route(ASSIGNMENT_SET_ROUTE + "/done", methods=["GET"])
 @roles_required("participant")
-def done_experiment(experiment_id):
+def done_experiment(experiment_id, assignment_set_id):
     """Show the user a screen indicating that they are finished.
     """
     experiment = validate_model_id(Experiment, experiment_id)
-    assignment_set = get_assignment_set_or_abort(experiment_id)
+    assignment_set = validate_model_id(AssignmentSet, assignment_set_id)
+
+    if assignment_set.experiment != experiment:
+        abort(404)
+
+    if assignment_set.participant != current_user:
+        abort(403)
+
+    if assignment_set.complete:
+        abort(400)
 
     # Handle any post finalize actions, e.g. providing a button to submit a HIT
     post_finalize = session.pop("experiment_post_finalize_handler", None)

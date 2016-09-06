@@ -10,21 +10,11 @@ from datetime import datetime, timedelta
 from quizApp import db
 from quizApp.models import AssignmentSet
 from quizApp.views.experiments import get_next_assignment_url, \
-    POST_FINALIZE_HANDLERS, get_assignment_set_or_abort
+    POST_FINALIZE_HANDLERS
 from tests.factories import ExperimentFactory, create_experiment
 from tests.auth import login_participant, get_participant, \
     login_experimenter
 from tests.helpers import json_success
-
-
-@mock.patch('quizApp.views.experiments.abort', autospec=True)
-def test_get_assignment_set_or_abort(abort_mock, users, client):
-    """Make sure get_assignment_set_or_abort actually aborts.
-    """
-    login_participant(client)
-    get_assignment_set_or_abort(5, 500)
-
-    abort_mock.assert_called_once_with(500)
 
 
 def test_experiments(client):
