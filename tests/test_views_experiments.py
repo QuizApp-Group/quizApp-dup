@@ -264,7 +264,7 @@ def test_read_assignment(client, users):
         assert question.question in data
         assert "Time elapsed" not in data
 
-        # And save a random question
+        # And save a random choice
         choice = random.choice(assignment.activity.choices)
         response = client.patch(url + str(assignment.id),
                                 data={"choices": str(choice.id)})

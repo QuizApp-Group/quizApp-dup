@@ -1,10 +1,12 @@
 function question_submit_done(data) {
   console.log(data);
-  if(data.scorecard) {
-    $("#scorecard").html(data.scorecard);
-    $("#submit").remove();
-  } else {
-    window.location.href = data["next_url"];
+  if(data.success) {
+      if(data.scorecard) {
+        $("#scorecard").html(data.scorecard);
+        $("#submit").remove();
+      } else {
+        window.location.href = data["next_url"];
+      }
   }
 }
 

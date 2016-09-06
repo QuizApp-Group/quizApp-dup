@@ -5,13 +5,14 @@ import os
 
 import pytest
 from sqlalchemy import inspect
+import mock
 
 from tests.factories import ExperimentFactory, ParticipantFactory, \
     ChoiceFactory, QuestionFactory
 from quizApp.models import AssignmentSet, Assignment, Role, Activity, \
     Question, Graph, MultipleChoiceQuestionResult, MultipleChoiceQuestion, \
     FreeAnswerQuestion, FreeAnswerQuestionResult, Result, \
-    IntegerQuestionResult, IntegerQuestion
+    IntegerQuestionResult, IntegerQuestion, Choice
 
 
 def test_db_rollback1():
@@ -190,6 +191,7 @@ def test_free_answer_question_get_score():
     fa_result.text = "AAAA"
 
     assert fa_question.get_score(fa_result) == 1
+    assert fa_question.get_score(None) == 0
 
 
 def test_assignment_get_score():
@@ -223,3 +225,64 @@ def test_integer_question_validators():
     int_result.integer = 1
 
     assert int_question.get_score(int_result) == 0
+
+
+def test_activity_correct():
+    activity = Activity()
+    activity.is_correct(None)
+
+
+def test_assignment_correct():
+    assignment = Assignment()
+    result = Result()
+    activity = mock.MagicMock(autospec=Activity())
+    activity.Meta.result_class = Result
+    activity.num_media_items = -1
+    assignment.activity = activity
+    assignment.result = result
+
+    assignment.correct()
+
+    activity.is_correct.assert_called_once_with(result)
+
+
+def test_integer_question_correct():
+    int_question = IntegerQuestion()
+    int_result = IntegerQuestionResult()
+    int_question.answer = 5
+
+    assert not int_question.is_correct(None)
+    assert not int_question.is_correct(int_result)
+
+    int_result.integer = 5
+
+    assert int_question.is_correct(int_result)
+
+
+def test_mc_question_correct():
+    mc_question = MultipleChoiceQuestion()
+    correct_choice = Choice(correct=True)
+    incorrect_choice = Choice(correct=False)
+    mc_result = MultipleChoiceQuestionResult
+    mc_question.choices = [correct_choice, incorrect_choice]
+
+    mc_result.choice = incorrect_choice
+
+    assert not mc_question.is_correct(None)
+    assert not mc_question.is_correct(mc_result)
+
+    mc_result.choice = correct_choice
+
+    assert mc_question.is_correct(mc_result)
+
+
+def test_free_answer_question_is_correct():
+    fa_question = FreeAnswerQuestion()
+    fa_result = FreeAnswerQuestionResult()
+
+    assert not fa_question.is_correct(fa_result)
+    assert not fa_question.is_correct(None)
+
+    fa_result.text = "aaaa"
+
+    assert fa_question.is_correct(fa_result)

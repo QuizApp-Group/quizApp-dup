@@ -92,7 +92,7 @@ def header_to_field_name(header, model):
     """Reverse header_from_property - given a header and a model, return the
     actual name of the field.
     """
-    if not header or not len(header):
+    if not header or not len(header) or header.lower() == "comments":
         return
     prefix = model.__tablename__ + ":"
 
@@ -286,9 +286,13 @@ def get_object_from_id(model, obj_id, pk_mapping):
     return it. Otherwise, query the database.
     """
     try:
-        return pk_mapping[model.__tablename__][obj_id]
+        obj = pk_mapping[model.__tablename__][obj_id]
     except KeyError:
-        return model.query.get(obj_id)
+        obj = model.query.get(obj_id)
+    if not obj:
+        raise ValueError("No such object {} with ID {}".
+                         format(model, obj_id))
+    return obj
 
 
 def instantiate_model(model, headers, row):
@@ -330,7 +334,7 @@ def import_data_from_workbook(workbook):
             obj_args = {}
 
             for col_index, cell in enumerate(row):
-                if not cell.value:
+                if not cell.value or headers[col_index] is None:
                     continue
                 populate_field(obj, headers[col_index],
                                cell.value, pk_mapping, obj_args)
