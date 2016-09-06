@@ -45,6 +45,8 @@ def get_assignment_set_or_abort(experiment_id, code=400):
 
 
 class ExperimentCollectionView(ObjectCollectionView):
+    """View for a collection of Experiments.
+    """
     decorators = [login_required]
     methods = ["GET", "POST"]
     template = "experiments/read_experiments.html"
@@ -88,6 +90,8 @@ experiments.add_url_rule(
 
 
 class ExperimentView(ObjectView):
+    """View for a particular experiment.
+    """
     decorators = [login_required]
     methods = ["GET", "PUT", "DELETE"]
     object_key = "experiment"
@@ -114,18 +118,18 @@ class ExperimentView(ObjectView):
                                experiment=experiment,
                                assignment=assignment)
 
-    def delete(self, experiment):
+    def delete(self, **kwargs):
         if current_user.has_role("experimenter"):
-            return super(ExperimentView, self).delete()
+            return super(ExperimentView, self).delete(**kwargs)
         abort(403)
 
-    def put(self, experiment):
+    def put(self, **kwargs):
         if current_user.has_role("experimenter"):
-            return super(ExperimentView, self).put()
+            return super(ExperimentView, self).put(**kwargs)
         abort(403)
 
 experiments.add_url_rule(
-    "/experiments/<int:experiment_id>",
+    EXPERIMENT_ROUTE,
     view_func=ExperimentView.as_view('experiment'))
 
 
@@ -341,7 +345,7 @@ def get_next_assignment_url(assignment_set, current_index):
                                experiment_id=experiment_id)
         else:
             # Experiment has already been submitted
-            next_url = url_for("experiments.read_experiment",
+            next_url = url_for("experiments.experiment",
                                experiment_id=experiment_id)
 
     return next_url
