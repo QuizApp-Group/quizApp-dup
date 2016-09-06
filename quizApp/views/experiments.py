@@ -357,7 +357,7 @@ def get_next_assignment_url(assignment_set, current_index):
         # We've reached the end of the experiment
         if not assignment_set.complete:
             # The experiment needs to be submitted
-            next_url = url_for("experiments.confirm_done_experiment",
+            next_url = url_for("experiments.confirm_done_assignment_set",
                                assignment_set_id=assignment_set.id,
                                experiment_id=experiment_id)
         else:
@@ -437,20 +437,20 @@ def results_experiment(experiment_id):
 
 @experiments.route(ASSIGNMENT_SET_ROUTE + "/confirm_done", methods=["GET"])
 @roles_required("participant")
-def confirm_done_experiment(experiment_id, assignment_set_id):
+def confirm_done_assignment_set(experiment_id, assignment_set_id):
     """Show the user a page before finalizing their quiz answers.
     """
     experiment, assignment_set = validate_assignment_set(experiment_id,
                                                          assignment_set_id)
 
-    return render_template("experiments/confirm_done_experiment.html",
+    return render_template("experiments/confirm_done_assignment_set.html",
                            assignment_set=assignment_set,
                            experiment=experiment)
 
 
 @experiments.route(ASSIGNMENT_SET_ROUTE + "/finalize", methods=["PATCH"])
 @roles_required("participant")
-def finalize_experiment(experiment_id, assignment_set_id):
+def finalize_assignment_set(experiment_id, assignment_set_id):
     """Finalize the user's answers for this experiment. They will no longer be
     able to edit them, but may view them.
     """
@@ -465,14 +465,14 @@ def finalize_experiment(experiment_id, assignment_set_id):
     db.session.commit()
 
     return jsonify({"success": 1,
-                    "next_url": url_for('experiments.done_experiment',
+                    "next_url": url_for('experiments.done_assignment_set',
                                         assignment_set_id=assignment_set.id,
                                         experiment_id=experiment.id)})
 
 
 @experiments.route(ASSIGNMENT_SET_ROUTE + "/done", methods=["GET"])
 @roles_required("participant")
-def done_experiment(experiment_id, assignment_set_id):
+def done_assignment_set(experiment_id, assignment_set_id):
     """Show the user a screen indicating that they are finished.
     """
     experiment, assignment_set = validate_assignment_set(experiment_id,
@@ -488,7 +488,7 @@ def done_experiment(experiment_id, assignment_set_id):
         handler = POST_FINALIZE_HANDLERS[post_finalize]
         addendum = handler()
 
-    return render_template("experiments/done_experiment.html",
+    return render_template("experiments/done_assignment_set.html",
                            addendum=addendum,
                            assignment_set=assignment_set,
                            scorecard_settings=experiment.scorecard_settings)
