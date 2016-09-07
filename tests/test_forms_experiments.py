@@ -1,9 +1,23 @@
 """Test activity forms.
 """
+import pytest
 
 from quizApp.forms import experiments as experiment_forms
 from quizApp import models, db
 from tests import factories
+
+
+def test_question_form():
+    question_form = experiment_forms.QuestionForm()
+
+    with pytest.raises(NotImplementedError):
+        question_form.populate_from_question(None)
+
+    with pytest.raises(NotImplementedError):
+        question_form.populate_from_result(None)
+
+    with pytest.raises(NotImplementedError):
+        question_form.result
 
 
 def test_integer_answer_form(client):
