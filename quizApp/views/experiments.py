@@ -169,7 +169,7 @@ def read_assignment(experiment_id, assignment_set_id, assignment_id):
             not assignment_set.complete:
         abort(400)
 
-    activity = validate_model_id(Activity, assignment.activity_id)
+    activity = assignment.activity
 
     read_function_mapping = {
         "question_mc_singleselect": read_question,
@@ -177,9 +177,42 @@ def read_assignment(experiment_id, assignment_set_id, assignment_id):
         "question_freeanswer": read_question,
         "question_mc_singleselect_scale": read_question,
         "question_integer": read_question,
+        "scorecard": read_scorecard,
     }
 
     return read_function_mapping[activity.type](experiment, assignment)
+
+
+def read_scorecard(experiment, assignment):
+    assignment_set = assignment.assignment_set
+    this_index = assignment_set.assignments.index(assignment)
+    if not assignment_set.complete:
+        # If the participant is not done, then save the choice order
+        next_url = None
+    else:
+        # If the participant is done, have a link right to the next question
+        next_url = get_next_assignment_url(assignment_set, this_index)
+
+    previous_assignment = None
+
+    if this_index - 1 > -1 and not experiment.disable_previous:
+        previous_assignment = assignment_set.assignments[this_index - 1]
+
+    cumulative_score = assignment.assignment_set.score
+    rendered_scorecard = render_activity(scorecard, assignment_set, this_index)
+
+    template_kwargs = {
+        "exp": experiment,
+        "assignment": assignment,
+        "next_url": next_url,
+        "cumulative_score": cumulative_score,
+        "experiment_complete": assignment_set.complete,
+        "previous_assignment": previous_assignment,
+        "rendered_scorecard": rendered_scorecard,
+    }
+
+    return render_template("experiments/read_question.html",
+                           **template_kwargs)
 
 
 def read_question(experiment, assignment):

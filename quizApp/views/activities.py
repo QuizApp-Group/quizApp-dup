@@ -19,11 +19,14 @@ from quizApp.views.common import ObjectCollectionView, ObjectView
 
 activities = Blueprint("activities", __name__, url_prefix="/activities")
 
-ACTIVITY_TYPES = {"question_mc_singleselect": "Single select multiple choice",
-                  "question_mc_multiselect": "Multi select multiple choice",
-                  "question_mc_singleselect_scale": "Likert scale",
-                  "question_integer": "Integer answer",
-                  "question_freeanswer": "Free answer"}
+ACTIVITY_TYPES = {
+    "question_mc_singleselect": "Single select multiple choice",
+    "question_mc_multiselect": "Multi select multiple choice",
+    "question_mc_singleselect_scale": "Likert scale",
+    "question_integer": "Integer answer",
+    "question_freeanswer": "Free answer",
+    "scorecard": "Scorecard",
+}
 
 ACTIVITY_ROUTE = "/<int:activity_id>"
 CHOICES_ROUTE = "/<int:question_id>/choices/"
@@ -98,9 +101,27 @@ def render_activity(activity, *args, **kwargs):
         "question_freeanswer": render_question,
         "question_integer": render_question,
         "question_mc_singleselect_scale": render_question,
+        "scorecard": render_scorecard,
     }
 
     return render_mapping[activity.type](activity, *args, **kwargs)
+
+
+def render_scorecard(scorecard, assignment_set=None, this_index=0):
+    """Render a scorecard I guess
+    """
+    if assignment_set:
+        assignments = assignment_set.assignments[:this_index]
+
+        # sort the previous assignments by category
+        scorecard_data = defaultdict([])
+
+        for assignment in assignments:
+            scorecard_data[assignment.activity.category].append(assignment)
+    else:
+        scorecard_data = {}
+
+    return render_template("activities/render_scorecard.html", scorecard_data=scorecard_data)
 
 
 def render_question(question, disabled=False, assignment=None,

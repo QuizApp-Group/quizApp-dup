@@ -7,7 +7,7 @@ from wtforms_alchemy import ModelForm, ModelFormField
 from quizApp.forms.common import ListObjectForm, OrderFormMixin,\
     ScorecardSettingsForm
 from quizApp.models import Choice, Question, Activity, \
-    IntegerQuestion
+    IntegerQuestion, Scorecard
 
 
 class ActivityForm(OrderFormMixin, ModelForm):
@@ -35,6 +35,15 @@ def get_activity_form(activity, *args, **kwargs):
     }
 
     return activity_form_mapping[activity.type](*args, **kwargs)
+
+
+class ScorecardForm(ActivityForm):
+    """Form that can be used for creating or updating scorecards.
+    """
+    class Meta(object):
+        """Specify model and field order.
+        """
+        model = Scorecard
 
 
 class QuestionForm(ActivityForm):

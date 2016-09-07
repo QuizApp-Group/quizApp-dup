@@ -458,6 +458,15 @@ question_dataset_table = db.Table(
 )
 
 
+class Scorecard(Activity):
+    """A Scorecard shows some kind of information about all previous
+    activities.
+    """
+    __mapper_args__ = {
+        'polymorphic_identity': 'scorecard',
+    }
+
+
 class Question(Activity):
     """A Question is related to one or more MediaItems and has one or more Choices,
     and is a part of one or more Experiments.
