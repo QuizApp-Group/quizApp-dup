@@ -22,6 +22,3 @@ def test_get_graph_url_filter(isfile_mock, app):
         url = get_graph_url_filter(graph)
 
     assert "missing" not in url
-
-
-
