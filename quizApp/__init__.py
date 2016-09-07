@@ -44,10 +44,12 @@ def create_app(config_name, overrides=None):
     from quizApp.views.core import core
     from quizApp.views.datasets import datasets
     from quizApp.views.experiments import experiments
+    from quizApp.views.data import data
     from quizApp.views.mturk import mturk
     from quizApp.filters import filters
 
     app.register_blueprint(activities)
+    app.register_blueprint(data)
     app.register_blueprint(core)
     app.register_blueprint(datasets)
     app.register_blueprint(experiments)

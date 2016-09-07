@@ -11,17 +11,25 @@ info attribute). However, in some cases certain columns need to be filled out
 earlier than others. This is why we use a special method on each model to
 populate an object.
 """
-import os
-from collections import OrderedDict, defaultdict
-import tempfile
 
-from openpyxl import Workbook
+from collections import OrderedDict, defaultdict
+import os
+import tempfile
+import traceback
+
+from flask import Blueprint, render_template
+from flask import send_file, jsonify
+from flask_security import roles_required
+import markupsafe
+import openpyxl
 from sqlalchemy import inspect
 from sqlalchemy.orm.interfaces import ONETOMANY, MANYTOMANY
 from sqlalchemy.orm.properties import ColumnProperty, RelationshipProperty
 
 from quizApp import db
 from quizApp import models
+from quizApp.forms.data import ImportDataForm
+
 
 SHEET_NAME_MAPPING = OrderedDict([
     ("Experiments", models.Experiment),
@@ -34,6 +42,8 @@ SHEET_NAME_MAPPING = OrderedDict([
     ("Results", models.Result),
 ])
 
+data = Blueprint("data", __name__, url_prefix="/data")
+
 
 def export_to_workbook():
     """Retrieve elements from thed database and save them to a workbook.
@@ -44,7 +54,7 @@ def export_to_workbook():
     `info` dictionary.
     """
 
-    workbook = Workbook()
+    workbook = openpyxl.Workbook()
     workbook.remove_sheet(workbook.active)
 
     for sheet_name, model in SHEET_NAME_MAPPING.items():
@@ -344,3 +354,109 @@ def import_data_from_workbook(workbook):
                 db.session.add(obj)
 
         db.session.commit()
+
+
+@data.route('/export')
+@roles_required("experimenter")
+def export_data():
+    """Send the user a breakddown of datasets, activities, etc. for use in
+    making assignments.
+    """
+    file_name = export_to_workbook()
+    return send_file(file_name, as_attachment=True,
+                     attachment_filename="quizapp_export.xlsx")
+
+
+@data.route('/import_template')
+@roles_required("experimenter")
+def import_template():
+    """Send the user a blank excel sheet that can be filled out and used to
+    populate an experiment's activity list.
+
+    The process is essentially:
+
+    1. Get a list of models to include
+
+    2. From each model, get all its polymorphisms
+
+    3. For each model, get all fields that should be included in the import
+    template, including any fields from polymorphisms
+
+    4. Create a workbook with as many sheets as models, with one row in each
+    sheet, containing the name of the included fields
+    """
+
+    sheets = OrderedDict([
+        ("Assignment Sets", models.AssignmentSet),
+        ("Assignments", models.Assignment),
+    ])
+
+    documentation = [
+        ["Do not modify the first row in every sheet!"],
+        ["Simply add in your data in the rows undeneath it."],
+        ["Use IDs from the export sheet to populate relationship columns."],
+        [("If you want multiple objects in a relation, separate the IDs using"
+          " commas.")],
+    ]
+
+    workbook = openpyxl.Workbook()
+    workbook.remove_sheet(workbook.active)
+
+    current_sheet = workbook.create_sheet()
+    current_sheet.title = "Documentation"
+    write_list_to_sheet(documentation, current_sheet)
+
+    for sheet_name, model in sheets.items():
+        current_sheet = workbook.create_sheet()
+        current_sheet.title = sheet_name
+        headers = model_to_sheet_headers(model)
+        write_list_to_sheet(headers, current_sheet)
+
+    file_handle, file_name = tempfile.mkstemp(".xlsx")
+    os.close(file_handle)
+    workbook.save(file_name)
+    return send_file(file_name, as_attachment=True,
+                     attachment_filename="import_template.xlsx")
+
+
+@data.route('/import', methods=["POST"])
+@roles_required("experimenter")
+def import_data():
+    """Given an uploaded spreadsheet, import data from the spreadsheet
+    into the database.
+    """
+    import_data_form = ImportDataForm()
+
+    if not import_data_form.validate():
+        return jsonify({"success": 0, "errors": import_data_form.errors})
+
+    workbook = openpyxl.load_workbook(import_data_form.data.data)
+
+    try:
+        import_data_from_workbook(workbook)
+    except Exception:
+        # This isn't very nice, but we need a way to capture exceptions that
+        # happen during import and show them to the user. However, we also want
+        # to have the traceback for debugging purposes. So we print the
+        # traceback to stdout.
+        print(traceback.format_exc())
+        return jsonify({
+            "success": 0,
+            "errors": (markupsafe.Markup("<br>") +
+                       markupsafe.escape(traceback.format_exc()).
+                       replace("\n", markupsafe.Markup("<br>")))
+        })
+
+    return jsonify({"success": 1})
+
+
+@data.route('/manage', methods=["GET"])
+@roles_required("experimenter")
+def manage_data():
+    """Show a form for uploading data and such.
+    """
+
+    import_data_form = ImportDataForm()
+
+    return render_template("data/manage_data.html",
+                           import_data_form=import_data_form)

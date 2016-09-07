@@ -6,25 +6,30 @@ import json
 import random
 import mock
 from datetime import datetime, timedelta
+from mock import patch
 
 from quizApp import db
 from quizApp.models import AssignmentSet
 from quizApp.views.experiments import get_next_assignment_url, \
-    POST_FINALIZE_HANDLERS, get_assignment_set_or_abort
+    POST_FINALIZE_HANDLERS, validate_assignment_set
 from tests.factories import ExperimentFactory, create_experiment
 from tests.auth import login_participant, get_participant, \
     login_experimenter
 from tests.helpers import json_success
 
 
-@mock.patch('quizApp.views.experiments.abort', autospec=True)
-def test_get_assignment_set_or_abort(abort_mock, users, client):
-    """Make sure get_assignment_set_or_abort actually aborts.
-    """
-    login_participant(client)
-    get_assignment_set_or_abort(5, 500)
+@patch('quizApp.views.experiments.abort', autospec=True)
+def test_validate_assignment_set(abort_mock):
+    exp = create_experiment(4, 1)
+    assignment_set = exp.assignment_sets[0]
+    assignment_set.experiment = None
+    exp.save()
+    assignment_set.save()
 
-    abort_mock.assert_called_once_with(500)
+    abort_mock.reset_mock()
+    validate_assignment_set(exp.id, assignment_set.id)
+
+    abort_mock.assert_called()
 
 
 def test_experiments(client):
@@ -263,7 +268,8 @@ def test_read_assignment(client, users):
     assignment_set.participant = participant
     experiment.save()
 
-    url = "/experiments/" + str(experiment.id) + "/assignments/"
+    url = "/experiments/{}/assignment_sets/{}/assignments/".\
+        format(experiment.id, assignment_set.id)
 
     for assignment in assignment_set.assignments:
         # Verify that the question is present in the output
@@ -301,7 +307,8 @@ def test_read_assignment(client, users):
                              activity.choices[0].id)})
     assert response.status_code == 400
 
-    response = client.patch("/experiments/" + str(experiment.id) + "/finalize")
+    response = client.patch("/experiments/{}/assignment_sets/{}/finalize".
+                            format(experiment.id, assignment_set.id))
     assert response.status_code == 200
     assert json_success(response.data)
 
@@ -321,14 +328,7 @@ def test_read_assignment(client, users):
     assignment2 = assignment_set2.assignments[0]
 
     response = client.get(url + str(assignment2.id))
-    assert response.status_code == 400
-
-    # If we can't render it return an error
-    url2 = "/experiments/" + str(experiment2.id) + "/assignments/"
-
-    response = client.get(url2 + str(assignment2.id))
-    assert response.status_code == 400
-    experiment2 = create_experiment(3, 1)
+    assert response.status_code == 404
 
     # Make sure likert questions render correctly
     experiment3 = create_experiment(3, 1,
@@ -338,7 +338,8 @@ def test_read_assignment(client, users):
     assignment_set3.participant = participant
     assignment_set3.save()
     assignment3 = assignment_set3.assignments[0]
-    url3 = "/experiments/" + str(experiment3.id) + "/assignments/"
+    url3 = "/experiments/{}/assignment_sets/{}/assignments/".\
+        format(experiment3.id, assignment_set3.id)
 
     response = client.get(url3 + str(assignment3.id))
     assert response.status_code == 200
@@ -355,7 +356,8 @@ def test_read_assignment(client, users):
     assignment_set3.participant = participant
     assignment_set3.save()
     assignment3 = assignment_set3.assignments[0]
-    url3 = "/experiments/" + str(experiment3.id) + "/assignments/"
+    url3 = "/experiments/{}/assignment_sets/{}/assignments/".\
+        format(experiment3.id, assignment_set3.id)
 
     response = client.get(url3 + str(assignment3.id))
     assert response.status_code == 200
@@ -378,8 +380,8 @@ def test_update_assignment(client, users):
 
     assignment = assignment_set.assignments[0]
 
-    url = "/experiments/" + str(experiment.id) + "/assignments/" + \
-        str(assignment.id)
+    url = "/experiments/{}/assignment_sets/{}/assignments/{}".\
+        format(experiment.id, assignment_set.id, assignment.id)
 
     choice = random.choice(assignment.activity.choices)
 
@@ -438,8 +440,8 @@ def test_update_assignment(client, users):
     experiment3.save()
 
     assignment3 = assignment_set3.assignments[0]
-    url = "/experiments/" + str(experiment3.id) + "/assignments/" + \
-        str(assignment3.id)
+    url = "/experiments/{}/assignment_sets/{}/assignments/{}".\
+        format(experiment3.id, assignment_set3.id, assignment3.id)
     response = client.patch(url)
 
     assert response.status_code == 403
@@ -460,8 +462,8 @@ def test_update_int_assignment(client, users):
 
     assignment = assignment_set.assignments[0]
 
-    url = "/experiments/" + str(experiment.id) + "/assignments/" + \
-        str(assignment.id)
+    url = "/experiments/{}/assignment_sets/{}/assignments/{}".\
+        format(experiment.id, assignment_set.id, assignment.id)
 
     time_to_submit = timedelta(hours=1)
     start_ts = datetime.now()
@@ -504,19 +506,20 @@ def test_finalize_experiment(client, users):
     assignment_set.complete = False
     assignment_set.save()
 
-    url = "/experiments/" + str(experiment.id) + "/finalize"
+    url_template = "/experiments/{}/assignment_sets/{}/finalize"
+
+    url = url_template.format(experiment.id, assignment_set.id)
 
     response = client.patch(url)
     assert response.status_code == 200
     assert json_success(response.data)
 
-    url = "/experiments/" + str(experiment.id) + "/finalize"
-
     response = client.patch(url)
     assert response.status_code == 400
 
-    url = "/experiments/" + str(experiment.id) + "/assignments/" + \
-        str(experiment.assignment_sets[0].assignments[0].id)
+    url = "/experiments/{}/assignment_sets/{}/assignments/{}".\
+        format(experiment.id, experiment.assignment_sets[0].id,
+               experiment.assignment_sets[0].assignments[0].id)
 
     choice = random.choice(assignment_set.assignments[0].
                            activity.choices)
@@ -542,7 +545,9 @@ def test_done_experiment_hook(client, users):
     mock_handler = mock.MagicMock()
     POST_FINALIZE_HANDLERS["test_handler"] = mock_handler
 
-    url = "/experiments/" + str(experiment2.id) + "/done"
+    url_template = "/experiments/{}/assignment_sets/{}/done"
+
+    url = url_template.format(experiment2.id, assignment_set2.id)
     with client.session_transaction() as sess:
         sess["experiment_post_finalize_handler"] = "test_handler"
     response = client.get(url)
@@ -561,10 +566,13 @@ def test_done_experiment(client, users):
     experiment = create_experiment(3, 1, ["question_mc_singleselect"])
     experiment.save()
     assignment_set = experiment.assignment_sets[0]
+    assignment_set.complete = False
     assignment_set.participant = participant
     assignment_set.save()
 
-    url = "/experiments/" + str(experiment.id) + "/done"
+    url_template = "/experiments/{}/assignment_sets/{}/done"
+
+    url = url_template.format(experiment.id, assignment_set.id)
 
     response = client.get(url)
     assert response.status_code == 200
@@ -572,12 +580,13 @@ def test_done_experiment(client, users):
     experiment2 = create_experiment(3, 1)
     experiment2.save()
 
-    url = "/experiments/" + str(experiment2.id) + "/done"
+    url = url_template.format(experiment2.id,
+                              experiment2.assignment_sets[0].id)
 
     response = client.get(url)
-    assert response.status_code == 400
+    assert response.status_code == 403
 
-    url = "/experiments/" + str(experiment2.id + 34) + "/done"
+    url = url_template.format(experiment.id + 4, assignment_set.id)
 
     response = client.get(url)
     assert response.status_code == 404
@@ -585,15 +594,20 @@ def test_done_experiment(client, users):
 
 def test_confirm_done_experiment(client, users):
     login_participant(client)
+    participant = get_participant()
     experiment = create_experiment(1, 1)
+    experiment.assignment_sets[0].participant = participant
     experiment.save()
 
-    url = "/experiments/" + str(experiment.id) + "/confirm_done"
+    url_template = "/experiments/{}/assignment_sets/{}/confirm_done"
+
+    url = url_template.format(experiment.id, experiment.assignment_sets[0].id)
 
     response = client.get(url)
     assert response.status_code == 200
 
-    url = "/experiments/" + str(experiment.id + 4) + "/confirm_done"
+    url = url_template.format(experiment.id + 4,
+                              experiment.assignment_sets[0].id)
 
     response = client.get(url)
     assert response.status_code == 404

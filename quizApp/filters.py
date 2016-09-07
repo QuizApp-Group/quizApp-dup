@@ -9,10 +9,14 @@ filters = Blueprint("filters", __name__)
 
 @filters.app_template_filter("is_nav_child")
 def is_nav_child(child, parent):
-    """Check if the route child is a child of the route parent.
+    """Check if the route ``child`` is a child of the route ``parent``.
 
     This method is a bit ad-hoc, but it works for highlighting navigation tabs
     well enough.
+
+    Arguments:
+        child (str): The child route (e.g. ``experiments.read_experiment``)
+        parent (str): The parent route (e.g. ``experiments.experiment``)
     """
     if child[:4] == "core":
         return False
@@ -25,14 +29,14 @@ def is_nav_child(child, parent):
 
 @filters.app_template_filter("datetime_format")
 def datetime_format_filter(value, fmt="%Y-%m-%d %H:%M:%S"):
-    """Format the value (a datetime) according to fmt with strftime.
+    """Format ``value`` according to ``fmt`` with strftime.
     """
     return value.strftime(fmt)
 
 
 @filters.app_template_filter("get_graph_url")
 def get_graph_url_filter(graph):
-    """Given a graph, return html to display it.
+    """Given a ``Graph``, return html to display it.
     """
     if os.path.isfile(graph.path):
         filename = graph.filename()
