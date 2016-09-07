@@ -141,7 +141,7 @@ platform and does not include a web server.
 One popular way to run a server is via gunicorn and nginx. Here is a good
 `tutorial`_ for setting up that configuration.
 
-.. _tutorial: https://www.digitalocean.com/community/tutorials/how-to-serve-flask-applications-with-gunicorn-and-nginx-on-ubuntu-14-041
+.. _tutorial: https://www.digitalocean.com/community/tutorials/how-to-serve-flask-applications-with-gunicorn-and-nginx-on-ubuntu-14-04
 
 QuizApp already includes a wsgi file for use with gunicorn, located at
 ``wsgi.py``.
