@@ -841,6 +841,9 @@ class Experiment(Base):
 
     @property
     def running(self):
+        """Returns True if this experiment is currently running, otherwise
+        False.
+        """
         now = datetime.now()
         return now >= self.start and now <= self.stop
 

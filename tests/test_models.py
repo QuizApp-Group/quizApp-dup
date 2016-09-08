@@ -51,6 +51,7 @@ def test_experiment_running():
 
     assert not experiment.running
 
+
 def test_assignment_set_validators():
     """Make sure validators are functioning correctly.
     """
