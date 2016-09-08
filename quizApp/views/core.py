@@ -1,11 +1,16 @@
 """This blueprint takes care of rendering static pages outside of the other
 blueprints.
 """
+import random
+import uuid
+import string
 
-from flask import Blueprint, render_template, redirect, url_for
-from flask_security import roles_required, login_required, current_user
+from flask import Blueprint, render_template, redirect, url_for, request
+from flask_security import roles_required, login_required, current_user,\
+    login_user
+from flask_security.utils import encrypt_password
 
-from quizApp import models, db
+from quizApp import models, db, security
 
 core = Blueprint("core", __name__, url_prefix="/")
 
@@ -53,3 +58,30 @@ def post_login():
         return redirect(url_for("core.getting_started"))
     else:
         return redirect(url_for("experiments.experiments"))
+
+
+@core.route("auto_register", methods=["GET"])
+def auto_register():
+    """Convenience endpoint for using QuizApp embedded in another site.
+
+    When a logged in user accesses this endpoint, they will be redirected to
+    the specified experiment.
+
+    When a user that is not logged in access this endpoint, an account will be
+    created, they will be logged in, then redirected to the specified
+    experiment.
+    """
+    if not current_user.is_authenticated():
+        password = ''.join(random.SystemRandom().
+                           choice(string.ascii_uppercase + string.digits)
+                           for _ in range(0, 15))
+        participant = models.Participant(
+            email=str(uuid.uuid4),  # just give them a random email
+            password=encrypt_password(password))
+        security.datastore.add_role_to_user(participant, "participant")
+        security.datastore.activate_user(participant)
+        participant.save()
+        login_user(participant)
+
+    return(url_for("experiments.experiment",
+                   experiment_id=request.args["experiment_id"]))
