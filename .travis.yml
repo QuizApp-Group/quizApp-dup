@@ -1,4 +1,7 @@
 language: python
+
+cache: pip
+
 python:
     - "2.7"
     - "3.5"
@@ -12,7 +15,7 @@ install:
     - ./manage.py --config testing create-db -u root
 
 script:
-    - ./manage.py test 
+    - ./manage.py test
     - make -C docs/ html
 
 before_install:
