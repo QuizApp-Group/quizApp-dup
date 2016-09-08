@@ -5,13 +5,15 @@ tests the kind of activity it is loading and then defers to a more specific
 function (for example, questions are read by read_question rather than
 read_activity itself).
 """
+from collections import defaultdict
+
 from flask import Blueprint, render_template, url_for, jsonify, abort, request
 from flask_security import roles_required
 
 from quizApp.models import Activity, Dataset, Question, Choice
 from quizApp.forms.experiments import get_question_form
 from quizApp.forms.activities import DatasetListForm,\
-    ChoiceForm, get_activity_form
+    ChoiceForm, get_activity_form, ActivityForm
 from quizApp.forms.common import DeleteObjectForm, ObjectTypeForm
 from quizApp import db
 from quizApp.views.helpers import validate_model_id
@@ -121,7 +123,9 @@ def render_scorecard(scorecard, assignment_set=None, this_index=0):
     else:
         scorecard_data = {}
 
-    return render_template("activities/render_scorecard.html", scorecard_data=scorecard_data)
+    return render_template("activities/render_scorecard.html",
+                           scorecard=scorecard,
+                           scorecard_data=scorecard_data)
 
 
 def render_question(question, disabled=False, assignment=None,
@@ -176,9 +180,20 @@ def settings_activity(activity_id):
         "question_freeanswer": settings_question,
         "question_mc_singleselect_scale": settings_question,
         "question_integer": settings_question,
+        "scorecard": settings_scorecard,
     }
 
     return settings_function_mapping[activity.type](activity)
+
+
+def settings_scorecard(scorecard):
+    """Show settings for a scorecard.
+    """
+    general_form = ActivityForm(obj=scorecard)
+
+    return render_template("activities/settings_scorecard.html",
+                           scorecard=scorecard,
+                           general_form=general_form)
 
 
 def settings_question(question):

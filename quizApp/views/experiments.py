@@ -15,7 +15,7 @@ from quizApp.forms.experiments import CreateExperimentForm, \
     get_question_form
 from quizApp.views.common import ObjectCollectionView, ObjectView
 from quizApp.models import Experiment, Assignment, \
-    AssignmentSet, Activity, Participant
+    AssignmentSet, Participant
 from quizApp.views.helpers import validate_model_id, get_first_assignment
 from quizApp.views.activities import render_activity
 from quizApp.views.mturk import submit_assignment
@@ -184,8 +184,11 @@ def read_assignment(experiment_id, assignment_set_id, assignment_id):
 
 
 def read_scorecard(experiment, assignment):
+    """Read an assignment that is a scorecard.
+    """
     assignment_set = assignment.assignment_set
     this_index = assignment_set.assignments.index(assignment)
+
     if not assignment_set.complete:
         # If the participant is not done, then save the choice order
         next_url = None
@@ -198,6 +201,7 @@ def read_scorecard(experiment, assignment):
     if this_index - 1 > -1 and not experiment.disable_previous:
         previous_assignment = assignment_set.assignments[this_index - 1]
 
+    scorecard = assignment.activity
     cumulative_score = assignment.assignment_set.score
     rendered_scorecard = render_activity(scorecard, assignment_set, this_index)
 
