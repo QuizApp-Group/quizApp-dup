@@ -81,6 +81,10 @@ def test_experiments_authed_participant(client, users):
     response = client.put(exp_url)
     assert response.status_code == 403
 
+    exp.stop = datetime.now() - timedelta(days=50)
+    response = client.get(exp_url)
+    assert response.status_code == 400
+
 
 def test_experiments_authed_experimenter(client, users):
     """Make sure logged in experimenters can see things.

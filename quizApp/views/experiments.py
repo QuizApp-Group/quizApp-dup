@@ -162,6 +162,9 @@ def read_assignment(experiment_id, assignment_set_id, assignment_id):
         assignment_set_id,
         assignment_id)
 
+    if not experiment.running:
+        abort(400)
+
     if experiment.disable_previous and assignment_set.progress > \
             assignment_set.assignments.index(assignment) and \
             not assignment_set.complete:
@@ -261,6 +264,9 @@ def update_assignment(experiment_id, assignment_set_id, assignment_id):
         assignment_id)
 
     if assignment_set.complete:
+        abort(400)
+
+    if not experiment.running:
         abort(400)
 
     if experiment.disable_previous and assignment_set.progress > \
