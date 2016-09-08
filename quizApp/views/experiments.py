@@ -67,7 +67,7 @@ def validate_assignment(experiment_id, assignment_set_id, assignment_id):
 class ExperimentCollectionView(ObjectCollectionView):
     """View for a collection of Experiments.
     """
-    decorators = [login_required]
+    decorators = [roles_required("experimenter")]
     methods = ["GET", "POST"]
     template = "experiments/read_experiments.html"
 
@@ -99,10 +99,6 @@ class ExperimentCollectionView(ObjectCollectionView):
                                 experiment_id=experiment.id),
         }
 
-    def post(self):
-        if current_user.has_role("experimenter"):
-            return super(ExperimentCollectionView, self).post()
-        abort(403)
 
 experiments.add_url_rule(
     "/",

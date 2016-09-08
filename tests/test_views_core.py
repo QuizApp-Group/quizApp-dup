@@ -28,4 +28,3 @@ def test_post_login(client, users):
     data = response.data.decode(response.charset)
 
     assert response.status_code == 200
-    assert "Experiment List" in data

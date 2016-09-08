@@ -66,11 +66,6 @@ def test_experiments_authed_participant(client, users):
 
     exp_url = "/experiments/" + str(exp.id)
 
-    response = client.get("/experiments/")
-    data = response.data.decode(response.charset)
-    assert response.status_code == 200
-    assert exp.name in data
-
     response = client.get(exp_url)
     data = response.data.decode(response.charset)
     assert response.status_code == 200
