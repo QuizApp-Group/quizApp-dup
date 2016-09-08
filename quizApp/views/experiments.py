@@ -1,6 +1,7 @@
 """Views that handle CRUD for experiments and rendering questions for
 participants.
 """
+import pdb
 from collections import defaultdict
 from datetime import datetime
 import json
@@ -377,6 +378,7 @@ def get_next_assignment_url(assignment_set, current_index):
 def settings_experiment(experiment_id):
     """Give information on an experiment and its activities.
     """
+    pdb.set_trace()
     experiment = validate_model_id(Experiment, experiment_id)
 
     update_experiment_form = CreateExperimentForm(obj=experiment)
