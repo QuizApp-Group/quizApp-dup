@@ -7,6 +7,7 @@ from flask_wtf.csrf import CsrfProtect
 from flask_sqlalchemy import SQLAlchemy
 from flask_security import Security, SQLAlchemyUserDatastore
 from flask_migrate import Migrate
+from flask_mail import Mail
 from quizApp import config
 
 
@@ -14,6 +15,7 @@ db = SQLAlchemy()
 csrf = CsrfProtect()
 security = Security()
 migrate = Migrate()
+mail = Mail()
 
 
 def create_app(config_name, overrides=None):
@@ -30,6 +32,7 @@ def create_app(config_name, overrides=None):
 
     db.init_app(app)
     csrf.init_app(app)
+    mail.init_app(app)
 
     from quizApp.models import User, Role
     user_datastore = SQLAlchemyUserDatastore(db, User, Role)
