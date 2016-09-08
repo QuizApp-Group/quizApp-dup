@@ -462,6 +462,12 @@ class Scorecard(Activity):
     """A Scorecard shows some kind of information about all previous
     activities.
     """
+    def get_score(self, result):
+        return 0
+
+    def is_correct(self, result):
+        return True
+
     __mapper_args__ = {
         'polymorphic_identity': 'scorecard',
     }

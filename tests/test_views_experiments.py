@@ -365,6 +365,24 @@ def test_read_assignment(client, users):
     assert assignment3.activity.question in data
 
 
+def test_read_scorecard(client, users):
+    login_participant(client)
+    participant = get_participant()
+    experiment = create_experiment(3, 1,
+                                   ["question_mc_singleselect", "scorecard"])
+    experiment.assignment_sets[0].participant = participant
+    experiment.save()
+
+    url = "/experiments/{}/assignment_sets/{}/assignments/".\
+        format(experiment.id, experiment.assignment_sets[0].id)
+
+    for assignment in experiment.assignment_sets[0].assignments:
+        ass_url = url + str(assignment.id)
+
+        response = client.get(ass_url)
+        assert response.status_code == 200
+
+
 def test_update_assignment(client, users):
     login_participant(client)
     participant = get_participant()

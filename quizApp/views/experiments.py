@@ -215,7 +215,7 @@ def read_scorecard(experiment, assignment):
         "rendered_scorecard": rendered_scorecard,
     }
 
-    return render_template("experiments/read_question.html",
+    return render_template("experiments/read_scorecard.html",
                            **template_kwargs)
 
 

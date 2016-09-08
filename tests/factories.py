@@ -156,6 +156,7 @@ def create_experiment(num_activities, num_participants, activity_types=[]):
                 "question_mc_singleselect_scale": ScaleQuestionFactory,
                 "question_integer": IntegerQuestionFactory,
                 "question_freeanswer": FreeAnswerQuestionFactory,
+                "scorecard": models.Scorecard,
             }
             activity = factory_mapping[activity_type]()
         else:

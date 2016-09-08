@@ -9,7 +9,7 @@ from tests.factories import ActivityFactory, SingleSelectQuestionFactory, \
     DatasetFactory, QuestionFactory, ChoiceFactory, IntegerQuestionFactory
 from tests.helpers import json_success
 from quizApp import db
-from quizApp.models import Question
+from quizApp.models import Question, Scorecard
 
 
 def test_read_activities(client, users):
@@ -89,6 +89,18 @@ def test_settings_activity(client, users):
     assert response.status_code == 200
     assert question.question in data
     assert question.explanation in data
+
+
+def test_settings_scorecard(client, users):
+    login_experimenter(client)
+
+    scorecard = Scorecard()
+    scorecard.save()
+
+    url = "/activities/" + str(scorecard.id) + "/settings"
+
+    response = client.get(url)
+    assert response.status_code == 200
 
 
 def test_update_activity(client, users):

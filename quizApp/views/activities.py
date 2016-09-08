@@ -116,7 +116,7 @@ def render_scorecard(scorecard, assignment_set=None, this_index=0):
         assignments = assignment_set.assignments[:this_index]
 
         # sort the previous assignments by category
-        scorecard_data = defaultdict([])
+        scorecard_data = defaultdict(list)
 
         for assignment in assignments:
             scorecard_data[assignment.activity.category].append(assignment)
