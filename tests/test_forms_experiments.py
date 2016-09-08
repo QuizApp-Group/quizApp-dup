@@ -20,6 +20,30 @@ def test_question_form():
         question_form.result
 
 
+def test_mc_question_form():
+    question_form = experiment_forms.MultipleChoiceForm()
+    question = models.Question()
+    choice = factories.ChoiceFactory()
+    question.choices.append(choice)
+
+    question_form.populate_from_question(question)
+
+    assert question_form.choices.choices[0][1] == "{} - {}".format(
+        choice.label, choice.choice)
+
+    choice_label = choice.label
+    choice.label = ""
+    question_form.populate_from_question(question)
+
+    assert question_form.choices.choices[0][1] == choice.choice
+
+    choice.label = choice_label
+    choice.choice = ""
+    question_form.populate_from_question(question)
+
+    assert question_form.choices.choices[0][1] == choice.label
+
+
 def test_integer_answer_form(client):
     form = experiment_forms.IntegerAnswerForm()
     question = factories.IntegerQuestionFactory()

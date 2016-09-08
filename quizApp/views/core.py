@@ -5,8 +5,7 @@ import random
 import uuid
 import string
 
-from flask import Blueprint, render_template, redirect, url_for, request,\
-    redirect
+from flask import Blueprint, render_template, redirect, url_for, request
 from flask_security import roles_required, login_required, current_user,\
     login_user
 from flask_security.utils import encrypt_password
@@ -58,7 +57,7 @@ def post_login():
     if current_user.has_role("experimenter"):
         return redirect(url_for("core.getting_started"))
     else:
-        return redirect(url_for("experiments.experiments"))
+        return redirect(url_for("core.home"))
 
 
 @core.route("auto_register", methods=["GET"])
@@ -85,4 +84,4 @@ def auto_register():
         login_user(participant)
 
     return redirect(url_for("experiments.experiment",
-                   experiment_id=request.args["experiment_id"]))
+                            experiment_id=request.args["experiment_id"]))

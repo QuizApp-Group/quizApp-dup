@@ -67,7 +67,7 @@ def validate_assignment(experiment_id, assignment_set_id, assignment_id):
 class ExperimentCollectionView(ObjectCollectionView):
     """View for a collection of Experiments.
     """
-    decorators = [login_required]
+    decorators = [roles_required("experimenter")]
     methods = ["GET", "POST"]
     template = "experiments/read_experiments.html"
 
@@ -99,10 +99,6 @@ class ExperimentCollectionView(ObjectCollectionView):
                                 experiment_id=experiment.id),
         }
 
-    def post(self):
-        if current_user.has_role("experimenter"):
-            return super(ExperimentCollectionView, self).post()
-        abort(403)
 
 experiments.add_url_rule(
     "/",
@@ -130,6 +126,8 @@ class ExperimentView(ObjectView):
         """View the landing page of an experiment, along with the ability to start.
         """
         if current_user.has_role("participant"):
+            if not experiment.running:
+                abort(400)
             assignment = get_first_assignment(experiment)
         else:
             assignment = None
@@ -163,6 +161,9 @@ def read_assignment(experiment_id, assignment_set_id, assignment_id):
         experiment_id,
         assignment_set_id,
         assignment_id)
+
+    if not experiment.running:
+        abort(400)
 
     if experiment.disable_previous and assignment_set.progress > \
             assignment_set.assignments.index(assignment) and \
@@ -263,6 +264,9 @@ def update_assignment(experiment_id, assignment_set_id, assignment_id):
         assignment_id)
 
     if assignment_set.complete:
+        abort(400)
+
+    if not experiment.running:
         abort(400)
 
     if experiment.disable_previous and assignment_set.progress > \
