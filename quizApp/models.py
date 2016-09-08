@@ -3,6 +3,7 @@
 from __future__ import unicode_literals
 from builtins import object
 import os
+from datetime import datetime
 
 from quizApp import db
 from flask_security import UserMixin, RoleMixin
@@ -837,6 +838,11 @@ class Experiment(Base):
         """
         self.scorecard_settings = ScorecardSettings()
         super(Experiment, self).__init__(*args, **kwargs)
+
+    @property
+    def running(self):
+        now = datetime.now()
+        return now >= self.start and now <= self.stop
 
 
 class Dataset(Base):

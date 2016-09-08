@@ -126,6 +126,8 @@ class ExperimentView(ObjectView):
         """View the landing page of an experiment, along with the ability to start.
         """
         if current_user.has_role("participant"):
+            if not experiment.running:
+                abort(400)
             assignment = get_first_assignment(experiment)
         else:
             assignment = None
