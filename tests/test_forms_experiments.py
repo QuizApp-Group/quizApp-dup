@@ -43,6 +43,7 @@ def test_mc_question_form():
 
     assert question_form.choices.choices[0][1] == choice.label
 
+
 def test_integer_answer_form(client):
     form = experiment_forms.IntegerAnswerForm()
     question = factories.IntegerQuestionFactory()
