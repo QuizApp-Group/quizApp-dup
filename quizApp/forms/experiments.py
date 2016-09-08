@@ -110,9 +110,16 @@ class MultipleChoiceForm(QuestionForm):
     def populate_from_question(self, question):
         """Given a pool of choices, populate the choices field.
         """
-        self.choices.choices = [(str(c.id),
-                                 "{} - {}".format(c.label, c.choice))
-                                for c in question.choices]
+        choices = []
+        for choice in question.choices:
+            if choice.choice and choice.label:
+                label = "{} - {}".format(choice.label, choice.choice)
+            elif choice.choice:
+                label = choice.choice
+            else:
+                label = choice.label
+            choices.append((str(choice.id), label))
+        self.choices.choices = choices
 
     def populate_from_result(self, result):
         self.choices.default = str(result.choice.id)
