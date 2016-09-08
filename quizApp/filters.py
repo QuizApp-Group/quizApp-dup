@@ -11,16 +11,10 @@ filters = Blueprint("filters", __name__)
 def is_nav_child(child, parent):
     """Check if the route ``child`` is a child of the route ``parent``.
 
-    This method is a bit ad-hoc, but it works for highlighting navigation tabs
-    well enough.
-
     Arguments:
         child (str): The child route (e.g. ``experiments.read_experiment``)
         parent (str): The parent route (e.g. ``experiments.experiment``)
     """
-    if child[:4] == "core":
-        return False
-
     child_parts = child.split(".")
     parent_parts = parent.split(".")
 

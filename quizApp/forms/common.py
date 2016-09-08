@@ -46,7 +46,7 @@ class ListObjectForm(Form):
     def get_choice_tuple(self, obj):
         """Populate the list of choices with the appropriate tuple.
         """
-        self.objects.choices.append((str(obj.id), obj.id))
+        raise NotImplementedError
 
 
 class DeleteObjectForm(Form):
