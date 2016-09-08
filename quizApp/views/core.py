@@ -5,7 +5,8 @@ import random
 import uuid
 import string
 
-from flask import Blueprint, render_template, redirect, url_for, request
+from flask import Blueprint, render_template, redirect, url_for, request,\
+    redirect
 from flask_security import roles_required, login_required, current_user,\
     login_user
 from flask_security.utils import encrypt_password
@@ -71,17 +72,17 @@ def auto_register():
     created, they will be logged in, then redirected to the specified
     experiment.
     """
-    if not current_user.is_authenticated():
+    if not current_user.is_authenticated:
         password = ''.join(random.SystemRandom().
                            choice(string.ascii_uppercase + string.digits)
                            for _ in range(0, 15))
         participant = models.Participant(
-            email=str(uuid.uuid4),  # just give them a random email
+            email=str(uuid.uuid4()),  # just give them a random email
             password=encrypt_password(password))
         security.datastore.add_role_to_user(participant, "participant")
         security.datastore.activate_user(participant)
         participant.save()
         login_user(participant)
 
-    return(url_for("experiments.experiment",
+    return redirect(url_for("experiments.experiment",
                    experiment_id=request.args["experiment_id"]))
