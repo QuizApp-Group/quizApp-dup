@@ -111,7 +111,7 @@ def test_render_scorecard(client, users):
     url = "/activities/" + str(scorecard.id)
     response = client.get(url)
     data = response.data.decode(response.charset)
-    assert "How you did" in scorecard
+    assert "performance" in data
 
 
 def test_update_activity(client, users):
