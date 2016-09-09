@@ -436,6 +436,17 @@ def test_update_assignment(client, users):
     assert assignment.time_to_submit == time_to_submit
     assert json_success(response.data)
 
+    # Test bad response
+    response = client.patch(url,
+                            data={"choices": choice.id + 10}
+                            )
+
+    db.session.refresh(assignment)
+
+    assert response.status_code == 200
+    assert assignment.time_to_submit == time_to_submit
+    assert not json_success(response.data)
+
     # Test scorecards
     assignment.activity.scorecard_settings.display_scorecard = True
     db.session.commit()

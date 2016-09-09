@@ -1,8 +1,30 @@
 """Test activity forms.
 """
+import pytest
+
 from quizApp.forms import experiments as experiment_forms
 from quizApp import models, db
 from tests import factories
+
+
+def test_activity_answer_form(client):
+    activity_answer_form = experiment_forms.ActivityAnswerForm()
+
+    with pytest.raises(NotImplementedError):
+        activity_answer_form.populate_from_activity(None)
+
+    with pytest.raises(NotImplementedError):
+        activity_answer_form.populate_from_result(None)
+
+    with pytest.raises(NotImplementedError):
+        activity_answer_form.result
+
+
+def scorecard_answer_form(client):
+    form = experiment_forms.ScorecardAnswerForm()
+
+    form.populate_from_result(None)  # noop
+    assert form.result
 
 
 def test_integer_answer_form(client):
