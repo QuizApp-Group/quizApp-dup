@@ -808,8 +808,8 @@ class Experiment(Base):
                             info={"label": ("Show score tally during the"
                                             " experiment")})
     flash = db.Column(db.Boolean,
-                      info={"label": "Flash this MediaItem when displaying"})
-    flash_duration = db.Column(db.Integer, nullable=False, default=-1,
+                      info={"label": "Flash MediaItems when displaying"})
+    flash_duration = db.Column(db.Integer, nullable=False, default=0,
                                info={"label": "Flash duration (ms)"})
     disable_previous = db.Column(db.Boolean,
                                  info={"label": ("Don't let participants go "
