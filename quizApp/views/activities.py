@@ -110,7 +110,8 @@ def render_activity(activity, *args, **kwargs):
 
 
 def render_scorecard(scorecard, assignment_set=None, this_index=0):
-    """Render a scorecard I guess
+    """Render a scorecard. This is the central point of rendering for
+    scorecards.
     """
     if assignment_set:
         assignments = assignment_set.assignments[:this_index]
