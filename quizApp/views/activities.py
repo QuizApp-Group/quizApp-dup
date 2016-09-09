@@ -119,17 +119,12 @@ def render_scorecard(scorecard, disabled=False, assignment_set=None,
     if assignment:
         form.populate_from_assignment(assignment)
 
+    scorecard_data = defaultdict(list)
     if assignment_set:
-        assignments = assignment_set.assignments[:this_index]
-
         # sort the previous assignments by category
-        scorecard_data = defaultdict(list)
-
-        for assignment in assignments:
+        for assignment in assignment_set.assignments[:this_index]:
             if assignment.activity.include_in_scorecards:
                 scorecard_data[assignment.activity.category].append(assignment)
-    else:
-        scorecard_data = {}
 
     return render_template("activities/render_scorecard.html",
                            assignment_set=assignment_set,

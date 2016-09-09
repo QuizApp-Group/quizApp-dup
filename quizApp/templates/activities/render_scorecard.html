@@ -16,7 +16,6 @@
       </thead>
       <tbody>
         {% for assignment in assignments %}
-        {% if assignment.result %}
         <tr
            class="{% if assignment.correct %}
            success
@@ -39,7 +38,6 @@
            <td>{{ assignment.score }}</td>
            <td>{{ assignment.activity.explanation }}</td>
         </tr>
-        {% endif %}
         {% endfor %}
       </tbody>
     </table>

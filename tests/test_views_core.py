@@ -37,7 +37,7 @@ def test_auto_register(client, users):
     experiment.assignment_sets[0].progress = 0
     experiment.save()
     initial_num_users = models.Participant.query.count()
-    url = "/auto_register?experiment_id=1"
+    url = "/auto_register?experiment_id=" + str(experiment.id)
 
     response = client.get(url, follow_redirects=True)
     data = response.data.decode(response.charset)
