@@ -116,16 +116,21 @@ called ``instance_config.py.ex``. If you wish to override any of the default
 production database settings, you should copy this file to
 ``instance/instance_config.py``.
 
-In that file, there are two primary options. The first option is the database
+In that file, there are four options. The first option is the database
 URI. The full reference for the URI syntax is located `here`_.
 
 .. _here: http://flask.pocoo.org/docs/0.11/config/#instance-folders
 
-The other is the secret key. This is used for various cryptographic purposes
+The second is the secret key. This is used for various cryptographic purposes
 and needs to be randomly generated. Refer to the `flask documentation`_ for
 instructions on generating secret keys.
 
 .. _flask documentation: http://flask.pocoo.org/docs/0.11/quickstart/#sessions
+
+Repeat the process above for the third option, ``SECURITY_PASSWORD_SALT``.
+
+The fourth option represents what email address QuizApp will use to send emails
+such as registration confirmation, password recovery, etc.
 
 In addition, if you plan to use QuizApp with Amazon Mechanical Turk, you will
 need to move ``instance/mturk.yaml.ex`` to ``instance/mturk.yaml`` and update
