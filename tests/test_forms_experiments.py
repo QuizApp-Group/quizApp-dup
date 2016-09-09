@@ -20,7 +20,7 @@ def test_activity_answer_form(client):
         activity_answer_form.result
 
 
-def scorecard_answer_form(client):
+def test_scorecard_answer_form(client):
     form = experiment_forms.ScorecardAnswerForm()
 
     form.populate_from_result(None)  # noop
