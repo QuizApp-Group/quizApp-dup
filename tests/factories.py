@@ -16,7 +16,7 @@ class ExperimentFactory(factory.Factory):
 
     name = factory.Faker('name')
     blurb = factory.Faker('text')
-    start = datetime.now()
+    start = datetime.now() - timedelta(days=5)
     stop = datetime.now() + timedelta(days=5)
 
 

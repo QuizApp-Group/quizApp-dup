@@ -2,6 +2,7 @@
 """
 from __future__ import unicode_literals
 import os
+from datetime import datetime, timedelta
 
 import pytest
 from sqlalchemy import inspect
@@ -12,7 +13,7 @@ from tests.factories import ExperimentFactory, ParticipantFactory, \
 from quizApp.models import AssignmentSet, Assignment, Role, Activity, \
     Question, Graph, MultipleChoiceQuestionResult, MultipleChoiceQuestion, \
     FreeAnswerQuestion, FreeAnswerQuestionResult, Result, \
-    IntegerQuestionResult, IntegerQuestion, Choice, Scorecard
+    IntegerQuestionResult, IntegerQuestion, Choice, Scorecard, Experiment
 
 
 def test_db_rollback1():
@@ -31,6 +32,24 @@ def test_db_rollback2():
     exp.save()
     assert Role.query.filter_by(name="notaname-1").count() == 0
     assert Role.query.filter_by(name="notaname-2").count() == 1
+
+
+def test_experiment_running():
+    experiment = Experiment(
+        start=datetime.now() + timedelta(days=-100),
+        stop=datetime.now() + timedelta(days=100)
+    )
+
+    assert experiment.running
+
+    experiment.start = datetime.now() + timedelta(days=100)
+
+    assert not experiment.running
+
+    experiment.start = datetime.now() + timedelta(days=-200)
+    experiment.stop = datetime.now() + timedelta(days=-100)
+
+    assert not experiment.running
 
 
 def test_assignment_set_validators():

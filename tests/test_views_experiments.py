@@ -66,11 +66,6 @@ def test_experiments_authed_participant(client, users):
 
     exp_url = "/experiments/" + str(exp.id)
 
-    response = client.get("/experiments/")
-    data = response.data.decode(response.charset)
-    assert response.status_code == 200
-    assert exp.name in data
-
     response = client.get(exp_url)
     data = response.data.decode(response.charset)
     assert response.status_code == 200
@@ -85,6 +80,10 @@ def test_experiments_authed_participant(client, users):
 
     response = client.put(exp_url)
     assert response.status_code == 403
+
+    exp.stop = datetime.now() - timedelta(days=50)
+    response = client.get(exp_url)
+    assert response.status_code == 400
 
 
 def test_experiments_authed_experimenter(client, users):
@@ -295,6 +294,16 @@ def test_read_assignment(client, users):
         assert response.status_code == 200
         assert question.question in data
 
+    experiment.stop = datetime.now() - timedelta(days=1)
+
+    for assignment in assignment_set.assignments:
+        # Make sure we can't read it
+        question = assignment.activity
+        response = client.get(url + str(assignment.id))
+        assert response.status_code == 400
+
+    experiment.stop = datetime.now() + timedelta(days=1)
+
     experiment.disable_previous = True
     db.session.commit()
 
@@ -452,6 +461,14 @@ def test_update_assignment(client, users):
 
     assert response.status_code == 200
     assert json_success(response.data)
+
+    # Don't let them update old experiments
+    experiment.stop = datetime.now() - timedelta(days=1)
+    response = client.patch(url,
+                            data={"choices": choice.id}
+                            )
+    assert response.status_code == 400
+    experiment.stop = datetime.now() + timedelta(days=1)
 
     # Make sure participants can't see each others' stuff
     experiment3 = create_experiment(3, 1)

@@ -3,6 +3,7 @@
 from __future__ import unicode_literals
 from builtins import object
 import os
+from datetime import datetime
 
 from quizApp import db
 from flask_security import UserMixin, RoleMixin
@@ -822,8 +823,8 @@ class Experiment(Base):
                             info={"label": ("Show score tally during the"
                                             " experiment")})
     flash = db.Column(db.Boolean,
-                      info={"label": "Flash this MediaItem when displaying"})
-    flash_duration = db.Column(db.Integer, nullable=False, default=-1,
+                      info={"label": "Flash MediaItems when displaying"})
+    flash_duration = db.Column(db.Integer, nullable=False, default=0,
                                info={"label": "Flash duration (ms)"})
     disable_previous = db.Column(db.Boolean,
                                  info={"label": ("Don't let participants go "
@@ -852,6 +853,14 @@ class Experiment(Base):
         """
         self.scorecard_settings = ScorecardSettings()
         super(Experiment, self).__init__(*args, **kwargs)
+
+    @property
+    def running(self):
+        """Returns True if this experiment is currently running, otherwise
+        False.
+        """
+        now = datetime.now()
+        return now >= self.start and now <= self.stop
 
 
 class Dataset(Base):
