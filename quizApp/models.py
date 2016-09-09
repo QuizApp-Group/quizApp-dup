@@ -383,6 +383,8 @@ class Activity(Base):
     Attributes:
         type (string): Discriminator column that determines what kind
             of Activity this is.
+        needs_comment (bool): True if the participant should be asked why
+            they picked what they did after they answer the question.
         category (string): A description of this assignment's category, for the
             users' convenience.
         experiments (list of Experiment): What Experiments include this
@@ -398,6 +400,11 @@ class Activity(Base):
         result_class = Result
 
     type = db.Column(db.String(50), nullable=False)
+    needs_comment = db.Column(db.Boolean(), info={"label": "Allow comments"})
+    include_in_scorecards = db.Column(
+        db.Boolean(), default=True,
+        info={"label": "Include this activity in any aggregate scorecards"})
+
     experiments = db.relationship("Experiment",
                                   secondary=activity_experiment_table,
                                   back_populates="activities",
@@ -459,6 +466,21 @@ question_dataset_table = db.Table(
 )
 
 
+class Scorecard(Activity):
+    """A Scorecard shows some kind of information about all previous
+    activities.
+    """
+    def get_score(self, result):
+        return 0
+
+    def is_correct(self, result):
+        return True
+
+    __mapper_args__ = {
+        'polymorphic_identity': 'scorecard',
+    }
+
+
 class Question(Activity):
     """A Question is related to one or more MediaItems and has one or more Choices,
     and is a part of one or more Experiments.
@@ -467,8 +489,6 @@ class Question(Activity):
         question (string): This question as a string
         explantion (string): The explanation for why the correct answer is
             correct.
-        needs_comment (bool): True if the participant should be asked why
-            they picked what they did after they answer the question.
         num_media_items (int): How many MediaItems should be shown when
             displaying this question
         choices (list of Choice): What Choices this Question has
@@ -485,7 +505,6 @@ class Question(Activity):
                                 info={
                                     "label": "Number of media items to show"
                                 })
-    needs_comment = db.Column(db.Boolean(), info={"label": "Allow comments"})
 
     choices = db.relationship("Choice", back_populates="question",
                               info={"import_include": False})
@@ -648,7 +667,7 @@ class Choice(Base):
         points (int): How many points the Participant gets for picking this
             choice
     """
-    choice = db.Column(db.String(200), nullable=False,
+    choice = db.Column(db.String(200),
                        info={"label": "Choice"})
     label = db.Column(db.String(3),
                       info={"label": "Label"})

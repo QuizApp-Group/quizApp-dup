@@ -5,13 +5,15 @@ tests the kind of activity it is loading and then defers to a more specific
 function (for example, questions are read by read_question rather than
 read_activity itself).
 """
+from collections import defaultdict
+
 from flask import Blueprint, render_template, url_for, jsonify, abort, request
 from flask_security import roles_required
 
 from quizApp.models import Activity, Dataset, Question, Choice
-from quizApp.forms.experiments import get_question_form
+from quizApp.forms.experiments import get_answer_form
 from quizApp.forms.activities import DatasetListForm,\
-    ChoiceForm, get_activity_form
+    ChoiceForm, get_activity_form, ActivityForm
 from quizApp.forms.common import DeleteObjectForm, ObjectTypeForm
 from quizApp import db
 from quizApp.views.helpers import validate_model_id
@@ -19,11 +21,14 @@ from quizApp.views.common import ObjectCollectionView, ObjectView
 
 activities = Blueprint("activities", __name__, url_prefix="/activities")
 
-ACTIVITY_TYPES = {"question_mc_singleselect": "Single select multiple choice",
-                  "question_mc_multiselect": "Multi select multiple choice",
-                  "question_mc_singleselect_scale": "Likert scale",
-                  "question_integer": "Integer answer",
-                  "question_freeanswer": "Free answer"}
+ACTIVITY_TYPES = {
+    "question_mc_singleselect": "Single select multiple choice",
+    "question_mc_multiselect": "Multi select multiple choice",
+    "question_mc_singleselect_scale": "Likert scale",
+    "question_integer": "Integer answer",
+    "question_freeanswer": "Free answer",
+    "scorecard": "Scorecard",
+}
 
 ACTIVITY_ROUTE = "/<int:activity_id>"
 CHOICES_ROUTE = "/<int:question_id>/choices/"
@@ -98,9 +103,35 @@ def render_activity(activity, *args, **kwargs):
         "question_freeanswer": render_question,
         "question_integer": render_question,
         "question_mc_singleselect_scale": render_question,
+        "scorecard": render_scorecard,
     }
 
     return render_mapping[activity.type](activity, *args, **kwargs)
+
+
+def render_scorecard(scorecard, disabled=False, assignment_set=None,
+                     assignment=None, this_index=0):
+    """Render a scorecard. This is the central point of rendering for
+    scorecards.
+    """
+    form = get_answer_form(scorecard)
+
+    if assignment:
+        form.populate_from_assignment(assignment)
+
+    scorecard_data = defaultdict(list)
+    if assignment_set:
+        # sort the previous assignments by category
+        for assignment in assignment_set.assignments[:this_index]:
+            if assignment.activity.include_in_scorecards:
+                scorecard_data[assignment.activity.category].append(assignment)
+
+    return render_template("activities/render_scorecard.html",
+                           assignment_set=assignment_set,
+                           scorecard=scorecard,
+                           form=form,
+                           disabled=disabled,
+                           scorecard_data=scorecard_data)
 
 
 def render_question(question, disabled=False, assignment=None,
@@ -115,19 +146,11 @@ def render_question(question, disabled=False, assignment=None,
         render_explanation (bool): If True, render the explanation for this
             question
     """
-    form = get_question_form(question)
-    form.populate_from_question(question)
+    form = get_answer_form(question)
+    form.populate_from_activity(question)
 
-    try:
-        form.populate_from_result(assignment.result)
-    except AttributeError:
-        pass
-
-    try:
-        form.comment.default = assignment.comment
-        form.process()
-    except AttributeError:
-        pass
+    if assignment:
+        form.populate_from_assignment(assignment)
 
     template_mapping = {
         "question_mc_singleselect": "activities/render_mc_question.html",
@@ -155,9 +178,20 @@ def settings_activity(activity_id):
         "question_freeanswer": settings_question,
         "question_mc_singleselect_scale": settings_question,
         "question_integer": settings_question,
+        "scorecard": settings_scorecard,
     }
 
     return settings_function_mapping[activity.type](activity)
+
+
+def settings_scorecard(scorecard):
+    """Show settings for a scorecard.
+    """
+    general_form = ActivityForm(obj=scorecard)
+
+    return render_template("activities/settings_scorecard.html",
+                           scorecard=scorecard,
+                           general_form=general_form)
 
 
 def settings_question(question):

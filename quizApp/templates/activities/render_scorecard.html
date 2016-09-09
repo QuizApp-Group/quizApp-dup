@@ -1,0 +1,51 @@
+{% import 'macros.html' as macros %}
+
+<div id='scorecard activity'>
+  <h3>Your performance so far</h3>
+  {% for category, assignments in scorecard_data.items() %}
+  <div class="activity-category">
+    <h4>{{ category }}</h4>
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>Assignment</th>
+          <th>Correct?</th>
+          <th>Score</th>
+          <th>Feedback</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for assignment in assignments %}
+        <tr
+           class="{% if assignment.correct %}
+           success
+           {% else%}
+           danger
+           {% endif %}"
+           >
+           <td><a href="{{ url_for('experiments.read_assignment',
+           assignment_set_id=assignment_set.id,
+           experiment_id=assignment_set.experiment.id,
+           assignment_id=assignment.id) }}">{{ assignment.id }}</a>
+           </td>
+           <td>
+             {% if assignment.correct %}
+             {{ macros.render_glyphicon("ok") }} Correct
+             {% else %}
+             {{ macros.render_glyphicon("remove") }} Incorrect
+             {% endif %}
+           </td>
+           <td>{{ assignment.score }}</td>
+           <td>{{ assignment.activity.explanation }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endfor %}
+  {% if scorecard.needs_comment %}
+      <p>Do you notice any trends?</p>
+      {{ macros.render_field(form.comment, rows="5", disabled=disabled) }}
+      <br />
+  {% endif %}
+</div>

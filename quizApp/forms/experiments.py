@@ -1,6 +1,5 @@
 """Forms for the Experiments blueprint.
 """
-
 from datetime import datetime
 
 from flask_wtf import Form
@@ -11,21 +10,22 @@ from wtforms_alchemy import ModelForm, ModelFormField
 
 from quizApp.forms.common import OrderFormMixin, ScorecardSettingsForm
 from quizApp.models import Experiment, MultipleChoiceQuestionResult, \
-    IntegerQuestionResult, FreeAnswerQuestionResult, Choice
+    IntegerQuestionResult, FreeAnswerQuestionResult, Choice, Result
 
 
-def get_question_form(question, data=None):
-    """Given a question type, return the proper form that should be displayed
+def get_answer_form(activity, data=None):
+    """Given an activity, return the proper form that should be displayed
     to the participant.
     """
     form_mapping = {
-        "question_mc_singleselect": MultipleChoiceForm,
-        "question_mc_multiselect": MultipleChoiceForm,
+        "question_mc_singleselect": MultipleChoiceAnswerForm,
+        "question_mc_multiselect": MultipleChoiceAnswerForm,
         "question_freeanswer": FreeAnswerForm,
         "question_integer": IntegerAnswerForm,
-        "question_mc_singleselect_scale": ScaleForm,
+        "question_mc_singleselect_scale": ScaleAnswerForm,
+        "scorecard": ScorecardAnswerForm,
     }
-    return form_mapping[question.type](data)
+    return form_mapping[activity.type](data)
 
 
 class LikertField(RadioField):
@@ -35,46 +35,82 @@ class LikertField(RadioField):
     pass
 
 
-class ActivityForm(Form):
+class ActivityAnswerForm(Form):
     """Form for rendering a general Activity. Mostly just for keeping track of
     render and submit time.
     """
     render_time = HiddenField()
     submit_time = HiddenField()
-
-
-class QuestionForm(ActivityForm):
-    """Form for rendering a general Question.
-    """
     submit = SubmitField("Submit")
     comment = TextAreaField()
 
-    def populate_from_question(self, question):
-        """Given a question, perform any processing necessary to display the
-        question - e.g. populate a list of choices, set field validators, etc.
+    def populate_from_assignment(self, assignment):
+        """Given an assignment, perform any processing necessary to display the
+        activity - e.g. populate a list of choices, set field validators, etc.
+
+        This will call ``populate_from_result`` as well as
+        ``populate_from_activity``, so it will stomp on any form data in this
+        form. This function is useful to call before rendering rather than
+        before validation.
+        """
+        if assignment.result:
+            self.populate_from_result(assignment.result)
+        self.populate_from_activity(assignment.activity)
+        self.comment.data = assignment.comment
+
+    def populate_from_activity(self, activity):
+        """Given an activity, populate defaults/validators/other things of that
+        nature.
+
+        This should not stomp on form data. This is called before validation to
+        ensure that user input meets validation requirements.
         """
         raise NotImplementedError
 
     def populate_from_result(self, result):
-        """Given a result, populate necessary defaults for this form.
+        """Given a result object, populate this form as necessary.
+
+        This will only be called if there is a result object associated with an
+        assignment.
         """
         raise NotImplementedError
+
+    def populate_assignment(self, assignment):
+        """Populate the given assignment based on this form.
+        """
+        assignment.comment = self.comment.data
+        result = self.result
+        result.assignment = assignment
 
     @property
     def result(self):
-        """Generate a Result record based on this form.
+        """Create a Result object based on this form's data.
         """
         raise NotImplementedError
 
 
-class IntegerAnswerForm(QuestionForm):
+class ScorecardAnswerForm(ActivityAnswerForm):
+    """Form to render when rendering a scorecard.
+    """
+    def populate_from_result(self, result):
+        pass
+
+    def populate_from_activity(self, activity):
+        pass
+
+    @property
+    def result(self):
+        return Result()
+
+
+class IntegerAnswerForm(ActivityAnswerForm):
     """Allow users to enter an integer as an answer.
     """
     integer = IntegerField()
 
-    def populate_from_question(self, question):
-        self.integer.validators = [NumberRange(question.lower_bound,
-                                               question.upper_bound)]
+    def populate_from_activity(self, activity):
+        self.integer.validators = [NumberRange(activity.lower_bound,
+                                               activity.upper_bound)]
 
     def populate_from_result(self, result):
         self.integer.default = result.integer
@@ -85,12 +121,12 @@ class IntegerAnswerForm(QuestionForm):
         return IntegerQuestionResult(integer=self.integer.data)
 
 
-class FreeAnswerForm(QuestionForm):
+class FreeAnswerForm(ActivityAnswerForm):
     """Form for rendering a free answer Question.
     """
     text = TextAreaField()
 
-    def populate_from_question(self, question):
+    def populate_from_activity(self, activity):
         pass
 
     def populate_from_result(self, result):
@@ -102,12 +138,12 @@ class FreeAnswerForm(QuestionForm):
         return FreeAnswerQuestionResult(text=self.text.data)
 
 
-class MultipleChoiceForm(QuestionForm):
+class MultipleChoiceAnswerForm(ActivityAnswerForm):
     """Form for rendering a multiple choice question with radio buttons.
     """
     choices = RadioField(validators=[DataRequired()], choices=[])
 
-    def populate_from_question(self, question):
+    def populate_from_activity(self, question):
         """Given a pool of choices, populate the choices field.
         """
         choices = []
@@ -131,15 +167,15 @@ class MultipleChoiceForm(QuestionForm):
             choice=Choice.query.get(self.choices.data))
 
 
-class ScaleForm(MultipleChoiceForm):
+class ScaleAnswerForm(MultipleChoiceAnswerForm):
     """Form for rendering a likert scale question.
     """
     choices = LikertField(validators=[DataRequired()])
 
-    def populate_from_question(self, question):
+    def populate_from_activity(self, activity):
         self.choices.choices = [(str(c.id),
                                  "{}<br />{}".format(c.label, c.choice))
-                                for c in question.choices]
+                                for c in activity.choices]
 
 
 class CreateExperimentForm(OrderFormMixin, ModelForm):

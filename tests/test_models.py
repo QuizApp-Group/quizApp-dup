@@ -13,7 +13,7 @@ from tests.factories import ExperimentFactory, ParticipantFactory, \
 from quizApp.models import AssignmentSet, Assignment, Role, Activity, \
     Question, Graph, MultipleChoiceQuestionResult, MultipleChoiceQuestion, \
     FreeAnswerQuestion, FreeAnswerQuestionResult, Result, \
-    IntegerQuestionResult, IntegerQuestion, Choice, Experiment
+    IntegerQuestionResult, IntegerQuestion, Choice, Scorecard, Experiment
 
 
 def test_db_rollback1():
@@ -305,3 +305,9 @@ def test_free_answer_question_is_correct():
     fa_result.text = "aaaa"
 
     assert fa_question.is_correct(fa_result)
+
+
+def test_scorecard_correct():
+    scorecard = Scorecard()
+
+    assert scorecard.is_correct(None)

@@ -7,41 +7,24 @@ from quizApp import models, db
 from tests import factories
 
 
-def test_question_form():
-    question_form = experiment_forms.QuestionForm()
+def test_activity_answer_form(client):
+    activity_answer_form = experiment_forms.ActivityAnswerForm()
 
     with pytest.raises(NotImplementedError):
-        question_form.populate_from_question(None)
+        activity_answer_form.populate_from_activity(None)
 
     with pytest.raises(NotImplementedError):
-        question_form.populate_from_result(None)
+        activity_answer_form.populate_from_result(None)
 
     with pytest.raises(NotImplementedError):
-        question_form.result
+        activity_answer_form.result
 
 
-def test_mc_question_form():
-    question_form = experiment_forms.MultipleChoiceForm()
-    question = models.Question()
-    choice = factories.ChoiceFactory()
-    question.choices.append(choice)
+def test_scorecard_answer_form(client):
+    form = experiment_forms.ScorecardAnswerForm()
 
-    question_form.populate_from_question(question)
-
-    assert question_form.choices.choices[0][1] == "{} - {}".format(
-        choice.label, choice.choice)
-
-    choice_label = choice.label
-    choice.label = ""
-    question_form.populate_from_question(question)
-
-    assert question_form.choices.choices[0][1] == choice.choice
-
-    choice.label = choice_label
-    choice.choice = ""
-    question_form.populate_from_question(question)
-
-    assert question_form.choices.choices[0][1] == choice.label
+    form.populate_from_result(None)  # noop
+    assert form.result
 
 
 def test_integer_answer_form(client):
@@ -51,7 +34,7 @@ def test_integer_answer_form(client):
     question.upper_bound = 5
     question.save()
 
-    form.populate_from_question(question)
+    form.populate_from_activity(question)
 
     form.integer.data = 6
 
@@ -63,18 +46,17 @@ def test_integer_answer_form(client):
 
     question.lower_bound = 2
     db.session.commit()
-    form.populate_from_question(question)
+    form.populate_from_activity(question)
 
     form.integer.data = 1
 
     assert not form.validate()
 
     result = models.IntegerQuestionResult(integer=4)
-
     form.populate_from_result(result)
+    form.integer.data = 4
 
     assert form.integer.default == result.integer
-
     assert form.result.integer == result.integer
 
 
@@ -82,12 +64,14 @@ def test_free_answer_form(client):
     form = experiment_forms.FreeAnswerForm()
     question = factories.FreeAnswerQuestionFactory()
 
-    form.populate_from_question(question)  # noop
+    form.populate_from_activity(question)  # noop
 
     result = models.FreeAnswerQuestionResult(text="foo")
 
     form.populate_from_result(result)
 
     assert form.text.default == result.text
+
+    form.text.data = result.text
 
     assert form.result.text == result.text

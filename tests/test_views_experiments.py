@@ -374,6 +374,31 @@ def test_read_assignment(client, users):
     assert assignment3.activity.question in data
 
 
+def test_read_scorecard(client, users):
+    login_participant(client)
+    participant = get_participant()
+    experiment = create_experiment(10, 1,
+                                   ["question_mc_singleselect", "scorecard"])
+    experiment.assignment_sets[0].participant = participant
+    experiment.assignment_sets[0].complete = False
+    experiment.save()
+
+    url = "/experiments/{}/assignment_sets/{}/assignments/".\
+        format(experiment.id, experiment.assignment_sets[0].id)
+
+    for i, assignment in enumerate(experiment.assignment_sets[0].assignments):
+        ass_url = url + str(assignment.id)
+
+        response = client.get(ass_url)
+        data = response.data.decode(response.charset)
+        assert response.status_code == 200
+
+        if i > 0:
+            assert "Previous" in data
+        if i < 9:
+            assert "Next" in data
+
+
 def test_update_assignment(client, users):
     login_participant(client)
     participant = get_participant()
@@ -411,6 +436,17 @@ def test_update_assignment(client, users):
     assert assignment.time_to_submit == time_to_submit
     assert json_success(response.data)
 
+    # Test bad response
+    response = client.patch(url,
+                            data={"choices": choice.id + 10}
+                            )
+
+    db.session.refresh(assignment)
+
+    assert response.status_code == 200
+    assert assignment.time_to_submit == time_to_submit
+    assert not json_success(response.data)
+
     # Test scorecards
     assignment.activity.scorecard_settings.display_scorecard = True
     db.session.commit()
@@ -444,11 +480,6 @@ def test_update_assignment(client, users):
                             )
     assert response.status_code == 400
     experiment.stop = datetime.now() + timedelta(days=1)
-
-    response = client.patch(url)
-
-    assert response.status_code == 200
-    assert not json_success(response.data)
 
     # Make sure participants can't see each others' stuff
     experiment3 = create_experiment(3, 1)

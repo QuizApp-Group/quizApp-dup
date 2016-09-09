@@ -12,10 +12,10 @@ from flask_security import login_required, current_user, roles_required
 
 from quizApp import db
 from quizApp.forms.experiments import CreateExperimentForm, \
-    get_question_form
+    get_answer_form
 from quizApp.views.common import ObjectCollectionView, ObjectView
 from quizApp.models import Experiment, Assignment, \
-    AssignmentSet, Activity, Participant
+    AssignmentSet, Participant
 from quizApp.views.helpers import validate_model_id, get_first_assignment
 from quizApp.views.activities import render_activity
 from quizApp.views.mturk import submit_assignment
@@ -170,7 +170,7 @@ def read_assignment(experiment_id, assignment_set_id, assignment_id):
             not assignment_set.complete:
         abort(400)
 
-    activity = validate_model_id(Activity, assignment.activity_id)
+    activity = assignment.activity
 
     read_function_mapping = {
         "question_mc_singleselect": read_question,
@@ -178,18 +178,56 @@ def read_assignment(experiment_id, assignment_set_id, assignment_id):
         "question_freeanswer": read_question,
         "question_mc_singleselect_scale": read_question,
         "question_integer": read_question,
+        "scorecard": read_scorecard,
     }
 
     return read_function_mapping[activity.type](experiment, assignment)
+
+
+def read_scorecard(experiment, assignment):
+    """Read an assignment that is a scorecard.
+    """
+    scorecard = assignment.activity
+    scorecard_form = get_answer_form(scorecard)
+    scorecard_form.populate_from_assignment(assignment)
+
+    assignment_set = assignment.assignment_set
+    this_index = assignment_set.assignments.index(assignment)
+
+    next_url = get_next_assignment_url(assignment_set, this_index)
+
+    previous_assignment = None
+
+    if this_index - 1 > -1 and not experiment.disable_previous:
+        previous_assignment = assignment_set.assignments[this_index - 1]
+
+    scorecard = assignment.activity
+    cumulative_score = assignment.assignment_set.score
+    rendered_scorecard = render_activity(scorecard, assignment_set.complete,
+                                         assignment_set, assignment,
+                                         this_index)
+
+    template_kwargs = {
+        "exp": experiment,
+        "assignment": assignment,
+        "next_url": next_url,
+        "cumulative_score": cumulative_score,
+        "experiment_complete": assignment_set.complete,
+        "previous_assignment": previous_assignment,
+        "rendered_scorecard": rendered_scorecard,
+        "scorecard_form": scorecard_form,
+    }
+
+    return render_template("experiments/read_scorecard.html",
+                           **template_kwargs)
 
 
 def read_question(experiment, assignment):
     """Common code for reading questions.
     """
     question = assignment.activity
-    question_form = get_question_form(question)
-    question_form.comment.data = assignment.comment
-    question_form.populate_from_question(question)
+    question_form = get_answer_form(question)
+    question_form.populate_from_assignment(assignment)
 
     assignment_set = assignment.assignment_set
     this_index = assignment_set.assignments.index(assignment)
@@ -199,9 +237,6 @@ def read_question(experiment, assignment):
 
     if not assignment_set.complete:
         # If the participant is not done, then save the choice order
-        choice_order = [c.id for c in question.choices]
-        assignment.choice_order = json.dumps(choice_order)
-        assignment.save()
         next_url = None
     else:
         # If the participant is done, have a link right to the next question
@@ -273,43 +308,26 @@ def update_assignment(experiment_id, assignment_set_id, assignment_id):
             assignment_set.assignments.index(assignment):
         abort(400)
 
+    activity_form = get_answer_form(assignment.activity, request.form)
+    activity_form.populate_from_activity(assignment.activity)
+
+    if not activity_form.validate():
+        return jsonify({"success": 0, "errors": activity_form.errors})
+
+    activity_form.populate_assignment(assignment)
+
     this_index = assignment_set.assignments.index(assignment)
-
-    update_function_mapping = {
-        "question_mc_singleselect": update_question_assignment,
-        "question_mc_multiselect": update_question_assignment,
-        "question_freeanswer": update_question_assignment,
-        "question_mc_singleselect_scale": update_question_assignment,
-        "question_integer": update_question_assignment,
-    }
-
-    return update_function_mapping[assignment.activity.type](assignment,
-                                                             this_index)
-
-
-def update_question_assignment(assignment, this_index):
-    """Common function for updating questions.
-    """
-    assignment_set = assignment.assignment_set
-    question = assignment.activity
-
-    question_form = get_question_form(question, request.form)
-    question_form.populate_from_question(question)
-
-    if not question_form.validate():
-        return jsonify({"success": 0, "errors": question_form.errors})
-
-    result = question_form.result
-    result.assignment = assignment
-    assignment.comment = question_form.comment.data
-    db.session.add(result)
-
     next_url = get_next_assignment_url(assignment_set, this_index)
 
     if this_index == assignment_set.progress:
         assignment_set.progress += 1
 
-    process_assignment(question_form, assignment, this_index)
+    # Record time to solve
+    if activity_form.render_time.data and activity_form.submit_time.data:
+        render_datetime = dateutil.parser.parse(activity_form.render_time.data)
+        submit_datetime = dateutil.parser.parse(activity_form.submit_time.data)
+        time_to_submit = submit_datetime - render_datetime
+        assignment.time_to_submit = time_to_submit
 
     db.session.commit()
 
@@ -324,22 +342,6 @@ def update_question_assignment(assignment, this_index):
         })
 
     return jsonify({"success": 1, "next_url": next_url})
-
-
-def process_assignment(activity_form, assignment, this_index):
-    """Do some assignment processing that's common across all Activity types,
-    but depends on the submission being valid.
-    """
-    assignment_set = assignment.assignment_set
-    if this_index == assignment_set.progress:
-        assignment_set.progress += 1
-
-    # Record time to solve
-    if activity_form.render_time.data and activity_form.submit_time.data:
-        render_datetime = dateutil.parser.parse(activity_form.render_time.data)
-        submit_datetime = dateutil.parser.parse(activity_form.submit_time.data)
-        time_to_submit = submit_datetime - render_datetime
-        assignment.time_to_submit = time_to_submit
 
 
 def get_next_assignment_url(assignment_set, current_index):
