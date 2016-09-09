@@ -371,6 +371,7 @@ def test_read_scorecard(client, users):
     experiment = create_experiment(3, 1,
                                    ["question_mc_singleselect", "scorecard"])
     experiment.assignment_sets[0].participant = participant
+    experiment.assignment_sets[0].complete = False
     experiment.save()
 
     url = "/experiments/{}/assignment_sets/{}/assignments/".\

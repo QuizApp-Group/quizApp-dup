@@ -103,6 +103,17 @@ def test_settings_scorecard(client, users):
     assert response.status_code == 200
 
 
+def test_render_scorecard(client, users):
+    login_experimenter(client)
+    scorecard = Scorecard()
+    scorecard.save()
+
+    url = "/activities/" + str(scorecard.id)
+    response = client.get(url)
+    data = response.data.decode(response.charset)
+    assert "How you did" in scorecard
+
+
 def test_update_activity(client, users):
     login_experimenter(client)
 
