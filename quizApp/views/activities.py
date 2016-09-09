@@ -11,7 +11,7 @@ from flask import Blueprint, render_template, url_for, jsonify, abort, request
 from flask_security import roles_required
 
 from quizApp.models import Activity, Dataset, Question, Choice
-from quizApp.forms.experiments import get_question_form
+from quizApp.forms.experiments import get_answer_form
 from quizApp.forms.activities import DatasetListForm,\
     ChoiceForm, get_activity_form, ActivityForm
 from quizApp.forms.common import DeleteObjectForm, ObjectTypeForm
@@ -141,8 +141,8 @@ def render_question(question, disabled=False, assignment=None,
         render_explanation (bool): If True, render the explanation for this
             question
     """
-    form = get_question_form(question)
-    form.populate_from_question(question)
+    form = get_answer_form(question)
+    form.populate_from_activity(question)
 
     try:
         form.populate_from_result(assignment.result)

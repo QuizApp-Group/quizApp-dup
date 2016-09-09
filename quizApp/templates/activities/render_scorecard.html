@@ -45,4 +45,9 @@
     </table>
   </div>
   {% endfor %}
+  {% if scorecard.needs_comment %}
+      <p>Do you notice any trends?</p>
+      {{ macros.render_field(form.comment, rows="5", disabled=disabled) }}
+      <br />
+  {% endif %}
 </div>

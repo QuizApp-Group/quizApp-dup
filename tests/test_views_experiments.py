@@ -368,7 +368,7 @@ def test_read_assignment(client, users):
 def test_read_scorecard(client, users):
     login_participant(client)
     participant = get_participant()
-    experiment = create_experiment(3, 1,
+    experiment = create_experiment(10, 1,
                                    ["question_mc_singleselect", "scorecard"])
     experiment.assignment_sets[0].participant = participant
     experiment.assignment_sets[0].complete = False
@@ -377,11 +377,17 @@ def test_read_scorecard(client, users):
     url = "/experiments/{}/assignment_sets/{}/assignments/".\
         format(experiment.id, experiment.assignment_sets[0].id)
 
-    for assignment in experiment.assignment_sets[0].assignments:
+    for i, assignment in enumerate(experiment.assignment_sets[0].assignments):
         ass_url = url + str(assignment.id)
 
         response = client.get(ass_url)
+        data = response.data.decode(response.charset)
         assert response.status_code == 200
+
+        if i > 0:
+            assert "Previous" in data
+        if i < 9:
+            assert "Next" in data
 
 
 def test_update_assignment(client, users):
@@ -446,11 +452,6 @@ def test_update_assignment(client, users):
 
     assert response.status_code == 200
     assert json_success(response.data)
-
-    response = client.patch(url)
-
-    assert response.status_code == 200
-    assert not json_success(response.data)
 
     # Make sure participants can't see each others' stuff
     experiment3 = create_experiment(3, 1)
