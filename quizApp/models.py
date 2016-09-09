@@ -401,6 +401,10 @@ class Activity(Base):
 
     type = db.Column(db.String(50), nullable=False)
     needs_comment = db.Column(db.Boolean(), info={"label": "Allow comments"})
+    include_in_scorecards = db.Column(
+        db.Boolean(), default=True,
+        info={"label": "Include this activity in any aggregate scorecards"})
+
     experiments = db.relationship("Experiment",
                                   secondary=activity_experiment_table,
                                   back_populates="activities",
@@ -663,7 +667,7 @@ class Choice(Base):
         points (int): How many points the Participant gets for picking this
             choice
     """
-    choice = db.Column(db.String(200), nullable=False,
+    choice = db.Column(db.String(200),
                        info={"label": "Choice"})
     label = db.Column(db.String(3),
                       info={"label": "Label"})

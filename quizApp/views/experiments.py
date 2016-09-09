@@ -203,7 +203,9 @@ def read_scorecard(experiment, assignment):
 
     scorecard = assignment.activity
     cumulative_score = assignment.assignment_set.score
-    rendered_scorecard = render_activity(scorecard, assignment_set, this_index)
+    rendered_scorecard = render_activity(scorecard, assignment_set.complete,
+                                         assignment_set, assignment,
+                                         this_index)
 
     template_kwargs = {
         "exp": experiment,

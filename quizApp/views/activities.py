@@ -109,10 +109,16 @@ def render_activity(activity, *args, **kwargs):
     return render_mapping[activity.type](activity, *args, **kwargs)
 
 
-def render_scorecard(scorecard, assignment_set=None, this_index=0):
+def render_scorecard(scorecard, disabled=False, assignment_set=None,
+                     assignment=None, this_index=0):
     """Render a scorecard. This is the central point of rendering for
     scorecards.
     """
+    form = get_answer_form(scorecard)
+
+    if assignment:
+        form.populate_from_assignment(assignment)
+
     if assignment_set:
         assignments = assignment_set.assignments[:this_index]
 
@@ -120,12 +126,16 @@ def render_scorecard(scorecard, assignment_set=None, this_index=0):
         scorecard_data = defaultdict(list)
 
         for assignment in assignments:
-            scorecard_data[assignment.activity.category].append(assignment)
+            if assignment.activity.include_in_scorecards:
+                scorecard_data[assignment.activity.category].append(assignment)
     else:
         scorecard_data = {}
 
     return render_template("activities/render_scorecard.html",
+                           assignment_set=assignment_set,
                            scorecard=scorecard,
+                           form=form,
+                           disabled=disabled,
                            scorecard_data=scorecard_data)
 
 
@@ -144,16 +154,8 @@ def render_question(question, disabled=False, assignment=None,
     form = get_answer_form(question)
     form.populate_from_activity(question)
 
-    try:
-        form.populate_from_result(assignment.result)
-    except AttributeError:
-        pass
-
-    try:
-        form.comment.default = assignment.comment
-        form.process()
-    except AttributeError:
-        pass
+    if assignment:
+        form.populate_from_assignment(assignment)
 
     template_mapping = {
         "question_mc_singleselect": "activities/render_mc_question.html",

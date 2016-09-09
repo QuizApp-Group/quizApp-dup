@@ -1,6 +1,5 @@
 """Forms for the Experiments blueprint.
 """
-
 from datetime import datetime
 
 from flask_wtf import Form
@@ -54,10 +53,10 @@ class ActivityAnswerForm(Form):
         form. This function is useful to call before rendering rather than
         before validation.
         """
-        self.comment.data = assignment.comment
         if assignment.result:
             self.populate_from_result(assignment.result)
         self.populate_from_activity(assignment.activity)
+        self.comment.data = assignment.comment
 
     def populate_from_activity(self, activity):
         """Given an activity, populate defaults/validators/other things of that

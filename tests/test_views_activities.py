@@ -222,10 +222,6 @@ def test_create_choice(client, users):
     assert initial_num_choices + 1 == len(updated_question.choices)
     assert choice.choice in [c.choice for c in updated_question.choices]
 
-    response = client.post(url)
-    assert response.status_code == 200
-    assert not json_success(response.data)
-
 
 def test_update_choice(client, users):
     login_experimenter(client)
@@ -247,10 +243,6 @@ def test_update_choice(client, users):
     assert updated_question.choices[0].choice == choice.choice
     assert updated_question.choices[0].label == choice.label
     assert updated_question.choices[0].correct == choice.correct
-
-    response = client.put(url)
-    assert response.status_code == 200
-    assert not json_success(response.data)
 
     unrelated_choice = ChoiceFactory()
     unrelated_choice.save()

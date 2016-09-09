@@ -17,7 +17,8 @@ class ActivityForm(OrderFormMixin, ModelForm):
         """Specify model and field order.
         """
         model = Activity
-        order = ('*', 'scorecard_settings', 'submit')
+        order = ('question', '*', 'needs_comment', 'include_in_scorecards',
+                 'scorecard_settings', 'submit')
 
     scorecard_settings = ModelFormField(ScorecardSettingsForm)
     submit = SubmitField("Save")
