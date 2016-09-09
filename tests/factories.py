@@ -43,6 +43,7 @@ class ActivityFactory(factory.Factory):
         model = models.Activity
 
     category = factory.Faker("text")
+    include_in_scorecards = factory.Faker('boolean')
 
 
 class QuestionFactory(ActivityFactory):

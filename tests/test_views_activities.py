@@ -113,6 +113,17 @@ def test_render_scorecard(client, users):
     data = response.data.decode(response.charset)
     assert "performance" in data
 
+    questions = factory.create_batch(FreeAnswerQuestionFactory, 10)
+    assignments = [Assignment(activity=question) for question in questions]
+    assignment_set = AssignmentSet(assignments=assignments)
+    scorecard = Scorecard()
+
+    rendered_sc = render_scorecard(scorecard, False, assignment_set, None, 9)
+
+    for assignment in assignments:
+        assert not assignment.activity.include_in_scorecards or \
+            assignment.id in rendered_sc
+
 
 def test_update_activity(client, users):
     login_experimenter(client)
