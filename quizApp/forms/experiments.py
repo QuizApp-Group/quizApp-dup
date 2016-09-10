@@ -140,7 +140,7 @@ class FreeAnswerForm(ActivityAnswerForm):
         return FreeAnswerQuestionResult(text=self.text.data)
 
 
-class ChoiceAnswerForm(ActivityAnswerForm):
+class ChoiceAnswerFormMixin(object):
     """Multiselect and singleselect questions both populate their choices in
     the same way, so this class serves as a base class to handle this.
     """
@@ -159,7 +159,7 @@ class ChoiceAnswerForm(ActivityAnswerForm):
         self.choices.choices = choices
 
 
-class MultiSelectAnswerForm(ChoiceAnswerForm):
+class MultiSelectAnswerForm(ChoiceAnswerFormMixin, ActivityAnswerForm):
     """Form for rendering a multiple choice question with check boxes.
     """
     choices = MultiCheckboxField(validators=[DataRequired()], choices=[])
@@ -174,7 +174,7 @@ class MultiSelectAnswerForm(ChoiceAnswerForm):
         return MultiSelectQuestionResult(choices=choices)
 
 
-class MultipleChoiceAnswerForm(ChoiceAnswerForm):
+class MultipleChoiceAnswerForm(ChoiceAnswerFormMixin, ActivityAnswerForm):
     """Form for rendering a multiple choice question with radio buttons.
     """
     choices = RadioField(validators=[DataRequired()], choices=[])
@@ -187,7 +187,6 @@ class MultipleChoiceAnswerForm(ChoiceAnswerForm):
     def result(self):
         return MultipleChoiceQuestionResult(
             choice=Choice.query.get(self.choices.data))
-
 
 
 class ScaleAnswerForm(MultipleChoiceAnswerForm):

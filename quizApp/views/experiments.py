@@ -1,7 +1,6 @@
 """Views that handle CRUD for experiments and rendering questions for
 participants.
 """
-import pdb
 from collections import defaultdict
 from datetime import datetime
 import json
@@ -294,7 +293,6 @@ def read_mc_question(_, assignment):
 def update_assignment(experiment_id, assignment_set_id, assignment_id):
     """Record a user's answer to this assignment
     """
-    pdb.set_trace()
     experiment, assignment_set, assignment = validate_assignment(
         experiment_id,
         assignment_set_id,
