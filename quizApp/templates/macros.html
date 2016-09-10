@@ -20,6 +20,8 @@
     {{ render_submit_field(field, label_visible, **kwargs) }}
   {% elif field.type == 'SelectField' %}
     {{ render_select_field(field, label_visible, **kwargs) }}
+  {% elif field.type == 'MultiCheckboxField' %}
+    {{ render_multi_checkbox_field(field, label_visible, **kwargs) }}
   {% elif field.type == 'DateTimeField' %}
     {{ render_date_time_field(field, label_visible, **kwargs) }}
   {% elif field.type == 'FileField' %}
@@ -56,6 +58,19 @@
 {% macro render_select_field(field, label_visible=true) -%}
 <div class="form-group {% if field.errors %}has-error{% endif %}">
 {{ field(class_="form-control", **kwargs) }}
+</div>
+{% endmacro %}
+
+{% macro render_multi_checkbox_field(field, label_visible=true) -%}
+<div class="form-group{% if field.errors %}has-error{% endif %}">
+  {% for choice in field %}
+  <div class="checkbox">
+    <label>
+    {{ choice(**kwargs) }}
+    {{ choice.label.text }}
+    </label>
+  </div>
+  {% endfor %}
 </div>
 {% endmacro %}
 
@@ -280,4 +295,3 @@
   </div>
 </div>
 {% endmacro %}
-

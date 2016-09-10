@@ -333,7 +333,7 @@ class MultipleChoiceQuestionResult(Result):
     """The Choice that a Participant picked in a MultipleChoiceQuestion.
     """
     choice_id = db.Column(db.Integer, db.ForeignKey("choice.id"))
-    choice = db.relationship("Choice", back_populates="results")
+    choice = db.relationship("Choice")
 
     @db.event.listens_for(Result.assignment, "set", propagate=True)
     def validate_choice(self, value, *_):
@@ -350,6 +350,31 @@ class MultipleChoiceQuestionResult(Result):
 
     __mapper_args__ = {
         "polymorphic_identity": "mc_question_result",
+    }
+
+
+result_choice_table = db.Table(
+    'result_choice', db.metadata,
+    db.Column("choice_id", db.Integer, db.ForeignKey('choice.id')),
+    db.Column("result_id", db.Integer, db.ForeignKey('result.id')),
+)
+
+
+class MultiSelectQuestionResult(Result):
+    """The Choices that a Participant picked in a MultiSelectQuestion.
+    """
+    choices = db.relationship("Choice", secondary=result_choice_table)
+
+    @db.event.listens_for(Result.assignment, "set", propagate=True)
+    def validate_choice(self, value, *_):
+        """Make sure this Choice is a valid option for this Question.
+        """
+        if self.type == "multiselect_question_result":
+            for choice in self.choices:
+                assert choice in value.activity.choices
+
+    __mapper_args__ = {
+        "polymorphic_identity": "multiselect_question_result",
     }
 
 
@@ -610,6 +635,10 @@ class SingleSelectQuestion(MultipleChoiceQuestion):
 class MultiSelectQuestion(MultipleChoiceQuestion):
     """A MultiSelectQuestion allows any number of Choices to be selected.
     """
+    class Meta(object):
+        """Define what kind of Result we are looking for.
+        """
+        result_class = MultiSelectQuestionResult
 
     __mapper_args__ = {
         'polymorphic_identity': 'question_mc_multiselect',
@@ -679,9 +708,6 @@ class Choice(Base):
 
     question_id = db.Column(db.Integer, db.ForeignKey("activity.id"))
     question = db.relationship("Question", back_populates="choices")
-
-    results = db.relationship("MultipleChoiceQuestionResult",
-                              back_populates="choice")
 
 
 class MediaItem(Base):

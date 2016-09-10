@@ -8,9 +8,11 @@ from wtforms.fields.html5 import IntegerField
 from wtforms.validators import DataRequired, NumberRange
 from wtforms_alchemy import ModelForm, ModelFormField
 
-from quizApp.forms.common import OrderFormMixin, ScorecardSettingsForm
+from quizApp.forms.common import OrderFormMixin, ScorecardSettingsForm, \
+    MultiCheckboxField
 from quizApp.models import Experiment, MultipleChoiceQuestionResult, \
-    IntegerQuestionResult, FreeAnswerQuestionResult, Choice, Result
+    IntegerQuestionResult, FreeAnswerQuestionResult, Choice, Result, \
+    MultiSelectQuestionResult
 
 
 def get_answer_form(activity, data=None):
@@ -19,7 +21,7 @@ def get_answer_form(activity, data=None):
     """
     form_mapping = {
         "question_mc_singleselect": MultipleChoiceAnswerForm,
-        "question_mc_multiselect": MultipleChoiceAnswerForm,
+        "question_mc_multiselect": MultiSelectAnswerForm,
         "question_freeanswer": FreeAnswerForm,
         "question_integer": IntegerAnswerForm,
         "question_mc_singleselect_scale": ScaleAnswerForm,
@@ -138,11 +140,10 @@ class FreeAnswerForm(ActivityAnswerForm):
         return FreeAnswerQuestionResult(text=self.text.data)
 
 
-class MultipleChoiceAnswerForm(ActivityAnswerForm):
-    """Form for rendering a multiple choice question with radio buttons.
+class ChoiceAnswerForm(ActivityAnswerForm):
+    """Multiselect and singleselect questions both populate their choices in
+    the same way, so this class serves as a base class to handle this.
     """
-    choices = RadioField(validators=[DataRequired()], choices=[])
-
     def populate_from_activity(self, question):
         """Given a pool of choices, populate the choices field.
         """
@@ -157,6 +158,27 @@ class MultipleChoiceAnswerForm(ActivityAnswerForm):
             choices.append((str(choice.id), label))
         self.choices.choices = choices
 
+
+class MultiSelectAnswerForm(ChoiceAnswerForm):
+    """Form for rendering a multiple choice question with check boxes.
+    """
+    choices = MultiCheckboxField(validators=[DataRequired()], choices=[])
+
+    def populate_from_result(self, result):
+        self.choices.default = [str(c.id) for c in result.choices]
+        self.process()
+
+    @property
+    def result(self):
+        choices = [Choice.query.get(c) for c in self.choices.data]
+        return MultiSelectQuestionResult(choices=choices)
+
+
+class MultipleChoiceAnswerForm(ChoiceAnswerForm):
+    """Form for rendering a multiple choice question with radio buttons.
+    """
+    choices = RadioField(validators=[DataRequired()], choices=[])
+
     def populate_from_result(self, result):
         self.choices.default = str(result.choice.id)
         self.process()
@@ -165,6 +187,7 @@ class MultipleChoiceAnswerForm(ActivityAnswerForm):
     def result(self):
         return MultipleChoiceQuestionResult(
             choice=Choice.query.get(self.choices.data))
+
 
 
 class ScaleAnswerForm(MultipleChoiceAnswerForm):
