@@ -76,6 +76,7 @@ def test_free_answer_form(client):
 
     assert form.result.text == result.text
 
+
 def test_multiselect_answer_form(client):
     form = experiment_forms.MultiSelectAnswerForm()
 
