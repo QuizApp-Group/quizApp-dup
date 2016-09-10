@@ -75,3 +75,27 @@ def test_free_answer_form(client):
     form.text.data = result.text
 
     assert form.result.text == result.text
+
+def test_multiselect_answer_form(client):
+    form = experiment_forms.MultiSelectAnswerForm()
+
+    choice1 = factories.ChoiceFactory()
+    choice2 = factories.ChoiceFactory()
+    choice3 = factories.ChoiceFactory()
+    choice1.save()
+    choice2.save()
+    choice3.save()
+
+    result = models.MultiSelectQuestionResult()
+    result.choices = [choice1, choice2]
+
+    form.populate_from_result(result)
+
+    for choice in result.choices:
+        assert str(choice.id) in form.choices.default
+
+    form.choices.data = [str(choice1.id), str(choice2.id)]
+    form_result = form.result
+
+    assert choice1 in form_result.choices
+    assert choice2 in form_result.choices
