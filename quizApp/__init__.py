@@ -49,6 +49,7 @@ def create_app(config_name, overrides=None):
     # Workaround for flask-security bug #383
     security.datastore = user_datastore
     security.app = app
+    ma.init_app(app)
 
     # Register all necessary blueprints
     from quizApp.views.activities import activities
