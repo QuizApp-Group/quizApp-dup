@@ -3,12 +3,12 @@
 from __future__ import print_function
 from __future__ import unicode_literals
 from flask import Flask
-from flask_wtf.csrf import CsrfProtect
-from flask_sqlalchemy import SQLAlchemy
-from flask_security import Security, SQLAlchemyUserDatastore
-from flask_migrate import Migrate
 from flask_mail import Mail
+from flask_migrate import Migrate
+from flask_security import Security, SQLAlchemyUserDatastore
 from flask_security.signals import user_registered
+from flask_sqlalchemy import SQLAlchemy
+from flask_wtf.csrf import CsrfProtect
 
 from quizApp import config
 
@@ -61,11 +61,14 @@ def create_app(config_name, overrides=None):
     app.register_blueprint(mturk)
     app.register_blueprint(filters)
 
-    user_registered.connect(apply_user_role, app)
+    user_registered.connect(apply_default_user_role, app)
 
     return app
 
-def apply_user_role(app, user, confirm_token):
+
+def apply_default_user_role(_, user, __):
+    """When a new user is registered, make them a participant.
+    """
     user.type = "participant"
     security.datastore.add_role_to_user(user, "participant")
     db.session.commit()
