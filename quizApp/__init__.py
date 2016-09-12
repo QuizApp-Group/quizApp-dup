@@ -8,6 +8,8 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_security import Security, SQLAlchemyUserDatastore
 from flask_migrate import Migrate
 from flask_mail import Mail
+from flask_security.signals import user_registered
+
 from quizApp import config
 
 
@@ -59,4 +61,11 @@ def create_app(config_name, overrides=None):
     app.register_blueprint(mturk)
     app.register_blueprint(filters)
 
+    user_registered.connect(apply_user_role, app)
+
     return app
+
+def apply_user_role(app, user, confirm_token):
+    user.type = "participant"
+    security.datastore.add_role_to_user(user, "participant")
+    db.session.commit()
