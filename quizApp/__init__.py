@@ -2,7 +2,6 @@
 """
 from __future__ import print_function
 from __future__ import unicode_literals
-import pdb
 from flask import Flask
 from flask_mail import Mail
 from flask_migrate import Migrate

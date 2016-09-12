@@ -1,7 +1,6 @@
 """Tests for core views.
 """
 from __future__ import unicode_literals
-import pdb
 
 from flask_security.signals import user_registered
 
