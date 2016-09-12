@@ -14,10 +14,9 @@ class Config(object):
     DEBUG = False
     EXPERIMENTS_PLACEHOLDER_GRAPH = "missing.png"
     GRAPH_DIRECTORY = "graphs"
-    SECRET_KEY = "---"
-    SECURITY_PASSWORD_SALT = "---"
     SECURITY_POST_LOGIN_VIEW = "core.post_login"
     SECURITY_REGISTERABLE = True
+    SECURITY_CHANGEABLE = True
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     TESTING = False
     WTF_CSRF_ENABLED = True
@@ -41,6 +40,8 @@ class Development(Config):
     SECURITY_SEND_REGISTER_EMAIL = False
     SQLALCHEMY_ECHO = True
     SECURITY_PASSWORD_HASH = "bcrypt"
+    SECRET_KEY = "---"
+    SECURITY_PASSWORD_SALT = "---"
 
 
 class Testing(Config):
@@ -50,7 +51,8 @@ class Testing(Config):
     TESTING = True
     WTF_CSRF_ENABLED = False
     SQLALCHEMY_DATABASE_URI = "mysql://quizapp:foobar@localhost/quizapp_test"
-    SECRET_KEY = "Foobar"
+    SECRET_KEY = "---"
+    SECURITY_PASSWORD_SALT = "---"
 
 
 configs = {
