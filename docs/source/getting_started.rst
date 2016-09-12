@@ -81,6 +81,14 @@ if you do not modify the database username and password.**
     Keep this in mind when you see other commands using ``manage.py``.
 
 
+Creating a user
+===============
+
+You will need to create a user to work with QuizApp. Full details are available
+on :ref:`managing_users`, but your command should look something like this::
+
+    ./manage.py create-user --username experimenter --password password --role experimenter
+
 Running QuizApp
 ===============
 
