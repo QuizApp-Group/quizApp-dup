@@ -75,7 +75,6 @@ def test_assignment_set_validators():
         assignment_set.assignments.append(assignment)
 
     activity = Activity()
-    exp2.activities.append(activity)
     assignment.activity = activity
     assignment_set.participant = part2
 
@@ -95,8 +94,6 @@ def test_assignment_validators():
     question = Question()
     question.num_media_items = -1
 
-    question.experiments.append(exp)
-
     assn.activity = question
     result = MultipleChoiceQuestionResult()
     result.choice = choice
@@ -110,7 +107,6 @@ def test_assignment_validators():
 
     # Test the media item number validations
     question2 = QuestionFactory()
-    question2.experiments.append(exp)
     question2.num_media_items == len(assn.media_items) + 1
 
     with pytest.raises(AssertionError):
@@ -136,7 +132,6 @@ def test_result_validators():
 
     experiment = ExperimentFactory()
     assignment.experiment = experiment
-    mc_question.experiments.append(experiment)
 
     assignment.activity = mc_question
 
@@ -148,7 +143,6 @@ def test_result_validators():
 
     assignment = Assignment()
     assignment.experiment = experiment
-    mc_question.experiments.append(experiment)
     assignment.activity = mc_question
 
     with pytest.raises(AssertionError):
@@ -156,7 +150,6 @@ def test_result_validators():
 
     assignment = Assignment()
     assignment.experiment = experiment
-    fa_question.experiments.append(experiment)
     assignment.activity = fa_question
 
     with pytest.raises(AssertionError):
