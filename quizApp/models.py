@@ -180,16 +180,11 @@ class AssignmentSet(Base):
         """The Assignments in this model must be related to the same Experiment
         as this model is."""
         assert assignment.participant == self.participant
-        assert assignment.activity in self.experiment.activities or \
-            not assignment.activity
         return assignment
 
     def import_dict(self, **kwargs):
-        assignments = kwargs.get("assignments", [])
         experiment = kwargs.pop("experiment")
         self.experiment = experiment
-        for assignment in assignments:
-            experiment.activities.append(assignment.activity)
 
         super(AssignmentSet, self).import_dict(**kwargs)
 
@@ -388,13 +383,6 @@ class FreeAnswerQuestionResult(Result):
     }
 
 
-activity_experiment_table = db.Table(
-    "activity_experiment", db.metadata,
-    db.Column("activity_id", db.Integer, db.ForeignKey('activity.id')),
-    db.Column('experiment_id', db.Integer, db.ForeignKey('experiment.id'))
-)
-
-
 class Activity(Base):
     """An Activity is essentially a screen that a User sees while doing an
     Experiment. It may be an instructional screen or show a Question, or do
@@ -430,11 +418,6 @@ class Activity(Base):
         db.Boolean(), default=True,
         info={"label": "Include this activity in any aggregate scorecards"})
 
-    experiments = db.relationship("Experiment",
-                                  secondary=activity_experiment_table,
-                                  back_populates="activities",
-                                  info={"import_include": False})
-
     assignments = db.relationship("Assignment", back_populates="activity",
                                   cascade="all")
     category = db.Column(db.String(100), info={"label": "Category"})
@@ -467,17 +450,6 @@ class Activity(Base):
         None.
         """
         pass
-
-    def import_dict(self, **kwargs):
-        """If we are setting assignments, we need to update experiments to
-        match.
-        """
-        if "experiments" not in kwargs:
-            assignments = kwargs.pop("assignments")
-            for assignment in assignments:
-                self.assignments.append(assignment)
-
-        super(Activity, self).import_dict(**kwargs)
 
     __mapper_args__ = {
         'polymorphic_identity': 'activity',
@@ -862,11 +834,6 @@ class Experiment(Base):
                                                  "activity")})
     show_timers = db.Column(db.Boolean,
                             info={"label": "Show timers on activities"})
-
-    activities = db.relationship("Activity",
-                                 secondary=activity_experiment_table,
-                                 back_populates="experiments",
-                                 info={"import_include": False})
 
     assignment_sets = db.relationship("AssignmentSet",
                                       back_populates="experiment",
