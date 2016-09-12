@@ -63,6 +63,9 @@
             <li role="presentation">
               <a href="{{ url_for('security.logout') }}">Logout</a>
             </li>
+            <li role="presentation">
+              <a href="{{ url_for('security.change_password') }}">Change password</a>
+            </li>
             {% else %}
             <li role="presentation" class="active">
               <a href="{{ url_for('security.login') }}">Login</a>
