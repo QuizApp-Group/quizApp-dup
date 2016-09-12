@@ -1,16 +1,14 @@
-[![codecov](https://codecov.io/gh/PlasmaSheep/quizApp/branch/develop/graph/badge.svg)](https://codecov.io/gh/PlasmaSheep/quizApp)
+[![codecov](https://codecov.io/gh/QuizApp-Group/quizApp/branch/develop/graph/badge.svg)](https://codecov.io/gh/QuizApp-Group/quizApp)
 [![Documentation Status](https://readthedocs.org/projects/quizapp/badge/?version=latest)](http://quizapp.readthedocs.io/en/latest/?badge=latest)
 
 
-Platform for asking questions based on visualizations.
+Platform for running experiments centered around stimuli and responses.
+
+Initially based on [cmgerber/quizApp](https://github.com/cmgerber/quizApp).
 
 ## Installation
 
-    pip install -r requirements.txt
-    ./manage.py create-db
-    ./manage.py poplate-db
-
-For more detailed installation instructions, check out the
+Check out the
 [documentation](https://quizapp.readthedocs.io/en/latest/getting_started.html).
 
 ## Running
