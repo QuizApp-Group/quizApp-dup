@@ -2,6 +2,7 @@
 """
 from __future__ import print_function
 from __future__ import unicode_literals
+import pdb
 from flask import Flask
 from flask_mail import Mail
 from flask_migrate import Migrate
@@ -66,7 +67,7 @@ def create_app(config_name, overrides=None):
     return app
 
 
-def apply_default_user_role(_, user, __):
+def apply_default_user_role(_, user, **__):
     """When a new user is registered, make them a participant.
     """
     user.type = "participant"

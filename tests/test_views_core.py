@@ -1,6 +1,9 @@
 """Tests for core views.
 """
 from __future__ import unicode_literals
+import pdb
+
+from flask_security.signals import user_registered
 
 from quizApp import models
 from tests.auth import login_experimenter, login_participant
@@ -52,3 +55,18 @@ def test_auto_register(client, users):
     assert response.status_code == 200
     assert experiment.blurb in data
     assert models.Participant.query.count() == 1 + initial_num_users
+
+
+def test_apply_default_role(app, users):
+    user = factories.UserFactory()
+    user.save()
+    initial_part_count = models.Participant.query.count()
+    initial_user_count = models.User.query.count()
+    user_registered.send(app, user=user, confirm_token="foobar")
+
+    assert models.User.query.count() == initial_user_count
+    assert models.Participant.query.count() == initial_part_count + 1
+
+    participant = models.Participant.query.filter_by(email=user.email).one()
+
+    assert participant.id == user.id

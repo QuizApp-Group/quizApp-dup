@@ -19,6 +19,12 @@ class ExperimentFactory(factory.Factory):
     start = datetime.now() - timedelta(days=5)
     stop = datetime.now() + timedelta(days=5)
 
+class UserFactory(factory.Factory):
+    class Meta(object):
+        model = models.User
+
+    email = factory.Faker('email')
+    password = factory.Faker('password')
 
 class ParticipantFactory(factory.Factory):
     class Meta(object):
