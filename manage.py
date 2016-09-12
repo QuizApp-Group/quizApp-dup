@@ -9,11 +9,14 @@ from flask.cli import FlaskGroup
 from sqlalchemy import create_engine
 from sqlalchemy.engine.url import make_url, URL
 from sqlalchemy.exc import OperationalError
+from flask_security.utils import encrypt_password
 import click
 import sqlalchemy_utils
 
 from quizApp import create_app
 from quizApp import db
+from quizApp import models
+from quizApp import security
 from scripts import populate_db, post_hits
 
 
@@ -135,6 +138,40 @@ def run_post_hits(max_assignments, duration, keywords, description, title,
     keywords_list = keywords.split(",")
     post_hits.post_hits(max_assignments, duration, keywords_list, description,
                         title, experiment_id, reward, live)
+
+
+@cli.command("create-user")
+@click.option("--role", help=("Role of the user to create"))
+@click.option("--password", help=("Password of the user to create"))
+@click.option("--email", help=("Email of the user to create"))
+def create_user(email, password, role):
+    """Create the specified user.
+    """
+    if role == "participant":
+        user = models.Participant()
+    else:
+        user = models.User()
+
+    user.email = email
+    user.password = encrypt_password(password)
+    security.datastore.add_role_to_user(user, role)
+    security.datastore.activate_user(user)
+    user.save()
+
+    print("User created successfully. ID is: {}".format(user.id))
+
+
+@cli.command("delete-user")
+@click.option("--email", help=("Email of the user to delete"))
+def delete_user(email):
+    """Delete the specified user.
+    """
+    user = security.datastore.find_user(email=email)
+    user_id = user.id
+    security.datastore.delete_user(user)
+    db.session.commit()
+
+    print("User deleted successfully. ID was: {}".format(user_id))
 
 
 @cli.command("populate-db")
