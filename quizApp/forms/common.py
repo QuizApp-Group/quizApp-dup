@@ -6,6 +6,9 @@ from flask_wtf import Form
 from wtforms import SubmitField, SelectMultipleField, SelectField
 from wtforms.validators import DataRequired
 from wtforms.widgets.core import CheckboxInput, ListWidget
+from wtforms_alchemy import ModelForm
+
+from quizApp.models import ScorecardSettings
 
 
 class MultiCheckboxField(SelectMultipleField):
@@ -20,6 +23,7 @@ class ListObjectForm(Form):
     """
     objects = MultiCheckboxField(validators=[DataRequired()])
     submit = SubmitField("Submit")
+    objects_mapping = {}
 
     def reset_objects(self):
         """Sometimes choices have to be reset.
@@ -33,18 +37,16 @@ class ListObjectForm(Form):
         if not self.objects.choices:
             self.objects.choices = []
 
-        objects_mapping = {}
+        self.objects_mapping = {}
 
         for obj in object_pool:
-            objects_mapping[str(obj.id)] = obj
+            self.objects_mapping[str(obj.id)] = obj
             self.get_choice_tuple(obj)
 
-        return objects_mapping
-
     def get_choice_tuple(self, obj):
-        """Get a tuple for the choices of objects.
+        """Populate the list of choices with the appropriate tuple.
         """
-        self.objects.choices.append((str(obj.id), obj.id))
+        raise NotImplementedError
 
 
 class DeleteObjectForm(Form):
@@ -58,13 +60,13 @@ class ObjectTypeForm(Form):
     """Select an object type from a drop down menu.
     """
     object_type = SelectField("Type")
-    submit = SubmitField("Submit")
+    submit = SubmitField("Create")
 
     def populate_object_type(self, mapping):
         """Given a mapping of object types to human readable names, populate
         the object_type field.
         """
-        self.object_type.choices = [(k, v) for k, v in mapping.iteritems()]
+        self.object_type.choices = [(k, v) for k, v in mapping.items()]
 
 
 class OrderFormMixin(object):
@@ -96,3 +98,12 @@ class OrderFormMixin(object):
                 visited.add(field_name)
 
         self._fields = new_fields
+
+
+class ScorecardSettingsForm(ModelForm):
+    """Form for rendering scorecard options.
+    """
+    class Meta(object):
+        """Specify model.
+        """
+        model = ScorecardSettings

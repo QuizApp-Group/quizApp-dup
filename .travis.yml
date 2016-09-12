@@ -1,15 +1,21 @@
 language: python
 
+cache: pip
+
+python:
+    - "2.7"
+    - "3.5"
+
 addons:
     mariadb: '10.1'
     ssh_known_hosts: 104.236.112.220
 
 install:
-    - mysql -u root < setup_db.sql
     - pip install -r requirements.txt
+    - ./manage.py --config testing create-db -u root
 
 script:
-    - ./runtests.py
+    - ./manage.py test
     - make -C docs/ html
 
 before_install:

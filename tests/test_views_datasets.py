@@ -1,5 +1,7 @@
 """Tests for dataset views.
 """
+from __future__ import unicode_literals
+from builtins import str
 import factory
 
 from werkzeug.datastructures import FileStorage
@@ -20,9 +22,10 @@ def test_read_datasets(client, users):
     db.session.commit()
 
     response = client.get("/datasets/")
+    data = response.data.decode(response.charset)
     assert response.status_code == 200
     for dataset in datasets:
-        assert dataset.name in response.data
+        assert dataset.name in data
 
 
 def test_create_dataset(client, users):
@@ -33,7 +36,7 @@ def test_create_dataset(client, users):
     dataset = DatasetFactory()
 
     response = client.post("/datasets/", data={"name": dataset.name,
-                                               "uri": dataset.uri})
+                                               "info": dataset.info})
 
     assert response.status_code == 200
     assert json_success(response.data)
@@ -42,7 +45,7 @@ def test_create_dataset(client, users):
     created_dataset = Dataset.query.one()
 
     assert created_dataset.name == dataset.name
-    assert created_dataset.uri == dataset.uri
+    assert created_dataset.info == dataset.info
 
     response = client.post("/datasets/")
 
@@ -50,8 +53,9 @@ def test_create_dataset(client, users):
     assert not json_success(response.data)
 
     response = client.get("/datasets/")
+    data = response.data.decode(response.charset)
     assert response.status_code == 200
-    assert dataset.name in response.data
+    assert dataset.name in data
 
 
 def test_update_dataset(client, users):
@@ -63,13 +67,14 @@ def test_update_dataset(client, users):
     url = "/datasets/" + str(dataset.id)
 
     response = client.put(url, data={"name": new_dataset.name,
-                          "uri": new_dataset.uri})
+                          "info": new_dataset.info})
     assert response.status_code == 200
     assert json_success(response.data)
 
     response = client.get("/datasets/")
+    data = response.data.decode(response.charset)
     assert response.status_code == 200
-    assert new_dataset.name in response.data
+    assert new_dataset.name in data
 
     response = client.put(url)
     assert response.status_code == 200
@@ -88,8 +93,9 @@ def test_delete_dataset(client, users):
     assert json_success(response.data)
 
     response = client.get("/datasets/")
+    data = response.data.decode(response.charset)
     assert response.status_code == 200
-    assert dataset.name not in response.data
+    assert dataset.name not in data
 
 
 def test_create_media_item(client, users):
@@ -108,8 +114,9 @@ def test_create_media_item(client, users):
     assert json_success(response.data)
 
     response = client.get(url + "/settings")
+    data = response.data.decode(response.charset)
     assert response.status_code == 200
-    assert graph.type in response.data
+    assert graph.type in data
 
     db.session.refresh(dataset)
 
@@ -177,8 +184,9 @@ def test_settings_media_item(client, users):
            "/settings")
 
     response = client.get(url)
+    data = response.data.decode(response.charset)
     assert response.status_code == 200
-    assert graph.name in response.data
+    assert graph.name in data
 
     unrelated_graph = GraphFactory()
     unrelated_graph.save()
@@ -224,26 +232,18 @@ def test_update_media_item(client, users):
 
     url = "/datasets/" + str(dataset.id) + "/media_items/" + str(graph.id)
 
-    """
-    graph_form = GraphForm()
-    graph_mock.set_spec(graph_form.graph)
-    attrs = {"data": ""}
-    graph_mock.configure_mock(**attrs)
-    """
-
     with mock.patch("quizApp.views.datasets.GraphForm") as GraphFormMock:
-        graph_form_mock = mock.MagicMock(spec_set=GraphForm(),
-                                         name="graph_form_mock")
         file_storage_mock = mock.MagicMock(spec_set=FileStorage())
         file_storage_mock.configure_mock(filename="foo.png")
 
-        attrs = {"graph.data": file_storage_mock}
-        graph_form_mock.configure_mock(**attrs)
+        graph_form = GraphForm()
+        graph_form.path.data = file_storage_mock
 
-        GraphFormMock.configure_mock(return_value=graph_form_mock)
+        GraphFormMock.configure_mock(return_value=graph_form)
 
         response = client.put(url,
-                              data={"graph": open("tests/data/graph.png")})
+                              data={"graph": open("tests/data/graph.png",
+                                                  "rb")})
         assert response.status_code == 200
         assert json_success(response.data)
         assert file_storage_mock.save.called_once()
@@ -255,7 +255,8 @@ def test_update_media_item(client, users):
             db.session.refresh(graph)
             file_storage_mock.reset_mock()
             response = client.put(url,
-                                  data={"graph": open("tests/data/graph.png")})
+                                  data={"graph": open("tests/data/graph.png",
+                                                      "rb")})
             assert response.status_code == 200
             assert json_success(response.data)
             assert file_storage_mock.save.called_once()

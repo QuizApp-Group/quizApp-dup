@@ -1,0 +1,19 @@
+{% if scorecard_settings.display_correctness %}
+  <p>
+  {% if assignment.correct %}
+  Correct!
+  {% else %}
+  Incorect!
+  </p>
+{% endif %}
+{% endif %}
+{% if scorecard_settings.display_score %}
+<p>You earned {{ assignment.score }} points.</p>
+{% endif %}
+{% if scorecard_settings.display_time %}
+<p>You took {{ assignment.time_to_submit }} to answer the question.</p>
+{% endif %}
+{% if scorecard_settings.display_feedback %}
+<p>{{ assignment.activity.explanation }}</p>
+{% endif %}
+<a href="{{ next_url }}" role="button" class="btn btn-primary">Continue</a>

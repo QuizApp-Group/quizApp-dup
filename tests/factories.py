@@ -1,5 +1,8 @@
 """Various factories, useful for writing less boilerplate when testing.
 """
+from __future__ import unicode_literals
+from builtins import range
+from builtins import object
 import random
 
 import factory
@@ -8,17 +11,17 @@ from datetime import datetime, timedelta
 
 
 class ExperimentFactory(factory.Factory):
-    class Meta:
+    class Meta(object):
         model = models.Experiment
 
     name = factory.Faker('name')
     blurb = factory.Faker('text')
-    start = datetime.now()
+    start = datetime.now() - timedelta(days=5)
     stop = datetime.now() + timedelta(days=5)
 
 
 class ParticipantFactory(factory.Factory):
-    class Meta:
+    class Meta(object):
         model = models.Participant
 
     email = factory.Faker('email')
@@ -26,23 +29,25 @@ class ParticipantFactory(factory.Factory):
 
 
 class ChoiceFactory(factory.Factory):
-    class Meta:
+    class Meta(object):
         model = models.Choice
 
     choice = factory.Faker('text')
     label = factory.Iterator(['a', 'b', 'c', 'd'])
     correct = factory.Faker("boolean")
+    points = factory.Faker('pyint')
 
 
 class ActivityFactory(factory.Factory):
-    class Meta:
+    class Meta(object):
         model = models.Activity
 
     category = factory.Faker("text")
+    include_in_scorecards = factory.Faker('boolean')
 
 
 class QuestionFactory(ActivityFactory):
-    class Meta:
+    class Meta(object):
         model = models.Question
 
     question = factory.Faker("text")
@@ -54,7 +59,7 @@ class QuestionFactory(ActivityFactory):
         if len(self.choices):
             return
 
-        for i in xrange(0, 4):
+        for i in range(0, 4):
             self.choices.append(ChoiceFactory())
 
     @factory.post_generation
@@ -62,22 +67,32 @@ class QuestionFactory(ActivityFactory):
         if len(self.datasets):
             return
 
-        for i in xrange(0, 4):
+        for i in range(0, 4):
             self.datasets.append(DatasetFactory())
 
 
+class FreeAnswerQuestionFactory(QuestionFactory):
+    class Meta(object):
+        model = models.FreeAnswerQuestion
+
+
+class IntegerQuestionFactory(QuestionFactory):
+    class Meta(object):
+        model = models.IntegerQuestion
+
+
 class SingleSelectQuestionFactory(QuestionFactory):
-    class Meta:
+    class Meta(object):
         model = models.SingleSelectQuestion
 
 
 class ScaleQuestionFactory(QuestionFactory):
-    class Meta:
+    class Meta(object):
         model = models.ScaleQuestion
 
 
 class AssignmentFactory(factory.Factory):
-    class Meta:
+    class Meta(object):
         model = models.Assignment
 
     skipped = factory.Faker("boolean")
@@ -85,62 +100,66 @@ class AssignmentFactory(factory.Factory):
     choice_order = factory.Faker("text")
 
 
-class ParticipantExperimentFactory(factory.Factory):
-    class Meta:
-        model = models.ParticipantExperiment
+class AssignmentSetFactory(factory.Factory):
+    class Meta(object):
+        model = models.AssignmentSet
 
     progress = factory.Faker("pyint")
     complete = factory.Faker("boolean")
 
 
 class MediaItemFactory(factory.Factory):
-    class Meta:
+    class Meta(object):
         model = models.MediaItem
 
     name = factory.Faker("text", max_nb_chars=100)
 
 
 class GraphFactory(MediaItemFactory):
-    class Meta:
+    class Meta(object):
         model = models.Graph
 
     path = factory.Faker("file_name")
 
 
 class DatasetFactory(factory.Factory):
-    class Meta:
+    class Meta(object):
         model = models.Dataset
 
     name = factory.Faker("text", max_nb_chars=100)
-    uri = factory.Faker("uri")
+    info = factory.Faker("text")
 
     @factory.post_generation
     def media_items(self, create, extracted, **kwargs):
         if len(self.media_items):
             return
 
-        for i in xrange(0, 4):
+        for i in range(0, 4):
             self.media_items.append(MediaItemFactory())
 
 
 def create_experiment(num_activities, num_participants, activity_types=[]):
     experiment = ExperimentFactory()
-    participant_experiments = []
+    assignment_sets = []
 
-    for _ in xrange(0, num_participants):
-        part_exp = ParticipantExperimentFactory()
-        experiment.participant_experiments.append(part_exp)
-        participant_experiments.append(part_exp)
+    for _ in range(0, num_participants):
+        assignment_set = AssignmentSetFactory()
+        experiment.assignment_sets.append(assignment_set)
+        assignment_sets.append(assignment_set)
 
-    for i in xrange(0, num_activities*num_participants):
-        part_exp = participant_experiments[i % num_participants]
+    for i in range(0, num_activities*num_participants):
+        assignment_set = assignment_sets[i % num_participants]
 
         if activity_types:
             activity_type = random.choice(activity_types)
-            if "scale" in activity_type:
-                activity = ScaleQuestionFactory()
-            elif "singleselect" in activity_type:
-                activity = SingleSelectQuestionFactory()
+            factory_mapping = {
+                "question_mc_singleselect": SingleSelectQuestionFactory,
+                "question_mc_singleselect_scale": ScaleQuestionFactory,
+                "question_integer": IntegerQuestionFactory,
+                "question_freeanswer": FreeAnswerQuestionFactory,
+                "scorecard": models.Scorecard,
+            }
+            activity = factory_mapping[activity_type]()
         else:
             activity = ActivityFactory()
 
@@ -152,6 +171,6 @@ def create_experiment(num_activities, num_participants, activity_types=[]):
         assignment.experiment = experiment
         assignment.activity = activity
 
-        part_exp.assignments.append(assignment)
+        assignment_set.assignments.append(assignment)
 
     return experiment
