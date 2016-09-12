@@ -2,5 +2,5 @@
 {% import 'macros.html' as macros %}
 
 {% block question_form %}
-{{ macros.render_field(form.integer) }}
+{{ macros.render_field(form.integer, disabled=disabled) }}
 {% endblock %}

@@ -13,7 +13,8 @@ from tests.factories import ExperimentFactory, ParticipantFactory, \
 from quizApp.models import AssignmentSet, Assignment, Role, Activity, \
     Question, Graph, MultipleChoiceQuestionResult, MultipleChoiceQuestion, \
     FreeAnswerQuestion, FreeAnswerQuestionResult, Result, \
-    IntegerQuestionResult, IntegerQuestion, Choice, Scorecard, Experiment
+    IntegerQuestionResult, IntegerQuestion, Choice, Scorecard, Experiment, \
+    MultiSelectQuestion, MultiSelectQuestionResult
 
 
 def test_db_rollback1():
@@ -311,3 +312,24 @@ def test_scorecard_correct():
     scorecard = Scorecard()
 
     assert scorecard.is_correct(None)
+
+
+def test_multiselect_question_result():
+    question = MultiSelectQuestion()
+    result = MultiSelectQuestionResult()
+    choice1 = ChoiceFactory()
+    choice2 = ChoiceFactory()
+    choice3 = ChoiceFactory()
+    question.choices = [choice1, choice2]
+    question.num_media_items = -1
+
+    result.choices = [choice3]
+    assignment = Assignment()
+    assignment.activity = question
+
+    with pytest.raises(AssertionError):
+        assignment.result = result
+
+    result.choices = [choice1, choice2]
+
+    assignment.result = result
