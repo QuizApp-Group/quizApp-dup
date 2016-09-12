@@ -451,16 +451,6 @@ class Activity(Base):
         """
         pass
 
-    def import_dict(self, **kwargs):
-        """If we are setting assignments, we need to update experiments to
-        match.
-        """
-        assignments = kwargs.pop("assignments")
-        for assignment in assignments:
-            self.assignments.append(assignment)
-
-        super(Activity, self).import_dict(**kwargs)
-
     __mapper_args__ = {
         'polymorphic_identity': 'activity',
         'polymorphic_on': type
