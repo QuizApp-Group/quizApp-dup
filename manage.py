@@ -145,6 +145,8 @@ def run_post_hits(max_assignments, duration, keywords, description, title,
 @click.option("--password", help=("Password of the user to create"))
 @click.option("--email", help=("Email of the user to create"))
 def create_user(email, password, role):
+    """Create the specified user.
+    """
     if role == "participant":
         user = models.Participant()
     else:
@@ -162,6 +164,8 @@ def create_user(email, password, role):
 @cli.command("delete-user")
 @click.option("--email", help=("Email of the user to delete"))
 def delete_user(email):
+    """Delete the specified user.
+    """
     user = security.datastore.find_user(email=email)
     user_id = user.id
     security.datastore.delete_user(user)
