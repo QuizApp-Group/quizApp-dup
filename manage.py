@@ -171,7 +171,7 @@ def delete_user(email):
     security.datastore.delete_user(user)
     db.session.commit()
 
-    print ("User deleted successfully. ID was: {}".format(user_id))
+    print("User deleted successfully. ID was: {}".format(user_id))
 
 
 @cli.command("populate-db")
