@@ -5,6 +5,11 @@
   {% for category, assignments in scorecard_data.items() %}
   <div class="activity-category">
     <h4>{{ category }}</h4>
+    {% if assignments[0].media_items %}
+    <div class="row media-item-container small">
+      {{ macros.render_media_item(assignments[0].media_items[0]) }}
+    </div>
+    {% endif %}
     <table class="table table-striped">
       <thead>
         <tr>
