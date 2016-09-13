@@ -3,19 +3,16 @@
 from __future__ import print_function
 from __future__ import unicode_literals
 from flask import Flask
-from flask_mail import Mail
-from flask_migrate import Migrate
-<<<<<<< HEAD
 from flask_jwt import JWT
-from flask_restful import Api
+from flask_mail import Mail
 from flask_marshmallow import Marshmallow
-=======
+from flask_migrate import Migrate
+from flask_restful import Api
 from flask_security import Security, SQLAlchemyUserDatastore
 from flask_security.signals import user_registered
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CsrfProtect
 
->>>>>>> f9fff1ade259917a5dad38dd3938e0cd5bc67ab0
 from quizApp import config
 
 
