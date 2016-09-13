@@ -33,11 +33,11 @@
 {%- endmacro %}
 
 {% macro experiment_row(exp, admin_controls) -%}
-<tr data-delete-action="{{ url_for('experiments.delete_experiment', experiment_id=exp.id) }}"
+<tr data-delete-action="{{ url_for('experiments.experiment', experiment_id=exp.id) }}"
     id="experiment-{{ exp.id }}">
   <td>{{ exp.id }}</td>
   <td class="name">
-    <a href="{{ url_for('experiments.read_experiment', experiment_id=exp.id) }}">{{exp.name}}</a>
+    <a href="{{ url_for('experiments.experiment', experiment_id=exp.id) }}">{{exp.name}}</a>
   </td>
   <td class="start">{{exp.start|datetime_format}}</td>
   <td class="stop">{{exp.stop|datetime_format}}</td>

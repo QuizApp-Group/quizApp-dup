@@ -11,10 +11,10 @@ Activity List
 {% endblock %}
 
 {% block content %}
-{{ macros.render_confirm_delete_modal(confirm_delete_activity_form, "activity") }}
+{{ macros.render_confirm_delete_modal(confirm_delete_form, "activity") }}
 <h3>Create new activity</h3>
-{{ macros.render_form(activity_type_form,
-action=url_for('activities.create_activity'),
+{{ macros.render_form(create_form,
+action=url_for('activities.activities'),
 method="post",
 id="create-activity-form") }}
 <hr>
@@ -32,8 +32,8 @@ id="create-activity-form") }}
       </tr>
     </thead>
     <tbody>
-      {% for activity in activities %}
-      <tr data-delete-action="{{ url_for('activities.delete_activity',
+      {% for activity in members %}
+      <tr data-delete-action="{{ url_for('activities.activity',
       activity_id=activity.id) }}" id="activity-{{ activity.id }}">
         <td>{{ activity.id }}</td>
         <td>{{ activity.category }}</td>
@@ -51,7 +51,7 @@ id="create-activity-form") }}
                       data-target="#confirm-delete-activity-modal">
             {{ macros.render_glyphicon("remove") }}</a>
         </td>
-        <td><a href="{{ url_for('activities.read_activity',
+        <td><a href="{{ url_for('activities.activity',
         activity_id=activity.id) }}">{{ macros.render_glyphicon("eye-open") }}</a></td>
 
       </tr>

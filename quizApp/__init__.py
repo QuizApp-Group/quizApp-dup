@@ -3,10 +3,13 @@
 from __future__ import print_function
 from __future__ import unicode_literals
 from flask import Flask
-from flask_wtf.csrf import CsrfProtect
-from flask_sqlalchemy import SQLAlchemy
-from flask_security import Security, SQLAlchemyUserDatastore
+from flask_mail import Mail
 from flask_migrate import Migrate
+from flask_security import Security, SQLAlchemyUserDatastore
+from flask_security.signals import user_registered
+from flask_sqlalchemy import SQLAlchemy
+from flask_wtf.csrf import CsrfProtect
+
 from quizApp import config
 
 
@@ -14,6 +17,7 @@ db = SQLAlchemy()
 csrf = CsrfProtect()
 security = Security()
 migrate = Migrate()
+mail = Mail()
 
 
 def create_app(config_name, overrides=None):
@@ -30,6 +34,7 @@ def create_app(config_name, overrides=None):
 
     db.init_app(app)
     csrf.init_app(app)
+    mail.init_app(app)
 
     from quizApp.models import User, Role
     user_datastore = SQLAlchemyUserDatastore(db, User, Role)
@@ -44,14 +49,26 @@ def create_app(config_name, overrides=None):
     from quizApp.views.core import core
     from quizApp.views.datasets import datasets
     from quizApp.views.experiments import experiments
+    from quizApp.views.data import data
     from quizApp.views.mturk import mturk
     from quizApp.filters import filters
 
     app.register_blueprint(activities)
+    app.register_blueprint(data)
     app.register_blueprint(core)
     app.register_blueprint(datasets)
     app.register_blueprint(experiments)
     app.register_blueprint(mturk)
     app.register_blueprint(filters)
 
+    user_registered.connect(apply_default_user_role, app)
+
     return app
+
+
+def apply_default_user_role(_, user, **__):
+    """When a new user is registered, make them a participant.
+    """
+    user.type = "participant"
+    security.datastore.add_role_to_user(user, "participant")
+    db.session.commit()

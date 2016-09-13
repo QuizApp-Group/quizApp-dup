@@ -11,14 +11,14 @@ Dataset List
 {% endblock %}
 
 {% block content %}
-{{ macros.render_confirm_delete_modal(confirm_delete_dataset_form, "dataset") }}
+{{ macros.render_confirm_delete_modal(confirm_delete_form, "dataset") }}
 <div class="alert alert-info">
   {{ macros.render_glyphicon('info-sign') }}
   To modify the media items of a dataset, click on the {{
   macros.render_glyphicon('cog') }} button in the row of the relevant
   dataset.
 </div>
-<form action="{{ url_for('datasets.create_dataset') }}" method="post",
+<form action="{{ url_for('datasets.datasets') }}" method="post",
 id="create-dataset-form">
   <table class="table table-striped data-table" id="datasets-table">
     <thead>
@@ -33,16 +33,16 @@ id="create-dataset-form">
     <tfoot>
       <tr>
         <td></td>
-        <td>{{ macros.render_field(create_dataset_form.name,
+        <td>{{ macros.render_field(create_form.name,
           label_visible=False) }}</td>
         <td></td>
-        <td>{{ macros.render_field(create_dataset_form.submit, value="Create")
+        <td>{{ macros.render_field(create_form.submit, value="Create")
           }}</td>
       </tr>
     </tfoot>
     <tbody>
-      {% for dataset in datasets %}
-      <tr data-delete-action="{{ url_for('datasets.delete_dataset',
+      {% for dataset in members %}
+      <tr data-delete-action="{{ url_for('datasets.dataset',
       dataset_id=dataset.id) }}" id="dataset-{{ dataset.id }}">
         <td>{{ dataset.id }}</td>
         <td class="name">{{ dataset.name }}</a>

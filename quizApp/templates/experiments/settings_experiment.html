@@ -13,7 +13,7 @@
 <h3>General settings</h2>
 
 {{ macros.render_form(update_experiment_form,
-action=url_for('experiments.update_experiment',
+action=url_for('experiments.experiment',
 experiment_id=experiment.id),
 method="put",
 id="update-experiment-form") }}

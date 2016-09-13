@@ -8,6 +8,7 @@ Contents
    understanding_models
    import_export
    mturk
+   managing_users
    api
 
 Indices and tables

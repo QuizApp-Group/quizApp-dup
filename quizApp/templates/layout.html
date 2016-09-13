@@ -1,10 +1,10 @@
 {% import 'macros.html' as macros %}
 {% set nav_tabs = (
   ('core.getting_started', "Getting started", ("experimenter",)),
-  ('experiments.read_experiments', "Experiments", ("experimenter", "participant")),
-  ('datasets.read_datasets', "Datasets", ("experimenter",)),
-  ('activities.read_activities', "Activities", ("experimenter",)),
-  ('core.manage_data', "Manage data", ("experimenter",)),
+  ('experiments.experiments', "Experiments", ("experimenter",)),
+  ('datasets.datasets', "Datasets", ("experimenter",)),
+  ('activities.activities', "Activities", ("experimenter",)),
+  ('data.manage_data', "Manage data", ("experimenter",)),
 ) %}
 
 <!DOCTYPE html>
@@ -69,6 +69,9 @@
             <li role="presentation">
               <a href="{{ url_for('security.logout') }}">Logout</a>
             </li>
+            <li role="presentation">
+              <a href="{{ url_for('security.change_password') }}">Change password</a>
+            </li>
             {% else %}
             <li role="presentation" class="active">
               <a href="{{ url_for('security.login') }}">Login</a>
@@ -77,12 +80,9 @@
               <a href="{{ url_for('security.register') }}">Register</a>
             </li>
             {% endif %}
-            <li role="presentation">
-              <a href="{{ url_for('core.home') }}">Home</a>
-            </li>
           </ul>
         </nav>
-        <h1 class="site-name">Quiz App</h1>
+        <h1 class="site-name"><a href="{{ url_for('core.home') }}">Quiz App</a></h1>
         <ul class="nav nav-pills page-tabs">
           {% if current_user.is_authenticated %}
           {% for endpoint, name, roles in nav_tabs %}
@@ -97,9 +97,10 @@
           {% endif %}
         </ul>
       </div>
-      
+
+      {% if current_user.has_role("experimenter") %}
       {% set previous_tab, next_tab = nav_tabs|prev_next_tabs %}
- 
+
       {% if previous_tab or next_tab %}
       <div class="row">
         <div class="col-md-6">
@@ -116,6 +117,7 @@
         </div>
         {% endif %}
       </div>
+      {% endif %}
       {% endif %}
 
       {{ macros.render_flashed_messages(["error"], "danger", "Errors ocurred") }}

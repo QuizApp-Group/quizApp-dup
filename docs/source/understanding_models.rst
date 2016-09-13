@@ -7,7 +7,7 @@ Understanding the QuizApp models
 The structure of a QuizApp database may be confusing at first, but it is
 actually fairly understandable. This document focuses on the relationships
 between the models. For information about the other fields, view the
-documentation for each model.
+documentation for :mod:`quizApp.models`.
 
 **********
 Experiment
@@ -18,27 +18,27 @@ contains information such as when to start running, when to stop running, and
 any introductory text necessary.
 
 *********************
-ParticipantExperiment
+AssignmentSet
 *********************
 
 An Experiment also has a collection of
-:py:class:`quizApp.models.ParticipantExperiment`. Each ParticipantExperiment
+:py:class:`quizApp.models.AssignmentSet`. Each AssignmentSet
 is an association between a :py:class:`quizApp.models.Participant`, an
 Experiment, and a collection of :py:class:`quizApp.models.Assignment` s. This
 means that in a given Experiment, every Participant will have a different
-ParticipantAssignment containing a sequence of Assignments.
+AssignmentSet containing a sequence of Assignments.
 
 **********
 Assignment
 **********
 
 An Assignment is the object that associates a Participant with an
-:py:class:`quizApp.models.Activity`. The reason that ParticipantExperiment does
+:py:class:`quizApp.models.Activity`. The reason that AssignmentSet does
 not directly contain Activities is that Activity is also associated with a
 collection of :py:class:`quizApp.models.MediaItem` s. This means that, for the
 same Activity, two Participants may see two different Mediaitems. While
 performing an Experiment, Participants are shown Assignments in the order they
-appear in their ParticipantAssignment class.
+appear in their AssignmentSet class.
 
 ********
 Activity

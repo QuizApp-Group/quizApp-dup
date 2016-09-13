@@ -9,26 +9,8 @@
 {% block title %}Activity {{ question.id }} - Settings{% endblock %}
 
 {% block content %}
-{% if update_choice_form %}
-{{ macros.render_confirm_delete_modal(confirm_delete_choice_form, "choice") }}
-<div class="modal fade" id="update-choice-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel">
-  <div class="modal-dialog" role="document">
-    <div class="modal-content">
-      <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h4 class="modal-title" id="exampleModalLabel"></h4>
-      </div>
-      <div class="modal-body">
-        {{ macros.render_form(update_choice_form, id="update-choice-form", method="put") }}
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-      </div>
-    </div>
-  </div>
-</div>
-{% endif %}
-<form action="{{ url_for('activities.update_activity', activity_id=question.id) }}"
+{% block pre_settings %}{% endblock %}
+<form action="{{ url_for('activities.activity', activity_id=question.id) }}"
       method="put" id="update-activity-form">
   {% for field in general_form %}
   {% if field.type != "SubmitField" %}
@@ -52,17 +34,16 @@
   </thead>
   <tbody>
     {% for object in dataset_form.objects %}
-    <tr
-                     data-create-action="{{
-                     url_for('activities.create_question_dataset',
-                     activity_id=question.id) }}"
-                     data-delete-action="{{
-                     url_for('activities.delete_question_dataset',
-                     activity_id=question.id, dataset_id=object.data) }}"
-                     >
-                     <td>
-                       {{ dataset_form.objects_mapping[object.data].id }}
-                     </td>
+    <tr data-create-action="{{
+    url_for('activities.create_question_dataset',
+    activity_id=question.id) }}"
+        data-delete-action="{{
+        url_for('activities.delete_question_dataset',
+        activity_id=question.id, dataset_id=object.data) }}"
+        >
+        <td>
+          {{ dataset_form.objects_mapping[object.data].id }}
+        </td>
       <td>
         {{ dataset_form.objects_mapping[object.data].name }}
       </td>
@@ -73,18 +54,7 @@
     {% endfor %}
   </tbody>
 </table>
-{% if create_choice_form %}
-<hr>
-<h3>Choices</h3>
-<form action="{{ url_for('activities.create_choice', question_id=question.id
-) }}" method="post" id="create-choice-form">
-  <div class="table-container">
-    {{ activities_macros.choice_table(choices, create_choice_form) }}
-  </div>
-</form>
-
+{% block post_settings %}{% endblock %}
 {{ macros.render_field(general_form.submit, form="update-activity-form") }}
-
-{% endif %}
 
 {% endblock %}

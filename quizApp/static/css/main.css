@@ -293,3 +293,14 @@ form #submit-message {
 tr * {
     transition: all .5s;
 }
+
+.activity-category {
+  background: #eceeef;
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: .3em;
+}
+
+.media-item-container.small img {
+  max-height: 20em;
+}

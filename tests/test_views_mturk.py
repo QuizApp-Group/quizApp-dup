@@ -11,8 +11,8 @@ from tests.factories import create_experiment
 
 def test_register(client, users):
     experiment = create_experiment(1, 1)
-    experiment.participant_experiments[0].complete = False
-    experiment.participant_experiments[0].progress = 0
+    experiment.assignment_sets[0].complete = False
+    experiment.assignment_sets[0].progress = 0
     experiment.save()
 
     response = client.get("/mturk/register?experiment_id={}".
@@ -31,8 +31,8 @@ def test_register(client, users):
 
     assert response.status_code == 200
     data = response.data.decode(response.charset)
-    assert "/experiments/{}/assignments/".format(experiment.id) in \
-        data
+    assert "/experiments/{}/assignment_sets/{}".\
+        format(experiment.id, experiment.assignment_sets[0].id) in data
 
     # one from users fixture, one from views
     assert Participant.query.count() == 2
@@ -44,8 +44,8 @@ def test_register(client, users):
     data = response.data.decode(response.charset)
     assert "mturk/externalSubmit" in session["mturk_post_url"]
 
-    assert "/experiments/{}/assignments/".format(experiment.id) in \
-        data
+    assert "/experiments/{}/assignment_sets/{}".\
+        format(experiment.id, experiment.assignment_sets[0].id) in data
     assert response.status_code == 200
     assert Participant.query.count() == 2
 
