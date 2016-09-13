@@ -128,7 +128,6 @@ def test_render_scorecard(client, users):
             str(assignment.id) in rendered_sc
 
 
-
 def test_update_activity(client, users):
     login_experimenter(client)
 

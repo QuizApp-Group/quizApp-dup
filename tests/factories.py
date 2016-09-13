@@ -61,6 +61,7 @@ class ScorecardFactory(factory.Factory):
     title = factory.Faker("text")
     prompt = factory.Faker('text')
 
+
 class QuestionFactory(ActivityFactory):
     class Meta(object):
         model = models.Question

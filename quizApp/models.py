@@ -473,6 +473,7 @@ class Scorecard(Activity):
     """
     title = db.Column(db.String(500))
     prompt = db.Column(db.String(500))
+
     def get_score(self, result):
         return 0
 
