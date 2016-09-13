@@ -225,6 +225,13 @@ def test_read_experiment(client, users):
         str(exp.assignment_sets[0].assignments[1].id) in \
         data
 
+    exp.assignment_sets[0].progress = len(exp.assignment_sets[0].assignments)
+    response = client.get(url)
+    data = response.data.decode(response.charset)
+    assert response.status_code == 200
+    assert "/assignments/{}".format(exp.assignment_sets[0].assignments[0].id) \
+        in data
+
 
 def test_update_experiment(client, users):
     login_experimenter(client)
