@@ -1,4 +1,4 @@
-"""Forms for core views.
+"""Forms for data views.
 """
 from flask_wtf import Form
 from wtforms import SubmitField, FileField

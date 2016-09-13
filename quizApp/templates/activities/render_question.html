@@ -1,0 +1,16 @@
+{% import 'macros.html' as macros %}
+
+<div id='question'>
+  <h3>{{ question.question }}</h3>
+    {% block question_form %}{% endblock %}
+    {% if question.needs_comment %}
+        <p>Why do you think this is the correct choice?</p>
+        {{ macros.render_field(form.comment, rows="5", disabled=disabled) }}
+        <br />
+    {% endif %}
+</div>
+{% if render_explanation %}
+<p id="explanation-text">
+{{ question.explanation }}
+</p>
+{% endif %}

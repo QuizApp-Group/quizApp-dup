@@ -232,23 +232,14 @@ def test_update_media_item(client, users):
 
     url = "/datasets/" + str(dataset.id) + "/media_items/" + str(graph.id)
 
-    """
-    graph_form = GraphForm()
-    graph_mock.set_spec(graph_form.graph)
-    attrs = {"data": ""}
-    graph_mock.configure_mock(**attrs)
-    """
-
     with mock.patch("quizApp.views.datasets.GraphForm") as GraphFormMock:
-        graph_form_mock = mock.MagicMock(spec_set=GraphForm(),
-                                         name="graph_form_mock")
         file_storage_mock = mock.MagicMock(spec_set=FileStorage())
         file_storage_mock.configure_mock(filename="foo.png")
 
-        attrs = {"graph.data": file_storage_mock}
-        graph_form_mock.configure_mock(**attrs)
+        graph_form = GraphForm()
+        graph_form.path.data = file_storage_mock
 
-        GraphFormMock.configure_mock(return_value=graph_form_mock)
+        GraphFormMock.configure_mock(return_value=graph_form)
 
         response = client.put(url,
                               data={"graph": open("tests/data/graph.png",

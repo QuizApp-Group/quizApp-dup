@@ -13,24 +13,13 @@
   {{ macros.render_media_item(media_item) }}
 </div>
 <br>
+<h3>Settings</h3>
+{{ macros.render_form(update_media_item_form,
+action=url_for('datasets.media_item', dataset_id=dataset.id, media_item_id=media_item.id),
+method="put",
+id="update-media-item-form") }}
+
 <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
-  <div class="panel panel-default">
-    <div class="panel-heading" role="tab" id="general-heading">
-      <h4 class="panel-title">
-        <a role="button" data-toggle="collapse" data-parent="#accordion" href="#general-collapse" aria-expanded="true" aria-controls="general-collapse">
-          Settings
-        </a>
-      </h4>
-    </div>
-    <div id="general-collapse" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="general-heading">
-      <div class="panel-body">
-        {{ macros.render_form(update_media_item_form,
-        action=url_for('datasets.update_media_item', dataset_id=dataset.id, media_item_id=media_item.id),
-        method="put",
-        id="update-media-item-form") }}
-      </div>
-    </div>
-  </div>
   <div class="panel panel-default">
     <div class="panel-heading" role="tab" id="create-heading">
       <h4 class="panel-title">
@@ -45,12 +34,12 @@
         {{ macros.render_form(create_media_item_form,
         id="create-media-item-form",
         method="post",
-        action=url_for('datasets.create_media_item', dataset_id=dataset.id))
+        action=url_for('datasets.media_items', dataset_id=dataset.id))
         }}
-        <a href="{{ url_for('datasets.settings_dataset', dataset_id=dataset.id)
-        }}" role="button" class="btn btn-primary">Back to dataset settings</a>
       </div>
     </div>
   </div>
 </div>
+<a href="{{ url_for('datasets.settings_dataset', dataset_id=dataset.id)
+}}" role="button" class="btn btn-primary">Back to dataset settings</a>
 {% endblock %}
