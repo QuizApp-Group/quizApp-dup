@@ -300,16 +300,12 @@ def create_assignment(question_id, experiment,
     question = Question.query.get(question_id)
     if not question:
         return
-    question.experiments.append(experiment)
 
     assignment = Assignment(
         participant=assignment_set.participant,
         media_items=[Graph.query.get(graph_id)])
     assignment.activity = question
     assignment.assignment_set = assignment_set
-
-    experiment.activities.append(
-        Question.query.get(question_id))
 
     db.session.add(assignment)
 
