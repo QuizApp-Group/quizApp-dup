@@ -272,7 +272,6 @@ def create_participant_data(participant_question_list, test, group):
             if test == 'pre_test' or test == 'post_test':
                 question_id = int(str(dataset)+str(5))
                 create_assignment(question_id,
-                                  experiments[test],
                                   assignment_set, graph_id)
 
             else:  # training
@@ -286,30 +285,24 @@ def create_participant_data(participant_question_list, test, group):
                     question_id = int(str(dataset)+str(x))
                     # write row to db
                     create_assignment(question_id,
-                                      experiments[test],
                                       assignment_set, graph_id)
 
     print("Completed storing {} {} tests".format(test, group))
 
 
-def create_assignment(question_id, experiment,
-                      assignment_set, graph_id):
+def create_assignment(question_id, assignment_set, graph_id):
     """Given parameters, create an assignment, returning without doing anything
     if the question doesn't exist.
     """
     question = Question.query.get(question_id)
     if not question:
         return
-    question.experiments.append(experiment)
 
     assignment = Assignment(
         participant=assignment_set.participant,
         media_items=[Graph.query.get(graph_id)])
     assignment.activity = question
     assignment.assignment_set = assignment_set
-
-    experiment.activities.append(
-        Question.query.get(question_id))
 
     db.session.add(assignment)
 
