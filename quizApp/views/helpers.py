@@ -62,11 +62,6 @@ def get_first_assignment(experiment):
             assignment = assignment_set.\
                 assignments[assignment_set.progress]
         except IndexError:
-            logging.error("Could not find assignment number %s in assignment
-                          set %s;" "there are %s assignments in the
-                          set. Getting assignment 0 instead", assignment_set.progress,
-                          assignment_set.id, len(assignment_set.assignments))
-
             assignment = assignment_set.assignments[0]
     return assignment
 
