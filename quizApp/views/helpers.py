@@ -1,6 +1,7 @@
 """Various functions that are useful in multiple views.
 """
 import random
+import logging
 from flask import abort, jsonify
 from flask_security import current_user
 from sqlalchemy.orm.exc import NoResultFound
@@ -46,8 +47,15 @@ def get_first_assignment(experiment):
     elif assignment_set.complete:
         assignment = assignment_set.assignments[0]
     else:
-        assignment = assignment_set.\
-            assignments[assignment_set.progress]
+        try:
+            assignment = assignment_set.\
+                assignments[assignment_set.progress]
+        except IndexError:
+            logging.error("Could not find assignment number %s in assignment
+                          set %s;" "there are %s assignments in the
+                          set", assignment_set.progress,
+                          assignment_set.id, len(assignment_set.assignments))
+            abort(404)
     return assignment
 
 
