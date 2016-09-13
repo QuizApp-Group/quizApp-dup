@@ -38,8 +38,19 @@ def get_or_create_assignment_set(experiment):
 
 def get_first_assignment(experiment):
     """Get the first assignment for this user in this experiment.
+
+    Note that this is not necessarily the same as the first assignment in an
+    assignment set. This function will first call
+    ``get_or_create_assignment_set`` in order to retrieve an assignment set.
+    If there is no assignment set or it is empty, this function returns none.
+
+    If the set is complete, this function returns the first assignment in the
+    set.
+
+    If
     """
     assignment_set = get_or_create_assignment_set(experiment)
+
     if not assignment_set:
         assignment = None
     elif len(assignment_set.assignments) == 0:
@@ -53,9 +64,10 @@ def get_first_assignment(experiment):
         except IndexError:
             logging.error("Could not find assignment number %s in assignment
                           set %s;" "there are %s assignments in the
-                          set", assignment_set.progress,
+                          set. Getting assignment 0 instead", assignment_set.progress,
                           assignment_set.id, len(assignment_set.assignments))
-            abort(404)
+
+            assignment = assignment_set.assignments[0]
     return assignment
 
 
