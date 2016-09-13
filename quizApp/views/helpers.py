@@ -1,7 +1,6 @@
 """Various functions that are useful in multiple views.
 """
 import random
-import logging
 from flask import abort, jsonify
 from flask_security import current_user
 from sqlalchemy.orm.exc import NoResultFound
