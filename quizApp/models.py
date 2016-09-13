@@ -466,7 +466,14 @@ question_dataset_table = db.Table(
 class Scorecard(Activity):
     """A Scorecard shows some kind of information about all previous
     activities.
+
+    Attributes:
+        title (str): The title of this scorecard
+        prompt (str): The prompt to show when asking for a comment
     """
+    title = db.Column(db.String(500))
+    prompt = db.Column(db.String(500))
+
     def get_score(self, result):
         return 0
 

@@ -54,6 +54,14 @@ class ActivityFactory(factory.Factory):
     include_in_scorecards = factory.Faker('boolean')
 
 
+class ScorecardFactory(factory.Factory):
+    class Meta(object):
+        model = models.Scorecard
+
+    title = factory.Faker("text")
+    prompt = factory.Faker('text')
+
+
 class QuestionFactory(ActivityFactory):
     class Meta(object):
         model = models.Question
@@ -165,7 +173,7 @@ def create_experiment(num_activities, num_participants, activity_types=[]):
                 "question_mc_singleselect_scale": ScaleQuestionFactory,
                 "question_integer": IntegerQuestionFactory,
                 "question_freeanswer": FreeAnswerQuestionFactory,
-                "scorecard": models.Scorecard,
+                "scorecard": ScorecardFactory,
             }
             activity = factory_mapping[activity_type]()
         else:
