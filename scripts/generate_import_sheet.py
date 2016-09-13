@@ -101,7 +101,7 @@ def write_data_to_workbook(data, workbook):
                   assignment_sheet)
 
     next_assignment_id = 1
-    for assignment_set_index, assignment_set in enumerate(data, 1):
+    for assignment_set_id, assignment_set in enumerate(data, 1):
         assignment_ids = []
 
         for assignment in assignment_set[1]:
@@ -114,10 +114,10 @@ def write_data_to_workbook(data, workbook):
             write_row(next_assignment_id, row, assignment_sheet)
 
         row = [assignment_set[0],
-               assignment_set_index,
+               assignment_set_id,
                ",".join(assignment_ids),
                ]
-        write_row(assignment_set_index + 1, row, assignment_set_sheet)
+        write_row(assignment_set_id + 1, row, assignment_set_sheet)
 
 
 def main():
