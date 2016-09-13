@@ -105,18 +105,20 @@ def test_settings_scorecard(client, users):
 
 def test_render_scorecard(client, users):
     login_experimenter(client)
-    scorecard = Scorecard()
+    scorecard = factories.ScorecardFactory()
+    scorecard.needs_comment = True
     scorecard.save()
 
     url = "/activities/" + str(scorecard.id)
     response = client.get(url)
     data = response.data.decode(response.charset)
-    assert "performance" in data
+    assert scorecard.title in data
+    assert scorecard.prompt in data
 
     # make sure include_in_scorecards is respected
     exp = factories.create_experiment(100, 1)
     assignment_set = exp.assignment_sets[0]
-    scorecard = Scorecard()
+    scorecard = factories.ScorecardFactory()
     exp.save()
 
     rendered_sc = render_scorecard(scorecard, False, assignment_set, None, 100)
@@ -124,6 +126,7 @@ def test_render_scorecard(client, users):
     for assignment in assignment_set.assignments:
         assert not assignment.activity.include_in_scorecards or \
             str(assignment.id) in rendered_sc
+
 
 
 def test_update_activity(client, users):
