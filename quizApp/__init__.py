@@ -1,13 +1,21 @@
 """Handle creating the app and configuring it.
 """
+from __future__ import print_function
+from __future__ import unicode_literals
 from flask import Flask
-from flask_wtf.csrf import CsrfProtect
-from flask_sqlalchemy import SQLAlchemy
-from flask_security import Security, SQLAlchemyUserDatastore
+from flask_mail import Mail
 from flask_migrate import Migrate
+<<<<<<< HEAD
 from flask_jwt import JWT
 from flask_restful import Api
 from flask_marshmallow import Marshmallow
+=======
+from flask_security import Security, SQLAlchemyUserDatastore
+from flask_security.signals import user_registered
+from flask_sqlalchemy import SQLAlchemy
+from flask_wtf.csrf import CsrfProtect
+
+>>>>>>> f9fff1ade259917a5dad38dd3938e0cd5bc67ab0
 from quizApp import config
 
 
@@ -18,6 +26,7 @@ migrate = Migrate()
 jwt = JWT()
 restful = Api(prefix="/api", decorators=[csrf.exempt])
 ma = Marshmallow()
+mail = Mail()
 
 
 def create_app(config_name, overrides=None):
@@ -31,12 +40,13 @@ def create_app(config_name, overrides=None):
     if overrides:
         app.config.from_mapping(overrides)
 
-    print "Using config: " + config_name
+    print("Using config: " + config_name)
 
     db.init_app(app)  # flask-sqlalchemy
     csrf.init_app(app)  # CSRF for wtforms
     ma.init_app(app)  # flask-marshmallow
     migrate.init_app(app, db)  # flask-migrate
+    mail.init_app(app)
 
     # Initialize flask-restful
     from quizApp.api import endpoints
@@ -56,16 +66,30 @@ def create_app(config_name, overrides=None):
     from quizApp.views.core import core
     from quizApp.views.datasets import datasets
     from quizApp.views.experiments import experiments
+    from quizApp.views.data import data
     from quizApp.views.mturk import mturk
+    from quizApp.filters import filters
 
     app.register_blueprint(activities)
+    app.register_blueprint(data)
     app.register_blueprint(core)
     app.register_blueprint(datasets)
     app.register_blueprint(experiments)
     app.register_blueprint(mturk)
+    app.register_blueprint(filters)
+
+    user_registered.connect(apply_default_user_role, app)
 
     # Initialize flask_jwt
     from quizApp import jwt_auth
     jwt.init_app(app)
 
     return app
+
+
+def apply_default_user_role(_, user, **__):
+    """When a new user is registered, make them a participant.
+    """
+    user.type = "participant"
+    security.datastore.add_role_to_user(user, "participant")
+    db.session.commit()

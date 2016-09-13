@@ -4,12 +4,14 @@
 <table class="table table-striped" id="{{ id }}">
   <thead>
     <tr>
-      <th class="col-md-3">Name</th>
-      <th class="col-md-2">Start time</th>
-      <th class="col-md-2">End time</th>
+      <th class="col-md-1">ID</th>
+      <th class="col-md-2">Name</th>
+      <th class="col-md-3">Start time</th>
+      <th class="col-md-3">End time</th>
       {% if admin_controls %}
       <th class="col-md-1">Edit</th>
       <th class="col-md-1">Results</th>
+      <th class="col-md-1">Delete</th>
       {% endif %}
     </tr>
   </thead>
@@ -19,6 +21,7 @@
     {% endfor %}
     {% if create_form and admin_controls %}
     <tr>
+      <td></td>
       <td>{{ macros.render_field(create_form.name, label_visible=false) }}</td>
       <td>{{ macros.render_field(create_form.start, label_visible=false) }}</td>
       <td>{{ macros.render_field(create_form.stop, label_visible=false) }}</td>
@@ -30,9 +33,11 @@
 {%- endmacro %}
 
 {% macro experiment_row(exp, admin_controls) -%}
-<tr>
+<tr data-delete-action="{{ url_for('experiments.experiment', experiment_id=exp.id) }}"
+    id="experiment-{{ exp.id }}">
+  <td>{{ exp.id }}</td>
   <td class="name">
-    <a href="{{ url_for('experiments.read_experiment', experiment_id=exp.id) }}">{{exp.name}}</a>
+    <a href="{{ url_for('experiments.experiment', experiment_id=exp.id) }}">{{exp.name}}</a>
   </td>
   <td class="start">{{exp.start|datetime_format}}</td>
   <td class="stop">{{exp.stop|datetime_format}}</td>
@@ -46,6 +51,11 @@
     <a href="{{ url_for('experiments.results_experiment', experiment_id=exp.id) }}">
       {{ macros.render_glyphicon('signal') }}
     </a>
+  </td>
+  <td><a href="#" class="delete-experiment text-danger"
+                  data-experiment-id="{{ exp.id }}"
+                  data-toggle="modal" data-target="#confirm-delete-experiment-modal">
+      {{ macros.render_glyphicon("remove") }}</a>
   </td>
   {% endif %}
 </tr>

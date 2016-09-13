@@ -1,9 +1,10 @@
 $(document).ready(function() {
-  form_ajax("#create-dataset-form", done_refresh);
-  form_ajax("#update-dataset-form", done_highlight);
-  form_ajax("#delete-dataset-form", done_redirect);
-  form_ajax("#delete-media-item-form", done_refresh);
-  form_ajax("#create-media-item-form", done_refresh);
+  form_ajax("#create-dataset-form", done_redirect);
+  form_ajax("#update-dataset-form", done_highlight, pre_callback_message);
+  form_ajax("#confirm-delete-dataset-form", doneRemoveRow);
+  form_ajax("#confirm-delete-media-item-form", doneRemoveRow);
+  form_ajax("#update-media-item-form", done_refresh);
+  form_ajax("#create-media-item-form", done_redirect);
 
   $('#preview-media-item-modal').on('show.bs.modal', function (event) {
     var button = $(event.relatedTarget); // Button that triggered the modal
@@ -28,4 +29,6 @@ $(document).ready(function() {
     });
 
   })
+  handleConfirmDeleteModal("dataset");
+  handleConfirmDeleteModal("media-item", "Media Item");
 })

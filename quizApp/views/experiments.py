@@ -4,262 +4,330 @@ participants.
 from collections import defaultdict
 from datetime import datetime
 import json
-import os
 
 import dateutil.parser
 from flask import Blueprint, render_template, url_for, jsonify, abort, \
-    current_app, request, session
+    request, session
 from flask_security import login_required, current_user, roles_required
-from sqlalchemy.orm.exc import NoResultFound
 
 from quizApp import db
-from quizApp.forms.common import DeleteObjectForm
 from quizApp.forms.experiments import CreateExperimentForm, \
-    get_question_form
-from quizApp.models import Choice, Experiment, Assignment, \
-    ParticipantExperiment, Activity, Participant, MultipleChoiceQuestionResult
+    get_answer_form
+from quizApp.views.common import ObjectCollectionView, ObjectView
+from quizApp.models import Experiment, Assignment, \
+    AssignmentSet, Participant
 from quizApp.views.helpers import validate_model_id, get_first_assignment
+from quizApp.views.activities import render_activity
 from quizApp.views.mturk import submit_assignment
 
 experiments = Blueprint("experiments", __name__, url_prefix="/experiments")
 
 EXPERIMENT_ROUTE = "/<int:experiment_id>"
-ASSIGNMENTS_ROUTE = EXPERIMENT_ROUTE + "/assignments/"
-ASSIGNMENT_ROUTE = ASSIGNMENTS_ROUTE + "<int:a_id>"
+ASSIGNMENT_SETS_ROUTE = EXPERIMENT_ROUTE + "/assignment_sets/"
+ASSIGNMENT_SET_ROUTE = ASSIGNMENT_SETS_ROUTE + "<int:assignment_set_id>"
+ASSIGNMENTS_ROUTE = ASSIGNMENT_SET_ROUTE + "/assignments/"
+ASSIGNMENT_ROUTE = ASSIGNMENTS_ROUTE + "<int:assignment_id>"
 
 POST_FINALIZE_HANDLERS = {
     "mturk": submit_assignment,
 }
 
 
-def get_participant_experiment_or_abort(experiment_id, code=400):
-    """Return the ParticipantExperiment object corresponding to the current
-    user and experiment_id or abort with the given code.
-    """
-    try:
-        return ParticipantExperiment.query.\
-            filter_by(participant_id=current_user.id).\
-            filter_by(experiment_id=experiment_id).one()
-    except NoResultFound:
-        abort(code)
-
-
-@experiments.route('/', methods=["GET"])
-@login_required
-def read_experiments():
-    """List experiments.
-    """
-    now = datetime.now()
-    past_experiments = Experiment.query.filter(Experiment.stop < now).all()
-    present_experiments = Experiment.query.filter(Experiment.stop > now).\
-        filter(Experiment.start < now).all()
-    future_experiments = Experiment.query.filter(Experiment.start > now)
-
-    create_form = CreateExperimentForm()
-
-    return render_template("experiments/read_experiments.html",
-                           past_experiments=past_experiments,
-                           present_experiments=present_experiments,
-                           future_experiments=future_experiments,
-                           create_form=create_form)
-
-
-@experiments.route("/", methods=["POST"])
-@roles_required("experimenter")
-def create_experiment():
-    """Create an experiment and save it to the database.
-    """
-    form = CreateExperimentForm(request.form)
-    if not form.validate():
-        return jsonify({"success": 0, "errors": form.errors})
-
-    exp = Experiment()
-    form.populate_obj(exp)
-    exp.created = datetime.now()
-    exp.save()
-
-    return jsonify({"success": 1})
-
-
-@experiments.route(EXPERIMENT_ROUTE, methods=["GET"])
-@login_required
-def read_experiment(experiment_id):
-    """View the landing page of an experiment, along with the ability to start.
+def validate_assignment_set(experiment_id, assignment_set_id):
+    """Check if this experiment and assignment set exist, if this assignment
+    set is part of this experiment, and if the current user owns the assignment
+    set.
     """
     experiment = validate_model_id(Experiment, experiment_id)
+    assignment_set = validate_model_id(AssignmentSet, assignment_set_id)
 
-    if current_user.has_role("participant"):
-        assignment = get_first_assignment(experiment)
-    else:
-        assignment = None
+    if assignment_set.experiment != experiment:
+        abort(404)
 
-    return render_template("experiments/read_experiment.html",
-                           experiment=experiment,
-                           assignment=assignment)
+    if assignment_set.participant != current_user:
+        abort(403)
+
+    return (experiment, assignment_set)
 
 
-@experiments.route(EXPERIMENT_ROUTE, methods=["DELETE"])
-@roles_required("experimenter")
-def delete_experiment(experiment_id):
-    """Delete an experiment.
+def validate_assignment(experiment_id, assignment_set_id, assignment_id):
+    """Do everything ``validate_assignment_set`` does, but also check that the
+    assignment exists and that it's part of the given assignment set.
     """
-    exp = validate_model_id(Experiment, experiment_id)
+    experiment, assignment_set = validate_assignment_set(experiment_id,
+                                                         assignment_set_id)
+    assignment = validate_model_id(Assignment, assignment_id)
 
-    db.session.delete(exp)
-    db.session.commit()
+    if assignment.assignment_set != assignment_set:
+        abort(404)
 
-    return jsonify({"success": 1, "next_url":
-                    url_for('experiments.read_experiments')})
+    return (experiment, assignment_set, assignment)
 
 
-@experiments.route(EXPERIMENT_ROUTE, methods=["PUT"])
-@roles_required("experimenter")
-def update_experiment(experiment_id):
-    """Modify an experiment's properties.
+class ExperimentCollectionView(ObjectCollectionView):
+    """View for a collection of Experiments.
     """
-    exp = validate_model_id(Experiment, experiment_id)
+    decorators = [roles_required("experimenter")]
+    methods = ["GET", "POST"]
+    template = "experiments/read_experiments.html"
 
-    experiment_update_form = CreateExperimentForm(request.form)
+    def create_form(self):
+        return CreateExperimentForm(request.form)
 
-    if not experiment_update_form.validate():
-        return jsonify({"success": 0, "errors": experiment_update_form.errors})
+    def resolve_kwargs(self, **kwargs):
+        return {}
 
-    experiment_update_form.populate_obj(exp)
+    def get_members(self):
+        now = datetime.now()
+        return {
+            "past_experiments": Experiment.query.filter(
+                Experiment.stop < now).all(),
+            "present_experiments": Experiment.query.filter(
+                Experiment.stop > now).filter(Experiment.start < now).all(),
+            "future_experiments": Experiment.query.filter(
+                Experiment.start > now),
+        }
 
-    exp.save()
+    def create_member(self, create_form):
+        experiment = Experiment()
+        create_form.populate_obj(experiment)
+        experiment.created = datetime.now()
+        experiment.save()
 
-    return jsonify({"success": 1})
+        return {
+            "next_url": url_for("experiments.settings_experiment",
+                                experiment_id=experiment.id),
+        }
+
+
+experiments.add_url_rule(
+    "/",
+    view_func=ExperimentCollectionView.as_view('experiments'))
+
+
+class ExperimentView(ObjectView):
+    """View for a particular experiment.
+    """
+    decorators = [login_required]
+    methods = ["GET", "PUT", "DELETE"]
+    object_key = "experiment"
+    template = "experiments/read_experiment.html"
+
+    def resolve_kwargs(self, experiment_id):
+        return {"experiment": validate_model_id(Experiment, experiment_id)}
+
+    def update_form(self, **_):
+        return CreateExperimentForm(request.form)
+
+    def collection_url(self, **_):
+        return url_for("experiments.experiments")
+
+    def get(self, experiment):
+        """View the landing page of an experiment, along with the ability to start.
+        """
+        if current_user.has_role("participant"):
+            if not experiment.running:
+                abort(400)
+            assignment = get_first_assignment(experiment)
+        else:
+            assignment = None
+
+        return render_template("experiments/read_experiment.html",
+                               experiment=experiment,
+                               assignment=assignment)
+
+    def delete(self, **kwargs):
+        if current_user.has_role("experimenter"):
+            return super(ExperimentView, self).delete(**kwargs)
+        abort(403)
+
+    def put(self, **kwargs):
+        if current_user.has_role("experimenter"):
+            return super(ExperimentView, self).put(**kwargs)
+        abort(403)
+
+experiments.add_url_rule(
+    EXPERIMENT_ROUTE,
+    view_func=ExperimentView.as_view('experiment'))
 
 
 @experiments.route(ASSIGNMENT_ROUTE, methods=["GET"])
 @roles_required("participant")
-def read_assignment(experiment_id, a_id):
+def read_assignment(experiment_id, assignment_set_id, assignment_id):
     """Given an assignment ID, retrieve it from the database and display it to
     the user.
     """
-    experiment = validate_model_id(Experiment, experiment_id)
-    assignment = validate_model_id(Assignment, a_id)
+    experiment, assignment_set, assignment = validate_assignment(
+        experiment_id,
+        assignment_set_id,
+        assignment_id)
 
-    part_exp = get_participant_experiment_or_abort(experiment_id)
-
-    if assignment not in part_exp.assignments:
+    if not experiment.running:
         abort(400)
 
-    if experiment.disable_previous and part_exp.progress > \
-            part_exp.assignments.index(assignment) and not part_exp.complete:
+    if experiment.disable_previous and assignment_set.progress > \
+            assignment_set.assignments.index(assignment) and \
+            not assignment_set.complete:
         abort(400)
 
-    activity = validate_model_id(Activity, assignment.activity_id)
+    activity = assignment.activity
 
-    if "question" in activity.type:
-        return read_question(experiment, activity, assignment)
+    read_function_mapping = {
+        "question_mc_singleselect": read_question,
+        "question_mc_multiselect": read_question,
+        "question_freeanswer": read_question,
+        "question_mc_singleselect_scale": read_question,
+        "question_integer": read_question,
+        "scorecard": read_scorecard,
+    }
 
-    abort(404)
+    return read_function_mapping[activity.type](experiment, assignment)
 
 
-def read_question(experiment, question, assignment):
-    """Retrieve a question from the database and render its template.
-
-    This function assumes that all necessary error checking has been done on
-    its parameters.
+def read_scorecard(experiment, assignment):
+    """Read an assignment that is a scorecard.
     """
-    question_form = get_question_form(question)
-    question_form.populate_choices(question.choices)
+    scorecard = assignment.activity
+    scorecard_form = get_answer_form(scorecard)
+    scorecard_form.populate_from_assignment(assignment)
 
-    if assignment.result:
-        question_form.choices.default = str(assignment.result.choice_id)
-        question_form.process()
+    assignment_set = assignment.assignment_set
+    this_index = assignment_set.assignments.index(assignment)
 
-    question_form.comment.data = assignment.comment
-
-    part_exp = assignment.participant_experiment
-    this_index = part_exp.assignments.index(assignment)
-
-    if not part_exp.complete:
-        # If the participant is not done, then save the choice order
-        choice_order = [c.id for c in question.choices]
-        assignment.choice_order = json.dumps(choice_order)
-        assignment.save()
-        next_url = None
-        explanation = ""
-    else:
-        # If the participant is done, have a link right to the next question
-        next_url = get_next_assignment_url(part_exp, this_index)
-        explanation = question.explanation
+    next_url = get_next_assignment_url(assignment_set, this_index)
 
     previous_assignment = None
 
     if this_index - 1 > -1 and not experiment.disable_previous:
-        previous_assignment = part_exp.assignments[this_index - 1]
+        previous_assignment = assignment_set.assignments[this_index - 1]
 
-    cumulative_score = assignment.participant_experiment.score
+    scorecard = assignment.activity
+    cumulative_score = assignment.assignment_set.score
+    rendered_scorecard = render_activity(scorecard, assignment_set.complete,
+                                         assignment_set, assignment,
+                                         this_index)
+
+    template_kwargs = {
+        "exp": experiment,
+        "assignment": assignment,
+        "next_url": next_url,
+        "cumulative_score": cumulative_score,
+        "experiment_complete": assignment_set.complete,
+        "previous_assignment": previous_assignment,
+        "rendered_scorecard": rendered_scorecard,
+        "scorecard_form": scorecard_form,
+    }
+
+    return render_template("experiments/read_scorecard.html",
+                           **template_kwargs)
+
+
+def read_question(experiment, assignment):
+    """Common code for reading questions.
+    """
+    question = assignment.activity
+    question_form = get_answer_form(question)
+    question_form.populate_from_assignment(assignment)
+
+    assignment_set = assignment.assignment_set
+    this_index = assignment_set.assignments.index(assignment)
+
+    if assignment.result:
+        question_form.populate_from_result(assignment.result)
+
+    if not assignment_set.complete:
+        # If the participant is not done, then save the choice order
+        next_url = None
+    else:
+        # If the participant is done, have a link right to the next question
+        next_url = get_next_assignment_url(assignment_set, this_index)
+
+    previous_assignment = None
+
+    if this_index - 1 > -1 and not experiment.disable_previous:
+        previous_assignment = assignment_set.assignments[this_index - 1]
+
+    cumulative_score = assignment.assignment_set.score
+    rendered_question = render_activity(question, assignment_set.complete,
+                                        assignment, assignment_set.complete)
+
+    template_kwargs = {
+        "exp": experiment,
+        "assignment": assignment,
+        "question_form": question_form,
+        "next_url": next_url,
+        "cumulative_score": cumulative_score,
+        "experiment_complete": assignment_set.complete,
+        "previous_assignment": previous_assignment,
+        "rendered_question": rendered_question,
+    }
+
+    # This mapping is for further processing of certain question types, if
+    # necessary
+    read_question_function_mapping = {
+        "question_mc_singleselect": read_mc_question,
+        "question_mc_multiselect": read_mc_question,
+        "question_mc_singleselect_scale": read_mc_question,
+    }
+
+    try:
+        read_question_function_mapping[question.type](experiment, assignment)
+    except KeyError:
+        pass
 
     return render_template("experiments/read_question.html",
-                           exp=experiment,
-                           question=question,
-                           assignment=assignment,
-                           mc_form=question_form,
-                           next_url=next_url,
-                           explanation=explanation,
-                           cumulative_score=cumulative_score,
-                           experiment_complete=part_exp.complete,
-                           previous_assignment=previous_assignment)
+                           **template_kwargs)
+
+
+def read_mc_question(_, assignment):
+    """Read a multiple choice question, making sure to save the choice order.
+    """
+    if not assignment.assignment_set.complete:
+        # If the participant is not done, then save the choice order
+        choice_order = [c.id for c in assignment.activity.choices]
+        assignment.choice_order = json.dumps(choice_order)
+        assignment.save()
 
 
 @experiments.route(ASSIGNMENT_ROUTE, methods=["PATCH"])
-def update_assignment(experiment_id, a_id):
+def update_assignment(experiment_id, assignment_set_id, assignment_id):
     """Record a user's answer to this assignment
     """
-    assignment = validate_model_id(Assignment, a_id)
-    experiment = validate_model_id(Experiment, experiment_id)
-    part_exp = assignment.participant_experiment
+    experiment, assignment_set, assignment = validate_assignment(
+        experiment_id,
+        assignment_set_id,
+        assignment_id)
 
-    if part_exp.participant != current_user:
-        abort(403)
-
-    if part_exp.complete:
+    if assignment_set.complete:
         abort(400)
 
-    if experiment.disable_previous and part_exp.progress > \
-            part_exp.assignments.index(assignment):
+    if not experiment.running:
         abort(400)
 
-    this_index = part_exp.assignments.index(assignment)
+    if experiment.disable_previous and assignment_set.progress > \
+            assignment_set.assignments.index(assignment):
+        abort(400)
 
-    if "question" in assignment.activity.type:
-        return update_question_assignment(part_exp, assignment, this_index)
+    activity_form = get_answer_form(assignment.activity, request.form)
+    activity_form.populate_from_activity(assignment.activity)
 
-    # Pass for now
-    return jsonify({"success": 1})
+    if not activity_form.validate():
+        return jsonify({"success": 0, "errors": activity_form.errors})
 
+    activity_form.populate_assignment(assignment)
 
-def update_question_assignment(part_exp, assignment, this_index):
-    """Update an assignment whose activity is a question.
-    """
-    question = assignment.activity
+    this_index = assignment_set.assignments.index(assignment)
+    next_url = get_next_assignment_url(assignment_set, this_index)
 
-    question_form = get_question_form(question, request.form)
-    question_form.populate_choices(question.choices)
+    if this_index == assignment_set.progress:
+        assignment_set.progress += 1
 
-    if not question_form.validate():
-        return jsonify({"success": 0, "errors": question_form.errors})
-
-    selected_choice = validate_model_id(Choice,
-                                        int(question_form.choices.data), 400)
-
-    # User has answered this question successfully
-    result = MultipleChoiceQuestionResult(
-        choice=Choice.query.get(selected_choice.id))
-    result.assignment = assignment
-    db.session.add(result)
-    assignment.comment = question_form.comment.data
-
-    next_url = get_next_assignment_url(part_exp, this_index)
-
-    if this_index == part_exp.progress:
-        part_exp.progress += 1
-
-    process_assignment(question_form, assignment)
+    # Record time to solve
+    if activity_form.render_time.data and activity_form.submit_time.data:
+        render_datetime = dateutil.parser.parse(activity_form.render_time.data)
+        submit_datetime = dateutil.parser.parse(activity_form.submit_time.data)
+        time_to_submit = submit_datetime - render_datetime
+        assignment.time_to_submit = time_to_submit
 
     db.session.commit()
 
@@ -276,41 +344,31 @@ def update_question_assignment(part_exp, assignment, this_index):
     return jsonify({"success": 1, "next_url": next_url})
 
 
-def process_assignment(activity_form, assignment):
-    """Do some assignment processing that's common across all Activity types,
-    but depends on the submission being valid.
-    """
-    # Record time to solve
-    if activity_form.render_time.data and activity_form.submit_time.data:
-        render_datetime = dateutil.parser.parse(activity_form.render_time.data)
-        submit_datetime = dateutil.parser.parse(activity_form.submit_time.data)
-        time_to_submit = submit_datetime - render_datetime
-        assignment.time_to_submit = time_to_submit
-
-
-def get_next_assignment_url(participant_experiment, current_index):
-    """Given an experiment, a participant_experiment, and the current index,
+def get_next_assignment_url(assignment_set, current_index):
+    """Given an experiment, a assignment_set, and the current index,
     find the url of the next assignment in the sequence.
     """
-    experiment_id = participant_experiment.experiment.id
+    experiment_id = assignment_set.experiment.id
     try:
         # If there is a next assignment, return its url
         next_url = url_for(
             "experiments.read_assignment",
             experiment_id=experiment_id,
-            a_id=participant_experiment.assignments[current_index + 1].id)
+            assignment_set_id=assignment_set.id,
+            assignment_id=assignment_set.assignments[current_index + 1].id)
     except IndexError:
         next_url = None
 
     if not next_url:
         # We've reached the end of the experiment
-        if not participant_experiment.complete:
+        if not assignment_set.complete:
             # The experiment needs to be submitted
-            next_url = url_for("experiments.confirm_done_experiment",
+            next_url = url_for("experiments.confirm_done_assignment_set",
+                               assignment_set_id=assignment_set.id,
                                experiment_id=experiment_id)
         else:
             # Experiment has already been submitted
-            next_url = url_for("experiments.read_experiment",
+            next_url = url_for("experiments.experiment",
                                experiment_id=experiment_id)
 
     return next_url
@@ -325,12 +383,9 @@ def settings_experiment(experiment_id):
 
     update_experiment_form = CreateExperimentForm(obj=experiment)
 
-    delete_experiment_form = DeleteObjectForm()
-
     return render_template("experiments/settings_experiment.html",
                            experiment=experiment,
-                           update_experiment_form=update_experiment_form,
-                           delete_experiment_form=delete_experiment_form)
+                           update_experiment_form=update_experiment_form)
 
 
 def get_question_stats(assignment, question_stats):
@@ -360,7 +415,7 @@ def results_experiment(experiment_id):
     experiment = validate_model_id(Experiment, experiment_id)
 
     num_participants = Participant.query.count()
-    num_finished = ParticipantExperiment.query.\
+    num_finished = AssignmentSet.query.\
         filter_by(experiment_id=experiment.id).\
         filter_by(progress=-1).count()
 
@@ -369,8 +424,10 @@ def results_experiment(experiment_id):
     # {"question_id": {"question": "question_text", "num_responses":
     #   num_responses, "num_correct": num_correct], ...}
     question_stats = defaultdict(dict)
+    assignments = Assignment.query.join(AssignmentSet).\
+        filter(AssignmentSet.experiment == experiment).all()
 
-    for assignment in experiment.assignments:
+    for assignment in assignments:
         activity = assignment.activity
 
         if "question" in activity.type:
@@ -384,45 +441,48 @@ def results_experiment(experiment_id):
                            question_stats=question_stats)
 
 
-@experiments.route(EXPERIMENT_ROUTE + "/confirm_done", methods=["GET"])
+@experiments.route(ASSIGNMENT_SET_ROUTE + "/confirm_done", methods=["GET"])
 @roles_required("participant")
-def confirm_done_experiment(experiment_id):
+def confirm_done_assignment_set(experiment_id, assignment_set_id):
     """Show the user a page before finalizing their quiz answers.
     """
-    experiment = validate_model_id(Experiment, experiment_id)
+    experiment, assignment_set = validate_assignment_set(experiment_id,
+                                                         assignment_set_id)
 
-    return render_template("experiments/confirm_done_experiment.html",
+    return render_template("experiments/confirm_done_assignment_set.html",
+                           assignment_set=assignment_set,
                            experiment=experiment)
 
 
-@experiments.route(EXPERIMENT_ROUTE + "/finalize", methods=["PATCH"])
+@experiments.route(ASSIGNMENT_SET_ROUTE + "/finalize", methods=["PATCH"])
 @roles_required("participant")
-def finalize_experiment(experiment_id):
+def finalize_assignment_set(experiment_id, assignment_set_id):
     """Finalize the user's answers for this experiment. They will no longer be
     able to edit them, but may view them.
     """
-    validate_model_id(Experiment, experiment_id)
-    part_exp = get_participant_experiment_or_abort(experiment_id)
+    experiment, assignment_set = validate_assignment_set(experiment_id,
+                                                         assignment_set_id)
 
-    if part_exp.complete:
+    if assignment_set.complete:
         abort(400)
 
-    part_exp.complete = True
+    assignment_set.complete = True
 
     db.session.commit()
 
     return jsonify({"success": 1,
-                    "next_url": url_for('experiments.done_experiment',
-                                        experiment_id=experiment_id)})
+                    "next_url": url_for('experiments.done_assignment_set',
+                                        assignment_set_id=assignment_set.id,
+                                        experiment_id=experiment.id)})
 
 
-@experiments.route(EXPERIMENT_ROUTE + "/done", methods=["GET"])
+@experiments.route(ASSIGNMENT_SET_ROUTE + "/done", methods=["GET"])
 @roles_required("participant")
-def done_experiment(experiment_id):
+def done_assignment_set(experiment_id, assignment_set_id):
     """Show the user a screen indicating that they are finished.
     """
-    experiment = validate_model_id(Experiment, experiment_id)
-    participant_experiment = get_participant_experiment_or_abort(experiment_id)
+    experiment, assignment_set = validate_assignment_set(experiment_id,
+                                                         assignment_set_id)
 
     # Handle any post finalize actions, e.g. providing a button to submit a HIT
     post_finalize = session.pop("experiment_post_finalize_handler", None)
@@ -431,30 +491,7 @@ def done_experiment(experiment_id):
         handler = POST_FINALIZE_HANDLERS[post_finalize]
         addendum = handler()
 
-    return render_template("experiments/done_experiment.html",
+    return render_template("experiments/done_assignment_set.html",
                            addendum=addendum,
-                           participant_experiment=participant_experiment,
+                           assignment_set=assignment_set,
                            scorecard_settings=experiment.scorecard_settings)
-
-
-@experiments.app_template_filter("datetime_format")
-def datetime_format_filter(value, fmt="%Y-%m-%d %H:%M:%S"):
-    """Format the value (a datetime) according to fmt with strftime.
-    """
-    return value.strftime(fmt)
-
-
-@experiments.app_template_filter("get_graph_url")
-def get_graph_url_filter(graph):
-    """Given a graph, return html to display it.
-    """
-    if os.path.isfile(graph.path):
-        filename = graph.filename()
-    else:
-        filename = current_app.config.get("EXPERIMENTS_PLACEHOLDER_GRAPH")
-
-    graph_path = url_for(
-        'static',
-        filename=os.path.join(current_app.config.get("GRAPH_DIRECTORY"),
-                              filename))
-    return graph_path

@@ -1,5 +1,6 @@
 """Test amazon turk views.
 """
+from __future__ import unicode_literals
 import mock
 from flask import session
 
@@ -10,14 +11,15 @@ from tests.factories import create_experiment
 
 def test_register(client, users):
     experiment = create_experiment(1, 1)
-    experiment.participant_experiments[0].complete = False
-    experiment.participant_experiments[0].progress = 0
+    experiment.assignment_sets[0].complete = False
+    experiment.assignment_sets[0].progress = 0
     experiment.save()
 
     response = client.get("/mturk/register?experiment_id={}".
                           format(experiment.id))
+    data = response.data.decode(response.charset)
     assert response.status_code == 200
-    assert experiment.blurb in response.data
+    assert experiment.blurb in data
 
     response = client.get("/mturk/register")
     assert response.status_code == 400
@@ -28,8 +30,9 @@ def test_register(client, users):
                           format(experiment.id))
 
     assert response.status_code == 200
-    assert "/experiments/{}/assignments/".format(experiment.id) in \
-        response.data
+    data = response.data.decode(response.charset)
+    assert "/experiments/{}/assignment_sets/{}".\
+        format(experiment.id, experiment.assignment_sets[0].id) in data
 
     # one from users fixture, one from views
     assert Participant.query.count() == 2
@@ -38,10 +41,11 @@ def test_register(client, users):
                            "&workerId=4fsa&assignmentId=4&turkSubmitTo=4"
                            "&hitId=5").
                           format(experiment.id))
+    data = response.data.decode(response.charset)
     assert "mturk/externalSubmit" in session["mturk_post_url"]
 
-    assert "/experiments/{}/assignments/".format(experiment.id) in \
-        response.data
+    assert "/experiments/{}/assignment_sets/{}".\
+        format(experiment.id, experiment.assignment_sets[0].id) in data
     assert response.status_code == 200
     assert Participant.query.count() == 2
 

@@ -8,7 +8,7 @@
 <div class="alert alert-info" role="alert">
   {{ macros.render_glyphicon("info-sign") }}
   Looking for more detailed information? You can see all experiment data
-  by <a href="{{ url_for('core.manage_data') }}">exporting data</a>.
+  by <a href="{{ url_for('data.manage_data') }}">exporting data</a>.
 </div>
 <p>Number of participants involved: {{ num_participants }}</p>
 <p>Number of participants finished: {{ num_finished }} </p>
@@ -21,7 +21,7 @@
     </tr>
   </thead>
   <tbody>
-{% for question, data in question_stats.iteritems() %}
+{% for question, data in question_stats.items() %}
 <tr>
   <td>{{ question }}</td>
   <td>{{ data["num_responses"] }}</td>

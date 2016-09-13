@@ -1,0 +1,16 @@
+{% extends 'layout.html' %}
+
+{% import 'macros.html' as macros %}
+
+{% block head %}
+{% endblock %}
+
+{% block title %}
+Activity {{ activity.id }} - Preview
+{% endblock %}
+
+{% block content %}
+<a href="{{ url_for('activities.settings_activity', activity_id=activity.id) }}"
+   role="button" class="btn btn-primary">Edit</a>
+{{ rendered_activity|safe }}
+{% endblock %}

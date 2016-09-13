@@ -1,68 +1,32 @@
-{% extends 'layout.html' %}
+{% extends 'experiments/read_activity.html' %}
 
 {% import 'macros.html' as macros %}
 
-{% block head %}
-<meta name="csrf-token" content="{{ csrf_token() }}">
-<script src="{{ url_for('static', filename='js/jquery.runner.min.js') }}"></script>
-<script src="{{ url_for('static', filename='js/activity_timing.js') }}"></script>
-<script src="{{ url_for('static', filename='js/common_ajax.js') }}"></script>
-<script src="{{ url_for('static', filename='js/experiments_ajax.js') }}"></script>
-{% endblock %}
-
-{% block title %}
-Quiz{% endblock %}
-
-{% block content %}
-{% if exp.show_timers and not experiment_complete %}
-Time elapsed: <span class="stopwatch"></span>
-{% endif %}
-{% if exp.show_scores %}
-<span class="score">Current score: {{ cumulative_score }}</span>
-{% endif %}
-{% for media_item in assignment.media_items %}
-<div class="row media-item-container"
-  {% if not experiment_complete and media_item.flash %}
-  data-flash-duration="{{ media_item.flash_duration }}"
-  {% endif %}
-  >
-  {{ macros.render_media_item(media_item) }}
-</div>
-{% endfor %}
-
-<div id='question'>
-  <h3>{{ question.question }}</h3>
-  <form action="{{ url_for('experiments.update_assignment', experiment_id=exp.id,
-  a_id=assignment.id)}}" method="patch" id="question-submit-form"
-  class="timed-form">
-    {{ macros.render_field(mc_form.render_time) }}
-    {{ macros.render_field(mc_form.submit_time) }}
-    {{ macros.render_field(mc_form.choices, disabled=experiment_complete) }}
-    {% if question.needs_comment %}
-    <p>Why do you think this is the correct choice?</p>
-    {{ macros.render_field(mc_form.comment, rows="5",
-    disabled=experiment_complete) }}
-    <br />
-    {% endif %}
-    <p id="explanation-text">{{ explanation }}</p>
-    <div class="row">
-      <div class="previous-button">
-        {% if previous_assignment %}
-        <a href="{{ url_for('experiments.read_assignment', experiment_id=exp.id,
-        a_id=previous_assignment.id) }}" class="btn btn-primary"
-                                         role="button">Previous</a>
-        {% endif %}
-      </div>
-      <div class="next-button">
-        {% if experiment_complete %}
-        <a href="{{ next_url }}" role="button" class="btn btn-primary">Next</a>
-        {% else %}
-        {{ macros.render_field(mc_form.submit, value="Next") }}
-        {% endif %}
-      </div>
+{% block activity %}
+<form action="{{ url_for('experiments.update_assignment', experiment_id=exp.id,
+assignment_set_id=assignment.assignment_set.id,
+assignment_id=assignment.id)}}" method="patch" id="question-submit-form"
+                                      class="timed-form">
+  {{ macros.render_field(question_form.render_time) }}
+  {{ macros.render_field(question_form.submit_time) }}
+  {{ rendered_question|safe }}
+  <div class="row">
+    <div class="previous-button">
+      {% if previous_assignment %}
+      <a href="{{ url_for('experiments.read_assignment', 
+      assignment_set_id=assignment.assignment_set.id,
+      experiment_id=exp.id,
+      assignment_id=previous_assignment.id) }}" class="btn btn-primary"
+                                       role="button">Previous</a>
+      {% endif %}
     </div>
-  </form>
-  <div id="scorecard">
+    <div class="next-button">
+      {% if experiment_complete %}
+      <a href="{{ next_url }}" role="button" class="btn btn-primary">Next</a>
+      {% else %}
+      {{ macros.render_field(question_form.submit, value="Next") }}
+      {% endif %}
+    </div>
   </div>
-</div>
+</form>
 {% endblock %}

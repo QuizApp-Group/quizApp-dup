@@ -3,9 +3,7 @@
 {% import "macros.html" as macros %}
 
 {% block head %}
-<meta name="csrf-token" content="{{ csrf_token() }}">
-<script src="{{ url_for('static', filename='js/common_ajax.js') }}"></script>
-<script src="{{ url_for('static', filename='js/experiments_ajax.js') }}"></script>
+<script defer src="{{ url_for('static', filename='js/experiments_ajax.js') }}"></script>
 {{ macros.import_datetimepicker() }}
 {% endblock %}
 
@@ -15,21 +13,8 @@
 <h3>General settings</h2>
 
 {{ macros.render_form(update_experiment_form,
-action=url_for('experiments.update_experiment',
+action=url_for('experiments.experiment',
 experiment_id=experiment.id),
 method="put",
 id="update-experiment-form") }}
-
-<hr>
-
-<h3>Delete experiment</h3>
-<div class="alert alert-danger" role="alert">
-  {{ macros.render_glyphicon("exclamation-sign") }}
-  Warning: this cannot be undone!
-</div>
-<form action="{{ url_for('experiments.delete_experiment', experiment_id=experiment.id)
-}}" method="delete" id="experiment-delete-form">
-  {{ macros.render_field(delete_experiment_form.submit, value="Delete",
-  class_="btn-danger") }}
-</form>
 {% endblock %}
