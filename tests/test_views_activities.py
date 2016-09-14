@@ -14,7 +14,8 @@ from quizApp.models import Question, Scorecard
 
 def test_read_activities(client, users):
     login_experimenter(client)
-    activities = factory.create_batch(factories.ActivityFactory, 10)
+    activities = factory.create_batch(factories.QuestionFactory, 10)
+    activities = factory.create_batch(factories.ScorecardFactory, 10)
     db.session.add_all(activities)
     db.session.commit()
 

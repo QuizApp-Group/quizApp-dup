@@ -11,7 +11,7 @@ from wtforms_alchemy import ModelForm, ModelFormField
 from quizApp.forms.common import OrderFormMixin, ScorecardSettingsForm, \
     MultiCheckboxField
 from quizApp.models import Experiment, MultipleChoiceQuestionResult, \
-    IntegerQuestionResult, FreeAnswerQuestionResult, Choice, Result, \
+    IntegerQuestionResult, FreeAnswerQuestionResult, Choice, \
     MultiSelectQuestionResult, ScorecardResult
 
 

@@ -13,7 +13,7 @@ from flask_security import roles_required
 from quizApp.models import Activity, Dataset, Question, Choice
 from quizApp.forms.experiments import get_answer_form
 from quizApp.forms.activities import DatasetListForm,\
-    ChoiceForm, get_activity_form, ActivityForm
+    ChoiceForm, get_activity_form
 from quizApp.forms.common import DeleteObjectForm, ObjectTypeForm
 from quizApp import db
 from quizApp.views.helpers import validate_model_id
