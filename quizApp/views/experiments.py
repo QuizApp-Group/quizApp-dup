@@ -4,10 +4,14 @@ participants.
 from collections import defaultdict
 from datetime import datetime
 import json
+import os
+import tempfile
+import pdb
 
+import openpyxl
 import dateutil.parser
 from flask import Blueprint, render_template, url_for, jsonify, abort, \
-    request, session
+    request, session, send_file
 from flask_security import login_required, current_user, roles_required
 
 from quizApp import db
@@ -457,39 +461,66 @@ def export_results_experiment(experiment_id):
     #  The above two give us coordinates, fill them out with user's answer,
     #  points, etc.
     experiment = validate_model_id(Experiment, experiment_id)
-    assignments = models.Assignment.query.\
-        join(models.AssignmentSet).\
-        join(models.Experiment).\
-        filter(models.Experiment == experiment).all()
+    assignment_sets = AssignmentSet.query.\
+        join(Experiment).\
+        filter(Experiment.id == experiment.id).all()
 
     headers = ["User email", "User ID"]
     activity_column_mapping = {}
     next_participant_row = 2
     participant_row_mapping = {}
 
-    for assignment in assignments:
-        participant = assignment.participant
-        activity = assignment.activity
+    workbook = openpyxl.Workbook()
+    sheet = workbook.active
+    sheet.title = "Experiment {} - Report".format(experiment.id)
+    pdb.set_trace()
 
+
+    for assignment_set in assignment_sets:
+        participant = assignment_set.participant
+
+        if not participant:
+            continue
+
+        pdb.set_trace()
         if participant.id not in participant_row_mapping:
             participant_row_mapping[participant.id] = next_participant_row
+            sheet.cell(row=next_participant_row, column=1).value = participant.email
+            sheet.cell(row=next_participant_row, column=2).value = participant.id
             next_participant_row += 1
 
-        if activity.id not in activity_column_mapping:
-            activity_column_mapping[activity.id] = len(headers)
-            headers.append(activity.title)
-            headers.append("Correct?")
-            headers.append("Points")
+        for assignment in assignment_set.assignments:
+            activity = assignment.activity
 
-        participant_row = participant_row_mapping[participant.id]
-        activity_column = activity_column_mapping[activity.id]
+            if activity.id not in activity_column_mapping:
+                activity_column_mapping[activity.id] = len(headers) + 1
+                headers.append("{}/{}: {}".format(assignment.id, activity.id, activity))
+                headers.append("Correct?")
+                headers.append("Points")
 
-        sheet.cell(row=participant_row, column=activity_column).value = \
-            result.string
-        sheet.cell(row=participant_row, column=activity_column + 1)\
-            .value = assignment.result.correct
-        sheet.cell(row=participant_row, column=activity_column + 2)\
-            .value = assignment.result.points
+            if not assignment.result:
+                continue
+
+            participant_row = participant_row_mapping[participant.id]
+            activity_column = activity_column_mapping[activity.id]
+
+            sheet.cell(row=participant_row, column=activity_column).value = \
+                str(assignment.result)
+            sheet.cell(row=participant_row, column=activity_column + 1)\
+                .value = assignment.correct
+            sheet.cell(row=participant_row, column=activity_column + 2)\
+                .value = assignment.score
+
+    for col, header in enumerate(headers, 1):
+        sheet.cell(row=1, column=col).value = header
+
+    pdb.set_trace()
+    file_name = tempfile.mkstemp(".xlsx")
+    os.close(file_name[0])
+    workbook.save(file_name[1])
+    return send_file(
+        file_name[1], as_attachment=True,
+        attachment_filename="experiment_{}_report.xlsx".format(experiment.id))
 
 
 
