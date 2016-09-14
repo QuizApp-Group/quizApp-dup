@@ -116,7 +116,11 @@ def test_render_scorecard(client, users):
     assert scorecard.prompt in data
 
     # make sure include_in_scorecards is respected
-    exp = factories.create_experiment(100, 1)
+    exp = factories.create_experiment(100, 1, ["question_mc_singleselect",
+                                               "question_mc_multiselect",
+                                               "scorecard",
+                                               "question_mc_singleselect_scale"
+                                               ])
     assignment_set = exp.assignment_sets[0]
     scorecard = factories.ScorecardFactory()
     exp.save()

@@ -5,7 +5,7 @@ tests the kind of activity it is loading and then defers to a more specific
 function (for example, questions are read by read_question rather than
 read_activity itself).
 """
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 
 from flask import Blueprint, render_template, url_for, jsonify, abort, request
 from flask_security import roles_required
@@ -119,19 +119,28 @@ def render_scorecard(scorecard, disabled=False, assignment_set=None,
     if assignment:
         form.populate_from_assignment(assignment)
 
-    scorecard_data = defaultdict(list)
+    # Each member of scorecard data is a tuple representing the cumulative
+    # score and the list of assignments
+    scorecard_data = defaultdict(lambda: dict(score=0, assignments=[]))
     if assignment_set:
         # sort the previous assignments by category
         for assignment in assignment_set.assignments[:this_index]:
             if assignment.activity.include_in_scorecards:
-                scorecard_data[assignment.activity.category].append(assignment)
+                category = scorecard_data[assignment.activity.category]
+                category["score"] += assignment.score
+                category["assignments"].append(assignment)
+
+    # Sort by average score
+    sorted_scorecard_data = OrderedDict(
+        sorted(scorecard_data.items(),
+               key=lambda x: float(x[1]["score"]) / len(x[1]["assignments"])))
 
     return render_template("activities/render_scorecard.html",
                            assignment_set=assignment_set,
                            scorecard=scorecard,
                            form=form,
                            disabled=disabled,
-                           scorecard_data=scorecard_data)
+                           scorecard_data=sorted_scorecard_data)
 
 
 def render_question(question, disabled=False, assignment=None,
