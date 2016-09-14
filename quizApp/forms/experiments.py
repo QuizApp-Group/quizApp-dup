@@ -11,8 +11,8 @@ from wtforms_alchemy import ModelForm, ModelFormField
 from quizApp.forms.common import OrderFormMixin, ScorecardSettingsForm, \
     MultiCheckboxField
 from quizApp.models import Experiment, MultipleChoiceQuestionResult, \
-    IntegerQuestionResult, FreeAnswerQuestionResult, Choice, Result, \
-    MultiSelectQuestionResult
+    IntegerQuestionResult, FreeAnswerQuestionResult, Choice, \
+    MultiSelectQuestionResult, ScorecardResult
 
 
 def get_answer_form(activity, data=None):
@@ -102,7 +102,7 @@ class ScorecardAnswerForm(ActivityAnswerForm):
 
     @property
     def result(self):
-        return Result()
+        return ScorecardResult()
 
 
 class IntegerAnswerForm(ActivityAnswerForm):
@@ -149,13 +149,7 @@ class ChoiceAnswerFormMixin(object):
         """
         choices = []
         for choice in question.choices:
-            if choice.choice and choice.label:
-                label = "{} - {}".format(choice.label, choice.choice)
-            elif choice.choice:
-                label = choice.choice
-            else:
-                label = choice.label
-            choices.append((str(choice.id), label))
+            choices.append((str(choice.id), str(choice)))
         self.choices.choices = choices
 
 

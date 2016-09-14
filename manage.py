@@ -97,16 +97,21 @@ def create_db(password, user):
                        db_uri.port,
                        db_uri.database)
 
+        click.echo("Got URIs")
+
         if not sqlalchemy_utils.database_exists(root_uri):
             sqlalchemy_utils.functions.create_database(root_uri)
 
         engine = create_engine(root_uri)
         conn = engine.connect()
+        click.echo("Connected to engine")
         conn.execute("commit")
         conn.execute(("GRANT ALL ON {}.* TO '{}'@'{}' IDENTIFIED BY'{}';").
                      format(db_uri.database, db_uri.username, db_uri.host,
                             db_uri.password))
         conn.close()
+
+        click.echo("Constructed database")
 
         return
     click.echo("Database seems to be working OK.")
