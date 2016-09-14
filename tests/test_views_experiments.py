@@ -683,9 +683,9 @@ def test_results_experiment(client, users):
 def test_populate_row_segment():
     workbook = openpyxl.Workbook()
     sheet = workbook.active
-    row_index = int(random.randint(1,100))
-    initial_col = int(random.randint(1,100))
-    data = range(0, int(random.randint(1,100)))
+    row_index = int(random.randint(1, 100))
+    initial_col = int(random.randint(1, 100))
+    data = range(0, int(random.randint(1, 100)))
 
     populate_row_segment(sheet, row_index, initial_col, data)
 
