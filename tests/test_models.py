@@ -345,6 +345,11 @@ def test_freeanswer_question_result():
     assert result.text in str(result)
 
 
+def test_scorecard_result():
+    result = ScorecardResult()
+    str(result)
+
+
 def test_integer_answer_question_result():
     result = IntegerQuestionResult()
     result.integer = 5993
