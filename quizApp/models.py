@@ -306,6 +306,15 @@ class Result(Base):
     }
 
 
+class ScorecardResult(Result):
+    """Result to a Scorecard activity. This class just exists to implement
+    __str__ since there is no action to be taken in a scorecard.
+    """
+
+    def __str__(self):
+        return ""
+
+
 class IntegerQuestionResult(Result):
     """The integer entered as an answer to an Integer Question.
 
@@ -486,6 +495,11 @@ class Scorecard(Activity):
         title (str): The title of this scorecard
         prompt (str): The prompt to show when asking for a comment
     """
+    class Meta(object):
+        """Define what kind of Result we are looking for.
+        """
+        result_class = ScorecardResult
+
     title = db.Column(db.String(500))
     prompt = db.Column(db.String(500))
 

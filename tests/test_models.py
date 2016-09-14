@@ -9,7 +9,7 @@ from sqlalchemy import inspect
 import mock
 
 from tests.factories import ExperimentFactory, \
-    ChoiceFactory, QuestionFactory
+    ChoiceFactory, QuestionFactory, ScorecardFactory
 from quizApp.models import Assignment, Role, Activity, \
     Question, Graph, MultipleChoiceQuestionResult, MultipleChoiceQuestion, \
     FreeAnswerQuestion, FreeAnswerQuestionResult, Result, \
@@ -217,6 +217,25 @@ def test_activity_correct():
     activity.is_correct(None)
 
 
+def test_activity_str():
+    activity = Activity()
+
+    with pytest.raises(NotImplementedError):
+        str(activity)
+
+
+def test_question_str():
+    question = QuestionFactory()
+
+    assert question.question in str(question)
+
+
+def test_scorecard_str():
+    scorecard = ScorecardFactory()
+
+    assert scorecard.title in str(scorecard)
+
+
 def test_assignment_correct():
     assignment = Assignment()
     result = Result()
@@ -298,3 +317,36 @@ def test_multiselect_question_result():
     result.choices = [choice1, choice2]
 
     assignment.result = result
+
+    assert choice1.choice in str(result)
+    assert choice2.choice in str(result)
+
+
+def test_singleselect_question_result():
+    result = MultipleChoiceQuestionResult()
+    choice = ChoiceFactory()
+
+    result.choice = choice
+
+    assert choice.choice in str(result)
+
+
+def test_result():
+    result = Result()
+
+    with pytest.raises(NotImplementedError):
+        str(result)
+
+
+def test_freeanswer_question_result():
+    result = FreeAnswerQuestionResult()
+    result.text = "jiefdjsae"
+
+    assert result.text in str(result)
+
+
+def test_integer_answer_question_result():
+    result = IntegerQuestionResult()
+    result.integer = 5993
+
+    assert str(result.integer) in str(result)
