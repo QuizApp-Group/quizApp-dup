@@ -692,3 +692,21 @@ def test_populate_row_segment():
     for col_offset, datum in enumerate(data):
         assert sheet.cell(row=row_index,
                           column=col_offset + initial_col).value == datum
+
+
+def test_export_experiment_results(client, users):
+    login_experimenter(client)
+
+    exp = create_experiment(10, 10)
+    exp.save()
+    url = "/experiments/{}/results/export".format(exp.id)
+
+    response = client.get(url)
+    assert response.status_code == 200
+
+    exp = ExperimentFactory()
+    exp.save()
+
+    url = "/experiments/{}/results/export".format(exp.id)
+    response = client.get(url)
+    assert response.status_code == 200

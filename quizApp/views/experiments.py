@@ -6,7 +6,6 @@ from datetime import datetime
 import json
 import os
 import tempfile
-import pdb
 
 import openpyxl
 import dateutil.parser
@@ -464,7 +463,6 @@ def export_results_experiment(experiment_id):
 
     workbook = get_results_workbook(experiment)
 
-    pdb.set_trace()
     file_name = tempfile.mkstemp(".xlsx")
     os.close(file_name[0])
     workbook.save(file_name[1])
@@ -486,7 +484,6 @@ def get_results_workbook(experiment):
     workbook = openpyxl.Workbook()
     sheet = workbook.active
     sheet.title = "Experiment {} - Report".format(experiment.id)
-    pdb.set_trace()
 
     for assignment_set in assignment_sets:
         participant = assignment_set.participant
@@ -494,7 +491,6 @@ def get_results_workbook(experiment):
         if not participant:
             continue
 
-        pdb.set_trace()
         if participant.id not in participant_row_mapping:
             participant_row_mapping[participant.id] = next_participant_row
             populate_row_segment(sheet,
