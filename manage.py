@@ -89,7 +89,6 @@ def create_db(password, user):
                 root_pass = ""
             root_name = user
 
-        click.echo("Got credentials")
 
         db_uri = make_url(current_app.config["SQLALCHEMY_DATABASE_URI"])
         root_uri = URL(db_uri.drivername,
@@ -106,6 +105,7 @@ def create_db(password, user):
 
         engine = create_engine(root_uri)
         conn = engine.connect()
+        click.echo("Connected to engine")
         conn.execute("commit")
         conn.execute(("GRANT ALL ON {}.* TO '{}'@'{}' IDENTIFIED BY'{}';").
                      format(db_uri.database, db_uri.username, db_uri.host,

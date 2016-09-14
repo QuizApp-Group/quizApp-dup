@@ -12,6 +12,11 @@ on Amazon Mechanical Turk. Using the script is fairly straightforward:
 2. Run ``./manage.py post-hits --experiment-id <experiment_id>`` with the
    ID of the experiment you wish to post.
 
+   .. note::
+
+      Make sure you are still in the virtual environment you made previously:
+      ``workon quizApp``
+
 3. If you are successful, you will see the message "HIT Created" followed by
    the ID of the HIT. You should now be able to see them in the requester
    interface on mechanical turk.
