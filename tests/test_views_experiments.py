@@ -8,11 +8,14 @@ import mock
 from datetime import datetime, timedelta
 from mock import patch
 
+import openpyxl
+
 from quizApp import db
 from quizApp.models import AssignmentSet
 from quizApp.views.experiments import get_next_assignment_url, \
-    POST_FINALIZE_HANDLERS, validate_assignment_set
-from tests.factories import ExperimentFactory, create_experiment
+    POST_FINALIZE_HANDLERS, validate_assignment_set, populate_row_segment
+from tests.factories import ExperimentFactory, create_experiment, \
+    ParticipantFactory, create_result
 from tests.auth import login_participant, get_participant, \
     login_experimenter
 from tests.helpers import json_success
@@ -674,5 +677,52 @@ def test_results_experiment(client, users):
     exp = create_experiment(1, 1)
     exp.save()
     url = "/experiments/" + str(exp.id) + "/results"
+    response = client.get(url)
+    assert response.status_code == 200
+
+
+def test_populate_row_segment():
+    workbook = openpyxl.Workbook()
+    sheet = workbook.active
+    row_index = int(random.randint(1, 100))
+    initial_col = int(random.randint(1, 100))
+    data = range(0, int(random.randint(1, 100)))
+
+    populate_row_segment(sheet, row_index, initial_col, data)
+
+    for col_offset, datum in enumerate(data):
+        assert sheet.cell(row=row_index,
+                          column=col_offset + initial_col).value == datum
+
+
+def test_export_experiment_results(client, users):
+    login_experimenter(client)
+
+    exp = create_experiment(10, 10, ["question_mc_singleselect", "scorecard",
+                                     "question_mc_singleselect_scale",
+                                     "question_mc_multiselect"])
+    common_participant = ParticipantFactory()
+    for assignment_set in exp.assignment_sets:
+        if random.random() > .5:
+            if random.random() > .5:
+                assignment_set.participant = common_participant
+            else:
+                assignment_set.participant = ParticipantFactory()
+
+            for assignment in assignment_set.assignments:
+                if random.random() > .5:
+                    result = create_result(assignment.activity)
+                    assignment.result = result
+
+    exp.save()
+    url = "/experiments/{}/results/export".format(exp.id)
+
+    response = client.get(url)
+    assert response.status_code == 200
+
+    exp = ExperimentFactory()
+    exp.save()
+
+    url = "/experiments/{}/results/export".format(exp.id)
     response = client.get(url)
     assert response.status_code == 200

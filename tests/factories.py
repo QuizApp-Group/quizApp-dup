@@ -107,6 +107,11 @@ class ScaleQuestionFactory(QuestionFactory):
         model = models.ScaleQuestion
 
 
+class MultiSelectQuestionFactory(QuestionFactory):
+    class Meta(object):
+        model = models.MultiSelectQuestion
+
+
 class AssignmentFactory(factory.Factory):
     class Meta(object):
         model = models.Assignment
@@ -154,6 +159,43 @@ class DatasetFactory(factory.Factory):
             self.media_items.append(MediaItemFactory())
 
 
+class IntegerQuestionResultFactory(factory.Factory):
+    class Meta(object):
+        model = models.IntegerQuestionResult
+
+    integer = factory.Faker("pyint")
+
+
+class FreeAnswerQuestionResultFactory(factory.Factory):
+    class Meta(object):
+        model = models.FreeAnswerQuestionResult
+
+    text = factory.Faker("text")
+
+
+def create_result(activity):
+    """Create a result for the given activity.
+    """
+    factory_mapping = {
+        "question_mc_singleselect": models.MultipleChoiceQuestionResult,
+        "question_mc_singleselect_scale": models.MultipleChoiceQuestionResult,
+        "question_mc_multiselect": models.MultiSelectQuestionResult,
+        "question_integer": IntegerQuestionResultFactory,
+        "question_freeanswer": FreeAnswerQuestionFactory,
+        "scorecard": models.ScorecardResult,
+    }
+
+    result = factory_mapping[activity.type]()
+
+    if "question_mc_singleselect" in activity.type:
+        result.choice = random.choice(activity.choices)
+
+    if "question_mc_multiselect" == activity.type:
+        result.choices = [random.choice(activity.choices)]
+
+    return result
+
+
 def create_experiment(num_activities, num_participants, activity_types=[]):
     experiment = ExperimentFactory()
     assignment_sets = []
@@ -173,6 +215,7 @@ def create_experiment(num_activities, num_participants, activity_types=[]):
                 "question_mc_singleselect_scale": ScaleQuestionFactory,
                 "question_integer": IntegerQuestionFactory,
                 "question_freeanswer": FreeAnswerQuestionFactory,
+                "question_mc_multiselect": MultiSelectQuestionFactory,
                 "scorecard": ScorecardFactory,
             }
             activity = factory_mapping[activity_type]()
