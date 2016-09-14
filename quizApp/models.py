@@ -175,13 +175,6 @@ class AssignmentSet(Base):
 
         return score
 
-    @db.validates('assignments')
-    def validate_assignments(self, _, assignment):
-        """The Assignments in this model must be related to the same Experiment
-        as this model is."""
-        assert assignment.participant == self.participant
-        return assignment
-
     def import_dict(self, **kwargs):
         experiment = kwargs.pop("experiment")
         self.experiment = experiment

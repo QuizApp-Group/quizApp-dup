@@ -461,58 +461,8 @@ def export_results_experiment(experiment_id):
     #  The above two give us coordinates, fill them out with user's answer,
     #  points, etc.
     experiment = validate_model_id(Experiment, experiment_id)
-    assignment_sets = AssignmentSet.query.\
-        join(Experiment).\
-        filter(Experiment.id == experiment.id).all()
 
-    headers = ["User email", "User ID"]
-    activity_column_mapping = {}
-    next_participant_row = 2
-    participant_row_mapping = {}
-
-    workbook = openpyxl.Workbook()
-    sheet = workbook.active
-    sheet.title = "Experiment {} - Report".format(experiment.id)
-    pdb.set_trace()
-
-
-    for assignment_set in assignment_sets:
-        participant = assignment_set.participant
-
-        if not participant:
-            continue
-
-        pdb.set_trace()
-        if participant.id not in participant_row_mapping:
-            participant_row_mapping[participant.id] = next_participant_row
-            sheet.cell(row=next_participant_row, column=1).value = participant.email
-            sheet.cell(row=next_participant_row, column=2).value = participant.id
-            next_participant_row += 1
-
-        for assignment in assignment_set.assignments:
-            activity = assignment.activity
-
-            if activity.id not in activity_column_mapping:
-                activity_column_mapping[activity.id] = len(headers) + 1
-                headers.append("{}/{}: {}".format(assignment.id, activity.id, activity))
-                headers.append("Correct?")
-                headers.append("Points")
-
-            if not assignment.result:
-                continue
-
-            participant_row = participant_row_mapping[participant.id]
-            activity_column = activity_column_mapping[activity.id]
-
-            sheet.cell(row=participant_row, column=activity_column).value = \
-                str(assignment.result)
-            sheet.cell(row=participant_row, column=activity_column + 1)\
-                .value = assignment.correct
-            sheet.cell(row=participant_row, column=activity_column + 2)\
-                .value = assignment.score
-
-    for col, header in enumerate(headers, 1):
-        sheet.cell(row=1, column=col).value = header
+    workbook = get_results_workbook(experiment)
 
     pdb.set_trace()
     file_name = tempfile.mkstemp(".xlsx")
@@ -523,6 +473,69 @@ def export_results_experiment(experiment_id):
         attachment_filename="experiment_{}_report.xlsx".format(experiment.id))
 
 
+def get_results_workbook(experiment):
+    """Analyze the assignment sets in the experiment and return an excel
+    workbook.
+    """
+    assignment_sets = experiment.assignment_sets
+    headers = ["User email", "User ID"]
+    activity_column_mapping = {}
+    next_participant_row = 2
+    participant_row_mapping = {}
+
+    workbook = openpyxl.Workbook()
+    sheet = workbook.active
+    sheet.title = "Experiment {} - Report".format(experiment.id)
+    pdb.set_trace()
+
+    for assignment_set in assignment_sets:
+        participant = assignment_set.participant
+
+        if not participant:
+            continue
+
+        pdb.set_trace()
+        if participant.id not in participant_row_mapping:
+            participant_row_mapping[participant.id] = next_participant_row
+            populate_row_segment(sheet,
+                                 next_participant_row,
+                                 1,
+                                 [participant.email, participant.id])
+            next_participant_row += 1
+
+        for assignment in assignment_set.assignments:
+            activity = assignment.activity
+
+            if activity.id not in activity_column_mapping:
+                activity_column_mapping[activity.id] = len(headers) + 1
+                headers.append("{}/{}: {}".format(assignment.id,
+                                                  activity.id, activity))
+                headers.append("Correct?")
+                headers.append("Points")
+
+            if not assignment.result:
+                continue
+
+            populate_row_segment(
+                sheet,
+                participant_row_mapping[participant.id],
+                activity_column_mapping[activity.id],
+                [str(assignment.result),
+                 assignment.correct,
+                 assignment.score]
+            )
+
+    populate_row_segment(sheet, 1, 1, headers)
+
+    return workbook
+
+
+def populate_row_segment(sheet, row_index, initial_col, row):
+    """Populate the segment of row # ``row_index`` in ``sheet`` that starts at
+    ``initial_col`` and contains the items in ``row``.
+    """
+    for col_offset, cell in enumerate(row):
+        sheet.cell(row=row_index, column=initial_col + col_offset).value = cell
 
 
 @experiments.route(ASSIGNMENT_SET_ROUTE + "/confirm_done", methods=["GET"])

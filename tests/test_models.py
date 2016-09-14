@@ -8,9 +8,9 @@ import pytest
 from sqlalchemy import inspect
 import mock
 
-from tests.factories import ExperimentFactory, ParticipantFactory, \
+from tests.factories import ExperimentFactory, \
     ChoiceFactory, QuestionFactory
-from quizApp.models import AssignmentSet, Assignment, Role, Activity, \
+from quizApp.models import Assignment, Role, Activity, \
     Question, Graph, MultipleChoiceQuestionResult, MultipleChoiceQuestion, \
     FreeAnswerQuestion, FreeAnswerQuestionResult, Result, \
     IntegerQuestionResult, IntegerQuestion, Choice, Scorecard, Experiment, \
@@ -51,34 +51,6 @@ def test_experiment_running():
     experiment.stop = datetime.now() + timedelta(days=-100)
 
     assert not experiment.running
-
-
-def test_assignment_set_validators():
-    """Make sure validators are functioning correctly.
-    """
-    exp1 = ExperimentFactory()
-    exp2 = ExperimentFactory()
-
-    assignment_set = AssignmentSet(experiment=exp1)
-    assignment = Assignment()
-
-    part1 = ParticipantFactory()
-    part2 = ParticipantFactory()
-    part1.save()
-    part2.save()
-
-    assignment_set.experiment = exp2
-    assignment_set.participant = part1
-    assignment.participant = part2
-
-    with pytest.raises(AssertionError):
-        assignment_set.assignments.append(assignment)
-
-    activity = Activity()
-    assignment.activity = activity
-    assignment_set.participant = part2
-
-    assignment_set.assignments.append(assignment)
 
 
 def test_assignment_validators():
