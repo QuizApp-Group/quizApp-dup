@@ -351,7 +351,7 @@ class MultipleChoiceQuestionResult(Result):
             assert self.choice in value.activity.choices
 
     def __str__(self):
-        return self.choice.choice
+        return str(self.choice)
 
     __mapper_args__ = {
         "polymorphic_identity": "mc_question_result",
@@ -379,7 +379,7 @@ class MultiSelectQuestionResult(Result):
                 assert choice in value.activity.choices
 
     def __str__(self):
-        return ",".join([c.choice for c in self.choices])
+        return ",".join([str(c) for c in self.choices])
 
     __mapper_args__ = {
         "polymorphic_identity": "multiselect_question_result",
@@ -500,8 +500,8 @@ class Scorecard(Activity):
         """
         result_class = ScorecardResult
 
-    title = db.Column(db.String(500))
-    prompt = db.Column(db.String(500))
+    title = db.Column(db.String(500), default="")
+    prompt = db.Column(db.String(500), default="")
 
     def get_score(self, result):
         return 0
@@ -722,6 +722,15 @@ class Choice(Base):
 
     question_id = db.Column(db.Integer, db.ForeignKey("activity.id"))
     question = db.relationship("Question", back_populates="choices")
+
+    def __str__(self):
+        if self.choice and self.label:
+            label = "{} - {}".format(self.label, self.choice)
+        elif self.choice:
+            label = self.choice
+        else:
+            label = self.label
+        return label
 
 
 class MediaItem(Base):

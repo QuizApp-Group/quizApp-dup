@@ -149,13 +149,7 @@ class ChoiceAnswerFormMixin(object):
         """
         choices = []
         for choice in question.choices:
-            if choice.choice and choice.label:
-                label = "{} - {}".format(choice.label, choice.choice)
-            elif choice.choice:
-                label = choice.choice
-            else:
-                label = choice.label
-            choices.append((str(choice.id), label))
+            choices.append((str(choice.id), str(choice)))
         self.choices.choices = choices
 
 

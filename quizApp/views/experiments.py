@@ -523,6 +523,17 @@ def get_results_workbook(experiment):
 
     populate_row_segment(sheet, 1, 1, headers)
 
+    # Put a special token in all blank spaces
+    for r in range(1, next_participant_row):
+        for c in range(1, len(headers) + 1):
+            value = sheet.cell(row=r, column=c).value
+            if value is None:
+                sheet.cell(row=r, column=c).value = "_BLANK_"
+
+    # Specify experiment ID
+    sheet.cell(row=1, column=len(headers) + 1).value = "Experiment ID"
+    sheet.cell(row=2, column=len(headers) + 1).value = experiment.id
+
     return workbook
 
 
