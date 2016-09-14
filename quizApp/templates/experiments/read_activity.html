@@ -18,15 +18,21 @@ Time elapsed: <span class="stopwatch"></span>
 {% if exp.show_scores %}
 <span class="score">Current score: {{ cumulative_score }}</span>
 {% endif %}
+<div class="row">
 {% for media_item in assignment.media_items %}
-<div class="row media-item-container"
-  {% if not experiment_complete and exp.flash %}
-  data-flash-duration="{{ exp.flash_duration }}"
-  {% endif %}
-  >
-  {{ macros.render_media_item(media_item) }}
+<div class="media-item-container
+{% if assignment.media_items|length > 1 %}
+col-sm-6
+{% endif %}
+"
+     {% if not experiment_complete and exp.flash %}
+     data-flash-duration="{{ exp.flash_duration }}"
+     {% endif %}
+     >
+     {{ macros.render_media_item(media_item) }}
 </div>
 {% endfor %}
+</div>
 
 {% block activity %}
 {% endblock %}
