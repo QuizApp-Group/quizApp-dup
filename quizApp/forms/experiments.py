@@ -12,7 +12,7 @@ from quizApp.forms.common import OrderFormMixin, ScorecardSettingsForm, \
     MultiCheckboxField
 from quizApp.models import Experiment, MultipleChoiceQuestionResult, \
     IntegerQuestionResult, FreeAnswerQuestionResult, Choice, Result, \
-    MultiSelectQuestionResult
+    MultiSelectQuestionResult, ScorecardResult
 
 
 def get_answer_form(activity, data=None):
@@ -102,7 +102,7 @@ class ScorecardAnswerForm(ActivityAnswerForm):
 
     @property
     def result(self):
-        return Result()
+        return ScorecardResult()
 
 
 class IntegerAnswerForm(ActivityAnswerForm):
