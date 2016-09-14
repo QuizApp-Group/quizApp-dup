@@ -17,7 +17,7 @@ function resource_error(element) {
 function check_js_error(condition, fallback) {
     if(!condition) {
         var script = document.createElement('script');
-        script.src = fallback_url;
-        document.head.appendChild(script);
+        script.src = fallback;
+        document.write("<script src='" + fallback + "></script>");
     }
 }
