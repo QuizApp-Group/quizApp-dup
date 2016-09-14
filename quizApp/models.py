@@ -113,9 +113,8 @@ class Participant(User):
     opt_in = db.Column(db.Boolean)
     foreign_id = db.Column(db.String(100))
 
-    assignments = db.relationship("Assignment", back_populates="participant")
-    experiments = db.relationship("AssignmentSet",
-                                  back_populates="participant")
+    assignment_sets = db.relationship("AssignmentSet",
+                                      back_populates="participant")
 
     __mapper_args__ = {
         'polymorphic_identity': 'participant',
@@ -150,7 +149,8 @@ class AssignmentSet(Base):
                          info={"import_include": False})
 
     participant_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    participant = db.relationship("Participant", back_populates="experiments",
+    participant = db.relationship("Participant",
+                                  back_populates="assignment_sets",
                                   info={"import_include": False})
 
     experiment_id = db.Column(db.Integer, db.ForeignKey('experiment.id'))
@@ -174,13 +174,6 @@ class AssignmentSet(Base):
             score += assignment.score
 
         return score
-
-    @db.validates('assignments')
-    def validate_assignments(self, _, assignment):
-        """The Assignments in this model must be related to the same Experiment
-        as this model is."""
-        assert assignment.participant == self.participant
-        return assignment
 
     def import_dict(self, **kwargs):
         experiment = kwargs.pop("experiment")
@@ -212,7 +205,6 @@ class Assignment(Base):
         time_to_submit (timedelta): Time from the question being rendered to
             the question being submitted.
         media_items (list of MediaItem): What MediaItems should be shown
-        participant (Participant): Which Participant gets this Assignment
         activity (Activity): Which Activity this Participant should see
         choice (Choice): Which Choice this Participant chose as their answer
         assignment_set (AssignmentSet): Which
@@ -227,10 +219,6 @@ class Assignment(Base):
     media_items = db.relationship("MediaItem",
                                   secondary=assignment_media_item_table,
                                   back_populates="assignments")
-
-    participant_id = db.Column(db.Integer, db.ForeignKey("user.id"))
-    participant = db.relationship("Participant", back_populates="assignments",
-                                  info={"import_include": False})
 
     activity_id = db.Column(db.Integer, db.ForeignKey("activity.id"))
     activity = db.relationship("Activity", back_populates="assignments")
@@ -305,10 +293,26 @@ class Result(Base):
                                  uselist=False)
     type = db.Column(db.String(50))
 
+    def __str__(self):
+        """Return some kind of string representation of this result.
+
+        Used in reports.
+        """
+        raise NotImplementedError
+
     __mapper_args__ = {
         "polymorphic_identity": "result",
         "polymorphic_on": type,
     }
+
+
+class ScorecardResult(Result):
+    """Result to a Scorecard activity. This class just exists to implement
+    __str__ since there is no action to be taken in a scorecard.
+    """
+
+    def __str__(self):
+        return ""
 
 
 class IntegerQuestionResult(Result):
@@ -318,6 +322,9 @@ class IntegerQuestionResult(Result):
         integer (int): The answer entered to this question.
     """
     integer = db.Column(db.Integer)
+
+    def __str__(self):
+        return str(self.integer)
 
     __mapper_args__ = {
         "polymorphic_identity": "integer_question_result",
@@ -342,6 +349,9 @@ class MultipleChoiceQuestionResult(Result):
         # on is in fact a MultipleChoiceQuestionResult.
         if self.type == "mc_question_result":
             assert self.choice in value.activity.choices
+
+    def __str__(self):
+        return str(self.choice)
 
     __mapper_args__ = {
         "polymorphic_identity": "mc_question_result",
@@ -368,6 +378,9 @@ class MultiSelectQuestionResult(Result):
             for choice in self.choices:
                 assert choice in value.activity.choices
 
+    def __str__(self):
+        return ",".join([str(c) for c in self.choices])
+
     __mapper_args__ = {
         "polymorphic_identity": "multiselect_question_result",
     }
@@ -377,6 +390,9 @@ class FreeAnswerQuestionResult(Result):
     """What a Participant entered into a text box.
     """
     text = db.Column(db.String(500))
+
+    def __str__(self):
+        return self.text
 
     __mapper_args__ = {
         "polymorphic_identity": "free_answer_question_result",
@@ -451,6 +467,14 @@ class Activity(Base):
         """
         pass
 
+    def __str__(self):
+        """Return some kind of title for this activity - this can be some other
+        field on the activity itself.
+
+        This is used for example in experiment result reports.
+        """
+        raise NotImplementedError
+
     __mapper_args__ = {
         'polymorphic_identity': 'activity',
         'polymorphic_on': type
@@ -466,12 +490,28 @@ question_dataset_table = db.Table(
 class Scorecard(Activity):
     """A Scorecard shows some kind of information about all previous
     activities.
+
+    Attributes:
+        title (str): The title of this scorecard
+        prompt (str): The prompt to show when asking for a comment
     """
+    class Meta(object):
+        """Define what kind of Result we are looking for.
+        """
+        result_class = ScorecardResult
+
+    title = db.Column(db.String(500), default="", info={"label": "Title"})
+    prompt = db.Column(db.String(500), default="",
+                       info={"label": "Comment prompt"})
+
     def get_score(self, result):
         return 0
 
     def is_correct(self, result):
         return True
+
+    def __str__(self):
+        return self.title
 
     __mapper_args__ = {
         'polymorphic_identity': 'scorecard',
@@ -507,6 +547,9 @@ class Question(Activity):
                               info={"import_include": False})
     datasets = db.relationship("Dataset", secondary=question_dataset_table,
                                back_populates="questions")
+
+    def __str__(self):
+        return self.question
 
     def import_dict(self, **kwargs):
         if "num_media_items" in kwargs:
@@ -680,6 +723,15 @@ class Choice(Base):
 
     question_id = db.Column(db.Integer, db.ForeignKey("activity.id"))
     question = db.relationship("Question", back_populates="choices")
+
+    def __str__(self):
+        if self.choice and self.label:
+            label = "{} - {}".format(self.label, self.choice)
+        elif self.choice:
+            label = self.choice
+        else:
+            label = self.label
+        return label
 
 
 class MediaItem(Base):

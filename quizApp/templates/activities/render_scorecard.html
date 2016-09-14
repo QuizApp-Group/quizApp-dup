@@ -1,13 +1,14 @@
 {% import 'macros.html' as macros %}
 
 <div id='scorecard activity'>
-  <h3>Your performance so far</h3>
-  {% for category, assignments in scorecard_data.items() %}
+  <h3>{{ scorecard.title }}</h3>
+  {% for category, info in scorecard_data.items() %}
   <div class="activity-category">
     <h4>{{ category }}</h4>
-    {% if assignments[0].media_items %}
+    <p>Average score: {{ "%0.2f" % (info["score"] / info["assignments"]|length) }}</p>
+    {% if info["assignments"][0].media_items %}
     <div class="row media-item-container small">
-      {{ macros.render_media_item(assignments[0].media_items[0]) }}
+      {{ macros.render_media_item(info["assignments"][0].media_items[0]) }}
     </div>
     {% endif %}
     <table class="table table-striped">
@@ -20,7 +21,7 @@
         </tr>
       </thead>
       <tbody>
-        {% for assignment in assignments %}
+        {% for assignment in info["assignments"] %}
         <tr
            class="{% if assignment.correct %}
            success
@@ -49,8 +50,8 @@
   </div>
   {% endfor %}
   {% if scorecard.needs_comment %}
-      <p>Do you notice any trends?</p>
-      {{ macros.render_field(form.comment, rows="5", disabled=disabled) }}
-      <br />
+    <p>{{ scorecard.prompt }}</p>
+    {{ macros.render_field(form.comment, rows="5", disabled=disabled) }}
+    <br />
   {% endif %}
 </div>

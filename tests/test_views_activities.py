@@ -14,7 +14,8 @@ from quizApp.models import Question, Scorecard
 
 def test_read_activities(client, users):
     login_experimenter(client)
-    activities = factory.create_batch(factories.ActivityFactory, 10)
+    activities = factory.create_batch(factories.QuestionFactory, 10)
+    activities = factory.create_batch(factories.ScorecardFactory, 10)
     db.session.add_all(activities)
     db.session.commit()
 
@@ -105,18 +106,24 @@ def test_settings_scorecard(client, users):
 
 def test_render_scorecard(client, users):
     login_experimenter(client)
-    scorecard = Scorecard()
+    scorecard = factories.ScorecardFactory()
+    scorecard.needs_comment = True
     scorecard.save()
 
     url = "/activities/" + str(scorecard.id)
     response = client.get(url)
     data = response.data.decode(response.charset)
-    assert "performance" in data
+    assert scorecard.title in data
+    assert scorecard.prompt in data
 
     # make sure include_in_scorecards is respected
-    exp = factories.create_experiment(100, 1)
+    exp = factories.create_experiment(100, 1, ["question_mc_singleselect",
+                                               "question_mc_multiselect",
+                                               "scorecard",
+                                               "question_mc_singleselect_scale"
+                                               ])
     assignment_set = exp.assignment_sets[0]
-    scorecard = Scorecard()
+    scorecard = factories.ScorecardFactory()
     exp.save()
 
     rendered_sc = render_scorecard(scorecard, False, assignment_set, None, 100)

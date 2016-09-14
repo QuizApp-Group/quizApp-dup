@@ -4,10 +4,13 @@ participants.
 from collections import defaultdict
 from datetime import datetime
 import json
+import os
+import tempfile
 
+import openpyxl
 import dateutil.parser
 from flask import Blueprint, render_template, url_for, jsonify, abort, \
-    request, session
+    request, session, send_file
 from flask_security import login_required, current_user, roles_required
 
 from quizApp import db
@@ -439,6 +442,107 @@ def results_experiment(experiment_id):
                            num_finished=num_finished,
                            percent_finished=percent_finished,
                            question_stats=question_stats)
+
+
+@experiments.route(EXPERIMENT_ROUTE + "/results/export", methods=["GET"])
+@roles_required("experimenter")
+def export_results_experiment(experiment_id):
+    """Get a spreadsheet breaking down how participants did in this experiment.
+    """
+    # Grab all assignments in the experiment
+    # For every assignment
+    #  If the activity is not present in the headers
+    #   Add it to the headers
+    #  If the user is not present in the rows
+    #   Add them to the rows
+    #  Determine the activity's position in the headers
+    #  Determine the user's position in the rows
+    #  The above two give us coordinates, fill them out with user's answer,
+    #  points, etc.
+    experiment = validate_model_id(Experiment, experiment_id)
+
+    workbook = get_results_workbook(experiment)
+
+    file_name = tempfile.mkstemp(".xlsx")
+    os.close(file_name[0])
+    workbook.save(file_name[1])
+    return send_file(
+        file_name[1], as_attachment=True,
+        attachment_filename="experiment_{}_report.xlsx".format(experiment.id))
+
+
+def get_results_workbook(experiment):
+    """Analyze the assignment sets in the experiment and return an excel
+    workbook.
+    """
+    assignment_sets = experiment.assignment_sets
+    headers = ["User email", "User ID"]
+    activity_column_mapping = {}
+    next_participant_row = 2
+    participant_row_mapping = {}
+
+    workbook = openpyxl.Workbook()
+    sheet = workbook.active
+    sheet.title = "Experiment {} - Report".format(experiment.id)
+
+    for assignment_set in assignment_sets:
+        participant = assignment_set.participant
+
+        if not participant:
+            continue
+
+        if participant.id not in participant_row_mapping:
+            participant_row_mapping[participant.id] = next_participant_row
+            populate_row_segment(sheet,
+                                 next_participant_row,
+                                 1,
+                                 [participant.email, participant.id])
+            next_participant_row += 1
+
+        for assignment in assignment_set.assignments:
+            activity = assignment.activity
+
+            if activity.id not in activity_column_mapping:
+                activity_column_mapping[activity.id] = len(headers) + 1
+                headers.append("{}/{}: {}".format(assignment.id,
+                                                  activity.id, activity))
+                headers.append("Correct?")
+                headers.append("Points")
+
+            if not assignment.result:
+                continue
+
+            populate_row_segment(
+                sheet,
+                participant_row_mapping[participant.id],
+                activity_column_mapping[activity.id],
+                [str(assignment.result),
+                 assignment.correct,
+                 assignment.score]
+            )
+
+    populate_row_segment(sheet, 1, 1, headers)
+
+    # Put a special token in all blank spaces
+    for r in range(1, next_participant_row):
+        for c in range(1, len(headers) + 1):
+            value = sheet.cell(row=r, column=c).value
+            if value is None:
+                sheet.cell(row=r, column=c).value = "_BLANK_"
+
+    # Specify experiment ID
+    sheet.cell(row=1, column=len(headers) + 1).value = "Experiment ID"
+    sheet.cell(row=2, column=len(headers) + 1).value = experiment.id
+
+    return workbook
+
+
+def populate_row_segment(sheet, row_index, initial_col, row):
+    """Populate the segment of row # ``row_index`` in ``sheet`` that starts at
+    ``initial_col`` and contains the items in ``row``.
+    """
+    for col_offset, cell in enumerate(row):
+        sheet.cell(row=row_index, column=initial_col + col_offset).value = cell
 
 
 @experiments.route(ASSIGNMENT_SET_ROUTE + "/confirm_done", methods=["GET"])

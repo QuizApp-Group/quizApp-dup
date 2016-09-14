@@ -5,11 +5,12 @@
 {% block title %}Results - {{ experiment.name }}{% endblock %}
 
 {% block content %}
-<div class="alert alert-info" role="alert">
-  {{ macros.render_glyphicon("info-sign") }}
-  Looking for more detailed information? You can see all experiment data
-  by <a href="{{ url_for('data.manage_data') }}">exporting data</a>.
-</div>
+<p>
+<a href="{{ url_for('experiments.export_results_experiment', experiment_id=experiment.id)
+}}" role="button" class="btn btn-primary">{{
+  macros.render_glyphicon("cloud-download") }} Download results as XLSX
+</a>
+</p>
 <p>Number of participants involved: {{ num_participants }}</p>
 <p>Number of participants finished: {{ num_finished }} </p>
 <table class="table">
