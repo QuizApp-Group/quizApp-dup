@@ -701,9 +701,13 @@ def test_export_experiment_results(client, users):
     exp = create_experiment(10, 10, ["question_mc_singleselect", "scorecard",
                                      "question_mc_singleselect_scale",
                                      "question_mc_multiselect"])
+    common_participant = ParticipantFactory()
     for assignment_set in exp.assignment_sets:
         if random.random() > .5:
-            assignment_set.participant = ParticipantFactory()
+            if random.random() > .5:
+                assignment_set.participant = common_participant
+            else:
+                assignment_set.participant = ParticipantFactory()
 
             for assignment in assignment_set.assignments:
                 if random.random() > .5:
