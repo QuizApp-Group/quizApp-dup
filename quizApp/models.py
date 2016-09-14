@@ -500,8 +500,9 @@ class Scorecard(Activity):
         """
         result_class = ScorecardResult
 
-    title = db.Column(db.String(500), default="")
-    prompt = db.Column(db.String(500), default="")
+    title = db.Column(db.String(500), default="", info={"label": "Title"})
+    prompt = db.Column(db.String(500), default="",
+                       info={"label": "Comment prompt"})
 
     def get_score(self, result):
         return 0

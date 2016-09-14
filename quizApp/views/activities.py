@@ -5,6 +5,7 @@ tests the kind of activity it is loading and then defers to a more specific
 function (for example, questions are read by read_question rather than
 read_activity itself).
 """
+import pdb
 from collections import defaultdict, OrderedDict
 
 from flask import Blueprint, render_template, url_for, jsonify, abort, request
@@ -114,6 +115,7 @@ def render_scorecard(scorecard, disabled=False, assignment_set=None,
     """Render a scorecard. This is the central point of rendering for
     scorecards.
     """
+    pdb.set_trace()
     form = get_answer_form(scorecard)
 
     if assignment:
@@ -133,7 +135,8 @@ def render_scorecard(scorecard, disabled=False, assignment_set=None,
     # Sort by average score
     sorted_scorecard_data = OrderedDict(
         sorted(scorecard_data.items(),
-               key=lambda x: float(x[1]["score"]) / len(x[1]["assignments"])))
+               key=lambda x: float(x[1]["score"]) / len(x[1]["assignments"]),
+               reverse=True))
 
     return render_template("activities/render_scorecard.html",
                            assignment_set=assignment_set,
@@ -196,7 +199,7 @@ def settings_activity(activity_id):
 def settings_scorecard(scorecard):
     """Show settings for a scorecard.
     """
-    general_form = ActivityForm(obj=scorecard)
+    general_form = get_activity_form(scorecard, obj=scorecard)
 
     return render_template("activities/settings_scorecard.html",
                            scorecard=scorecard,
