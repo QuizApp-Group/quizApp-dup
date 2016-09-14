@@ -89,6 +89,8 @@ def create_db(password, user):
                 root_pass = ""
             root_name = user
 
+        click.echo("Got credentials")
+
         db_uri = make_url(current_app.config["SQLALCHEMY_DATABASE_URI"])
         root_uri = URL(db_uri.drivername,
                        root_name,
@@ -96,6 +98,8 @@ def create_db(password, user):
                        db_uri.host,
                        db_uri.port,
                        db_uri.database)
+
+        click.echo("Got URIs")
 
         if not sqlalchemy_utils.database_exists(root_uri):
             sqlalchemy_utils.functions.create_database(root_uri)
@@ -107,6 +111,8 @@ def create_db(password, user):
                      format(db_uri.database, db_uri.username, db_uri.host,
                             db_uri.password))
         conn.close()
+
+        click.echo("Constructed database")
 
         return
     click.echo("Database seems to be working OK.")
