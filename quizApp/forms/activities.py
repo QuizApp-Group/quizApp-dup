@@ -33,7 +33,7 @@ def get_activity_form(activity, *args, **kwargs):
         "question_freeanswer": QuestionForm,
         "question_mc_singleselect_scale": QuestionForm,
         "question_integer": IntegerQuestionForm,
-        "scorecard": ActivityForm,
+        "scorecard": ScorecardForm,
     }
 
     return activity_form_mapping[activity.type](*args, **kwargs)

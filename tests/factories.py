@@ -54,7 +54,7 @@ class ActivityFactory(factory.Factory):
     include_in_scorecards = factory.Faker('boolean')
 
 
-class ScorecardFactory(factory.Factory):
+class ScorecardFactory(ActivityFactory):
     class Meta(object):
         model = models.Scorecard
 
