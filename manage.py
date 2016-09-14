@@ -89,7 +89,6 @@ def create_db(password, user):
                 root_pass = ""
             root_name = user
 
-
         db_uri = make_url(current_app.config["SQLALCHEMY_DATABASE_URI"])
         root_uri = URL(db_uri.drivername,
                        root_name,
