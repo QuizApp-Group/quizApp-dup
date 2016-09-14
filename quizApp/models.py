@@ -305,6 +305,13 @@ class Result(Base):
                                  uselist=False)
     type = db.Column(db.String(50))
 
+    def __str__(self):
+        """Return some kind of string representation of this result.
+
+        Used in reports.
+        """
+        raise NotImplementedError
+
     __mapper_args__ = {
         "polymorphic_identity": "result",
         "polymorphic_on": type,
@@ -318,6 +325,9 @@ class IntegerQuestionResult(Result):
         integer (int): The answer entered to this question.
     """
     integer = db.Column(db.Integer)
+
+    def __str__(self):
+        return str(self.integer)
 
     __mapper_args__ = {
         "polymorphic_identity": "integer_question_result",
@@ -450,6 +460,14 @@ class Activity(Base):
         None.
         """
         pass
+
+    def __str__(self):
+        """Return some kind of title for this activity - this can be some other
+        field on the activity itself.
+
+        This is used for example in experiment result reports.
+        """
+        raise NotImplementedError
 
     __mapper_args__ = {
         'polymorphic_identity': 'activity',
