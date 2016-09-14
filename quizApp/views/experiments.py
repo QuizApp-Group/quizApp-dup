@@ -441,6 +441,59 @@ def results_experiment(experiment_id):
                            question_stats=question_stats)
 
 
+@experiments.route(EXPERIMENT_ROUTE + "/results/export", methods=["GET"])
+@roles_required("experimenter")
+def export_results_experiment(experiment_id):
+    """Get a spreadsheet breaking down how participants did in this experiment.
+    """
+    # Grab all assignments in the experiment
+    # For every assignment
+    #  If the activity is not present in the headers
+    #   Add it to the headers
+    #  If the user is not present in the rows
+    #   Add them to the rows
+    #  Determine the activity's position in the headers
+    #  Determine the user's position in the rows
+    #  The above two give us coordinates, fill them out with user's answer,
+    #  points, etc.
+    experiment = validate_model_id(Experiment, experiment_id)
+    assignments = models.Assignment.query.\
+        join(models.AssignmentSet).\
+        join(models.Experiment).\
+        filter(models.Experiment == experiment).all()
+
+    headers = ["User email", "User ID"]
+    activity_column_mapping = {}
+    next_participant_row = 2
+    participant_row_mapping = {}
+
+    for assignment in assignments:
+        participant = assignment.participant
+        activity = assignment.activity
+
+        if participant.id not in participant_row_mapping:
+            participant_row_mapping[participant.id] = next_participant_row
+            next_participant_row += 1
+
+        if activity.id not in activity_column_mapping:
+            activity_column_mapping[activity.id] = len(headers)
+            headers.append(activity.title)
+            headers.append("Correct?")
+            headers.append("Points")
+
+        participant_row = participant_row_mapping[participant.id]
+        activity_column = activity_column_mapping[activity.id]
+
+        sheet.cell(row=participant_row, column=activity_column).value = \
+            result.string
+        sheet.cell(row=participant_row, column=activity_column + 1)\
+            .value = assignment.result.correct
+        sheet.cell(row=participant_row, column=activity_column + 2)\
+            .value = assignment.result.points
+
+
+
+
 @experiments.route(ASSIGNMENT_SET_ROUTE + "/confirm_done", methods=["GET"])
 @roles_required("participant")
 def confirm_done_assignment_set(experiment_id, assignment_set_id):
