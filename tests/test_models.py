@@ -351,3 +351,20 @@ def test_integer_answer_question_result():
     result.integer = 5993
 
     assert str(result.integer) in str(result)
+
+
+def test_choice_str():
+    choice = ChoiceFactory()
+
+    assert choice.label in str(choice)
+    assert choice.choice in str(choice)
+
+    label = choice.label
+    choice.label = ""
+
+    assert choice.choice == str(choice)
+
+    choice.label = label
+    choice.choice = ""
+
+    assert choice.label == str(choice)
