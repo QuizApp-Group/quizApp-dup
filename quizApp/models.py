@@ -314,6 +314,10 @@ class ScorecardResult(Result):
     def __str__(self):
         return ""
 
+    __mapper_args__ = {
+        "polymorphic_identity": "scorecard_result",
+    }
+
 
 class IntegerQuestionResult(Result):
     """The integer entered as an answer to an Integer Question.
