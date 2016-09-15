@@ -314,6 +314,10 @@ class ScorecardResult(Result):
     def __str__(self):
         return ""
 
+    __mapper_args__ = {
+        "polymorphic_identity": "scorecard_result",
+    }
+
 
 class IntegerQuestionResult(Result):
     """The integer entered as an answer to an Integer Question.
@@ -586,15 +590,19 @@ class IntegerQuestion(Question):
     def get_score(self, result):
         """If the choice is the answer, one point.
         """
-        try:
-            return int(result.integer == self.answer)
-        except AttributeError:
+        if self.is_correct(result):
+            return 1
+        else:
             return 0
 
     def is_correct(self, result):
+        # In percent, how off the participant's answer may be before it is
+        # marked incorrect
+        tolerance = 5
         try:
-            return result.integer == self.answer
-        except AttributeError:
+            return tolerance >= (float(abs(result.integer - self.answer))
+                                 / self.answer) * 100
+        except (AttributeError, TypeError):
             return False
 
     @db.validates('answer')
