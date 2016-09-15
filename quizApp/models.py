@@ -586,19 +586,25 @@ class IntegerQuestion(Question):
     answer = db.Column(db.Integer(), info={"label": "Correct answer"})
     lower_bound = db.Column(db.Integer, info={"label": "Lower bound"})
     upper_bound = db.Column(db.Integer, info={"label": "Upper bound"})
+    tolerance = db.Column(db.Integer,
+                          info={"label": ("Maximal percent differenct for a"
+                                          " correct answer")},
+                          default=5
+                          )
 
     def get_score(self, result):
         """If the choice is the answer, one point.
         """
-        try:
-            return int(result.integer == self.answer)
-        except AttributeError:
+        if self.is_correct(result):
+            return 1
+        else:
             return 0
 
     def is_correct(self, result):
         try:
-            return result.integer == self.answer
-        except AttributeError:
+            return self.tolerance >= (float(abs(result.integer - self.answer))
+                                      / self.answer) * 100
+        except (AttributeError, TypeError):
             return False
 
     @db.validates('answer')
