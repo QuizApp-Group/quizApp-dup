@@ -1,12 +1,11 @@
 from flask_restful import fields, Resource
 from flask import request
-from quizApp import models, restful
+from quizApp import models, restful, db
 import pdb
 
 class CollectionResource(Resource):
     def __init__(self, model, retrieval_function=None):
         self.model = model
-        self.retrieval_function = retrieval_function
 
     def polymorphic_dump(self, records):
         result = []
@@ -15,19 +14,30 @@ class CollectionResource(Resource):
             result.append(schema.dump(record).data)
         return result
 
+    def resolve_kwargs(self, **kwargs):
+        raise NotImplementedError
+
+    def get_records(self, **kwargs):
+        raise NotImplementedError
+
+    def generate_record(self, **kwargs):
+        raise NotImplementedError
+
     def get(self, **kwargs):
-        if self.retrieval_function:
-            records = self.retrieval_function(**kwargs)
-        else:
-            records = self.model.query.all()
+        resolved_kwargs = self.resolve_kwargs(**kwargs)
+        records = self.get_records(**resolved_kwargs)
         return self.polymorphic_dump(records)
 
     def post(self, **kwargs):
-        schema = self.schema()
-        new_record = schema.load(request.data)
-        if schema.errors:
-            return schema.errors
-        new_record.data.save()
+        resolved_kwargs = self.resolve_kwargs(**kwargs)
+        schema = self.model.__marshmallow__(session=db.session)
+        new_record = self.generate_record(**resolved_kwargs)
+        pdb.set_trace()
+        if request.data:
+            data = schema.load(request.data, instance=new_record)
+            if data.errors:
+                return data.errors
+        new_record.save()
         return None, 200
 
 class ItemResource(Resource):
@@ -42,6 +52,12 @@ class ItemResource(Resource):
         return schema.dump(record)
 
 class ExperimentCollectionResource(CollectionResource):
+    def resolve_kwargs(self):
+        return {}
+
+    def get_records(self):
+        return models.Experiment.query.all()
+
     def __init__(self):
         super(ExperimentCollectionResource,
               self).__init__(model=models.Experiment)
@@ -59,6 +75,15 @@ restful.add_resource(ExperimentItemResource,
                      )
 
 class AssignmentSetCollectionResource(CollectionResource):
+    def resolve_kwargs(self, experiment_id):
+        return {"experiment": models.Experiment.query.get(experiment_id) }
+
+    def get_records(self, experiment):
+        return experiment.assignment_sets
+
+    def generate_record(self, experiment):
+        return models.AssignmentSet(experiment=experiment)
+
     def __init__(self):
         super(AssignmentSetCollectionResource,
               self).__init__(model=models.AssignmentSet)
