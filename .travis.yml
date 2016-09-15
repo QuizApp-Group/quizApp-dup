@@ -5,7 +5,7 @@ python:
     - '3.5'
 addons:
     mariadb: '10.1'
-    ssh_known_hosts: 104.236.112.220
+    ssh_known_hosts: 159.203.101.171
 install:
     - pip install -r requirements.txt
     - "./manage.py --config testing create-db -u root"
