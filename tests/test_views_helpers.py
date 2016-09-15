@@ -1,22 +1,43 @@
 """Tests for view helpers.
 """
+from __future__ import unicode_literals
 
 from mock import MagicMock, patch
+from wtforms import Form
 
-from tests.auth import login_participant
+from tests.auth import login_participant, get_participant
 from tests.factories import create_experiment
+from tests.helpers import json_success
 from quizApp.models import Base
 from quizApp.views.helpers import validate_model_id,\
-    get_or_create_participant_experiment
+    get_or_create_assignment_set, get_first_assignment,\
+    validate_form_or_error
 
 
-def test_get_or_create_participant_experiment(client, users):
+def test_get_first_assignment(client, users):
     login_participant(client)
     experiment = create_experiment(1, 1)
-    experiment.participant_experiments = []
+    assignment_set = experiment.assignment_sets[0]
+    assignment_set.complete = True
+    assignment_set.participant = get_participant()
     experiment.save()
 
-    result = get_or_create_participant_experiment(experiment)
+    result = get_first_assignment(experiment)
+    assert result == assignment_set.assignments[0]
+
+    experiment = create_experiment(0, 0)
+    experiment.save()
+    result = get_first_assignment(experiment)
+    assert result is None
+
+
+def test_get_or_create_assignment_set(client, users):
+    login_participant(client)
+    experiment = create_experiment(1, 1)
+    experiment.assignment_sets = []
+    experiment.save()
+
+    result = get_or_create_assignment_set(experiment)
     assert result is None
 
 
@@ -30,3 +51,17 @@ def test_validate_model_id(abort_mock):
 
     validate_model_id(obj_class_mock, 5)
     abort_mock.assert_called_once()
+
+
+def test_validate_form_or_error():
+    form = MagicMock(autospec=Form())
+
+    form.validate.return_value = False
+    form.errors = ""
+
+    result = validate_form_or_error(form)
+    assert not json_success(result.data)
+
+    form.validate.return_value = True
+    result = validate_form_or_error(form)
+    assert result is None

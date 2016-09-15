@@ -1,5 +1,6 @@
 """Tests to make sure that create_app works as specified.
 """
+from __future__ import unicode_literals
 from quizApp import create_app
 
 

@@ -1,6 +1,9 @@
 """Models for the quizApp.
 """
+from __future__ import unicode_literals
+from builtins import object
 import os
+from datetime import datetime
 
 from quizApp import db
 from flask_security import UserMixin, RoleMixin
@@ -36,7 +39,7 @@ class Base(db.Model):
         others. Subclasses of Base to which this applies are expected to
         override this method and implement their import correctly.
         """
-        for key, value in kwargs.items():
+        for key, value in list(kwargs.items()):
             setattr(self, key, value)
 
 
@@ -103,23 +106,22 @@ class Participant(User):
             field holds the foreign ID of this user.
         assignments (list of Assignments): List of assignments that this user
             has
-        participant_experiments (list of ParticipantExperiments): List of
-            ParticipantExperiments that this participant has
+        assignment_sets (list of AssignmentSets): List of
+            AssignmentSets that this participant has
     """
 
     opt_in = db.Column(db.Boolean)
     foreign_id = db.Column(db.String(100))
 
-    assignments = db.relationship("Assignment", back_populates="participant")
-    experiments = db.relationship("ParticipantExperiment",
-                                  back_populates="participant")
+    assignment_sets = db.relationship("AssignmentSet",
+                                      back_populates="participant")
 
     __mapper_args__ = {
         'polymorphic_identity': 'participant',
     }
 
 
-class ParticipantExperiment(Base):
+class AssignmentSet(Base):
     """An Association Object that relates a User to an Experiment and also
     stores the progress of the User in this Experiment as well as the order of
     Questions that this user does.
@@ -147,26 +149,37 @@ class ParticipantExperiment(Base):
                          info={"import_include": False})
 
     participant_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    participant = db.relationship("Participant", back_populates="experiments",
+    participant = db.relationship("Participant",
+                                  back_populates="assignment_sets",
                                   info={"import_include": False})
 
     experiment_id = db.Column(db.Integer, db.ForeignKey('experiment.id'))
     experiment = db.relationship("Experiment",
-                                 back_populates="participant_experiments")
+                                 back_populates="assignment_sets")
 
     assignments = db.relationship("Assignment",
-                                  back_populates="participant_experiment",
-                                  info={"import_include": False})
+                                  back_populates="assignment_set")
 
-    @db.validates('assignments')
-    def validate_assignments(self, _, assignment):
-        """The Assignments in this model must be related to the same Experiment
-        as this model is."""
-        assert assignment.experiment == self.experiment
-        assert assignment.participant == self.participant
-        assert assignment.activity in self.experiment.activities or \
-            not assignment.activity
-        return assignment
+    @property
+    def score(self):
+        """Return the cumulative score of all assignments in this
+        AssignmentSet,
+
+        Currently this iterates through all assignments. Profiling will be
+        required to see if this is too slow.
+        """
+        score = 0
+
+        for assignment in self.assignments[:self.progress]:
+            score += assignment.score
+
+        return score
+
+    def import_dict(self, **kwargs):
+        experiment = kwargs.pop("experiment")
+        self.experiment = experiment
+
+        super(AssignmentSet, self).import_dict(**kwargs)
 
 assignment_media_item_table = db.Table(
     "assignment_media_item", db.metadata,
@@ -189,56 +202,55 @@ class Assignment(Base):
             order of choices that this participant was presented with when
             answering this question, e.g. {[1, 50, 9, 3]} where the numbers are
             the IDs of those choices.
+        time_to_submit (timedelta): Time from the question being rendered to
+            the question being submitted.
         media_items (list of MediaItem): What MediaItems should be shown
-        participant (Participant): Which Participant gets this Assignment
         activity (Activity): Which Activity this Participant should see
         choice (Choice): Which Choice this Participant chose as their answer
-        participant_experiment (ParticipantExperiment): Which
-            ParticipantExperiment this Assignment belongs to
+        assignment_set (AssignmentSet): Which
+            AssignmentSet this Assignment belongs to
     """
 
     skipped = db.Column(db.Boolean, info={"import_include": False})
-    comment = db.Column(db.String(200), info={"import_include": False})
+    comment = db.Column(db.String(500), info={"import_include": False})
     choice_order = db.Column(db.String(80), info={"import_include": False})
+    time_to_submit = db.Column(db.Interval(), info={"import_include": False})
 
     media_items = db.relationship("MediaItem",
                                   secondary=assignment_media_item_table,
-                                  back_populates="assignments",
-                                  info={"import_include": True})
-
-    participant_id = db.Column(db.Integer, db.ForeignKey("user.id"))
-    participant = db.relationship("Participant", back_populates="assignments",
-                                  info={"import_include": False})
+                                  back_populates="assignments")
 
     activity_id = db.Column(db.Integer, db.ForeignKey("activity.id"))
-    activity = db.relationship("Activity", back_populates="assignments",
-                               info={"import_include": False})
+    activity = db.relationship("Activity", back_populates="assignments")
 
-    choice_id = db.Column(db.Integer, db.ForeignKey("choice.id"))
-    choice = db.relationship("Choice", back_populates="assignments",
-                             info={"import_include": False})
+    result_id = db.Column(db.Integer, db.ForeignKey("result.id"))
+    result = db.relationship("Result", back_populates="assignment",
+                             info={"import_include": False}, uselist=False)
 
-    experiment_id = db.Column(db.Integer, db.ForeignKey("experiment.id"))
-    experiment = db.relationship("Experiment", back_populates="assignments",
-                                 info={"import_include": False})
-
-    participant_experiment_id = db.Column(
+    assignment_set_id = db.Column(
         db.Integer,
-        db.ForeignKey("participant_experiment.id"))
-    participant_experiment = db.relationship("ParticipantExperiment",
-                                             back_populates="assignments")
+        db.ForeignKey("assignment_set.id"),
+    )
+    assignment_set = db.relationship("AssignmentSet",
+                                     info={"import_include": False},
+                                     back_populates="assignments")
 
-    def import_dict(self, **kwargs):
-        """If we are setting assignments, we need to update experiments to
-        match.
+    @property
+    def correct(self):
+        """Check if this assignment was answered correctly.
         """
-        if "experiments" not in kwargs:
-            participant_experiment = kwargs.pop("participant_experiment")
-            if participant_experiment.experiment:
-                self.experiment = participant_experiment.experiment
-            self.participant_experiment = participant_experiment
+        return self.activity.is_correct(self.result)
 
-        super(Assignment, self).import_dict(**kwargs)
+    @property
+    def score(self):
+        """Get the score for this assignment.
+
+        This method simply passes `result` to the `activity`'s `get_score`
+        method and returns the result.
+
+        Note that if there is no `activity` this will raise an AttributeError.
+        """
+        return self.activity.get_score(self.result)
 
     @db.validates("activity")
     def validate_activity(self, _, activity):
@@ -246,8 +258,6 @@ class Assignment(Base):
         Make sure that the number of media items on the activity is the same as
         the number of media items this assignment has.
         """
-        assert self.experiment in activity.experiments
-
         try:
             assert (activity.num_media_items == len(self.media_items)) or \
                 activity.num_media_items == -1
@@ -256,21 +266,141 @@ class Assignment(Base):
 
         return activity
 
-    @db.validates("choice")
-    def validate_choice(self, _, choice):
-        """This must be a valid choice, i.e. contained in the question (if any)
+    @db.validates("result")
+    def validate_result(self, _, result):
+        """Make sure that this assignment has the correct type of result.
         """
-        if "question" in self.activity.type and choice is not None:
-            assert choice in self.activity.choices
-
-        return choice
+        assert isinstance(result, self.activity.Meta.result_class)
+        return result
 
 
-activity_experiment_table = db.Table(
-    "activity_experiment", db.metadata,
-    db.Column("activity_id", db.Integer, db.ForeignKey('activity.id')),
-    db.Column('experiment_id', db.Integer, db.ForeignKey('experiment.id'))
+class Result(Base):
+    """A Result is the outcome of a Participant completing an Activity.
+
+    Different Activities have different data that they generate, so this model
+    does not actually contain any information on the outcome of an Activity.
+    That is something that child classes of this class must define in their
+    schemas.
+
+    On the Assignment level, the type of Activity will determine the type of
+    Result.
+
+    Attributes:
+        assignment (Assignment): The Assignment that owns this Result.
+    """
+
+    assignment = db.relationship("Assignment", back_populates="result",
+                                 uselist=False)
+    type = db.Column(db.String(50))
+
+    def __str__(self):
+        """Return some kind of string representation of this result.
+
+        Used in reports.
+        """
+        raise NotImplementedError
+
+    __mapper_args__ = {
+        "polymorphic_identity": "result",
+        "polymorphic_on": type,
+    }
+
+
+class ScorecardResult(Result):
+    """Result to a Scorecard activity. This class just exists to implement
+    __str__ since there is no action to be taken in a scorecard.
+    """
+
+    def __str__(self):
+        return ""
+
+    __mapper_args__ = {
+        "polymorphic_identity": "scorecard_result",
+    }
+
+
+class IntegerQuestionResult(Result):
+    """The integer entered as an answer to an Integer Question.
+
+    Attributes:
+        integer (int): The answer entered to this question.
+    """
+    integer = db.Column(db.Integer)
+
+    def __str__(self):
+        return str(self.integer)
+
+    __mapper_args__ = {
+        "polymorphic_identity": "integer_question_result",
+    }
+
+
+class MultipleChoiceQuestionResult(Result):
+    """The Choice that a Participant picked in a MultipleChoiceQuestion.
+    """
+    choice_id = db.Column(db.Integer, db.ForeignKey("choice.id"))
+    choice = db.relationship("Choice")
+
+    @db.event.listens_for(Result.assignment, "set", propagate=True)
+    def validate_choice(self, value, *_):
+        """Make sure this Choice is a valid option for this Question.
+        """
+        # This is kind of ugly, but the fact is that sqlalchemy does not have a
+        # good way of validating an attribute of a parent. See this issue for
+        # more details:
+        # bitbucket.org/zzzeek/sqlalchemy/issues/2943/
+        # To work around this, we check if the class we are currently operating
+        # on is in fact a MultipleChoiceQuestionResult.
+        if self.type == "mc_question_result":
+            assert self.choice in value.activity.choices
+
+    def __str__(self):
+        return str(self.choice)
+
+    __mapper_args__ = {
+        "polymorphic_identity": "mc_question_result",
+    }
+
+
+result_choice_table = db.Table(
+    'result_choice', db.metadata,
+    db.Column("choice_id", db.Integer, db.ForeignKey('choice.id')),
+    db.Column("result_id", db.Integer, db.ForeignKey('result.id')),
 )
+
+
+class MultiSelectQuestionResult(Result):
+    """The Choices that a Participant picked in a MultiSelectQuestion.
+    """
+    choices = db.relationship("Choice", secondary=result_choice_table)
+
+    @db.event.listens_for(Result.assignment, "set", propagate=True)
+    def validate_choice(self, value, *_):
+        """Make sure this Choice is a valid option for this Question.
+        """
+        if self.type == "multiselect_question_result":
+            for choice in self.choices:
+                assert choice in value.activity.choices
+
+    def __str__(self):
+        return ",".join([str(c) for c in self.choices])
+
+    __mapper_args__ = {
+        "polymorphic_identity": "multiselect_question_result",
+    }
+
+
+class FreeAnswerQuestionResult(Result):
+    """What a Participant entered into a text box.
+    """
+    text = db.Column(db.String(500))
+
+    def __str__(self):
+        return self.text
+
+    __mapper_args__ = {
+        "polymorphic_identity": "free_answer_question_result",
+    }
 
 
 class Activity(Base):
@@ -286,36 +416,68 @@ class Activity(Base):
     Attributes:
         type (string): Discriminator column that determines what kind
             of Activity this is.
+        needs_comment (bool): True if the participant should be asked why
+            they picked what they did after they answer the question.
         category (string): A description of this assignment's category, for the
             users' convenience.
         experiments (list of Experiment): What Experiments include this
             Activity
         assignments (list of Assignment): What Assignments include this
             Activity
+        scorecard_settings (ScorecardSettings): Settings for scorecards after
+            this Activity is done
     """
+    class Meta(object):
+        """Define what kind of Result we are looking for.
+        """
+        result_class = Result
 
     type = db.Column(db.String(50), nullable=False)
-    experiments = db.relationship("Experiment",
-                                  secondary=activity_experiment_table,
-                                  back_populates="activities",
-                                  info={"import_include": False})
+    needs_comment = db.Column(db.Boolean(), info={"label": "Allow comments"})
+    include_in_scorecards = db.Column(
+        db.Boolean(), default=True,
+        info={"label": "Include this activity in any aggregate scorecards"})
 
     assignments = db.relationship("Assignment", back_populates="activity",
                                   cascade="all")
     category = db.Column(db.String(100), info={"label": "Category"})
 
-    def import_dict(self, **kwargs):
-        """If we are setting assignments, we need to update experiments to
-        match.
-        """
-        if "experiments" not in kwargs:
-            assignments = kwargs.pop("assignments")
-            for assignment in assignments:
-                if assignment.experiment:
-                    self.experiments.append(assignment.experiment)
-                self.assignments.append(assignment)
+    scorecard_settings_id = db.Column(db.Integer,
+                                      db.ForeignKey("scorecard_settings.id"))
+    scorecard_settings = db.relationship("ScorecardSettings",
+                                         info={"import_include": False})
 
-        super(Activity, self).import_dict(**kwargs)
+    def __init__(self, *args, **kwargs):
+        """Make sure to populate scorecard_settings.
+        """
+        self.scorecard_settings = ScorecardSettings()
+        super(Activity, self).__init__(*args, **kwargs)
+
+    def get_score(self, result):
+        """Get the participant's score for this Activity.
+
+        Given a Result object, an Activity subclass should be able to
+        "score" the result in some way, and return an integer quantifying the
+        Participant's performance.
+        """
+        pass
+
+    def is_correct(self, result):
+        """Given a result, return True if the answer was correct or False
+        otherwise.
+
+        If this activity does not have a concept of correct/incorrect, return
+        None.
+        """
+        pass
+
+    def __str__(self):
+        """Return some kind of title for this activity - this can be some other
+        field on the activity itself.
+
+        This is used for example in experiment result reports.
+        """
+        raise NotImplementedError
 
     __mapper_args__ = {
         'polymorphic_identity': 'activity',
@@ -329,6 +491,37 @@ question_dataset_table = db.Table(
 )
 
 
+class Scorecard(Activity):
+    """A Scorecard shows some kind of information about all previous
+    activities.
+
+    Attributes:
+        title (str): The title of this scorecard
+        prompt (str): The prompt to show when asking for a comment
+    """
+    class Meta(object):
+        """Define what kind of Result we are looking for.
+        """
+        result_class = ScorecardResult
+
+    title = db.Column(db.String(500), default="", info={"label": "Title"})
+    prompt = db.Column(db.String(500), default="",
+                       info={"label": "Comment prompt"})
+
+    def get_score(self, result):
+        return 0
+
+    def is_correct(self, result):
+        return True
+
+    def __str__(self):
+        return self.title
+
+    __mapper_args__ = {
+        'polymorphic_identity': 'scorecard',
+    }
+
+
 class Question(Activity):
     """A Question is related to one or more MediaItems and has one or more Choices,
     and is a part of one or more Experiments.
@@ -337,8 +530,6 @@ class Question(Activity):
         question (string): This question as a string
         explantion (string): The explanation for why the correct answer is
             correct.
-        needs_comment (bool): True if the participant should be asked why
-            they picked what they did after they answer the question.
         num_media_items (int): How many MediaItems should be shown when
             displaying this question
         choices (list of Choice): What Choices this Question has
@@ -347,20 +538,22 @@ class Question(Activity):
             from any Dataset.
     """
 
-    question = db.Column(db.String(200), nullable=False, info={"label":
-                                                               "Question"})
-    explanation = db.Column(db.String(200), info={"label": "Explanation"})
+    question = db.Column(db.Text, nullable=False, info={"label":
+                                                        "Question"})
+    explanation = db.Column(db.Text, info={"label": "Explanation"})
     num_media_items = db.Column(db.Integer,
                                 nullable=False,
                                 info={
                                     "label": "Number of media items to show"
                                 })
-    needs_comment = db.Column(db.Boolean(), info={"label": "Allow comments"})
 
     choices = db.relationship("Choice", back_populates="question",
                               info={"import_include": False})
     datasets = db.relationship("Dataset", secondary=question_dataset_table,
                                back_populates="questions")
+
+    def __str__(self):
+        return self.question
 
     def import_dict(self, **kwargs):
         if "num_media_items" in kwargs:
@@ -373,9 +566,81 @@ class Question(Activity):
     }
 
 
+class IntegerQuestion(Question):
+    """Ask participants to enter an integer, optionally bounded above/below.
+
+    All bounds are inclusive.
+
+    Attributes:
+        answer (int): The correct answer to this question
+        bounded_below (bool): If True, enforce a lower bound
+        lower_bound (int): The minimum possible answer.
+        bounded_above (bool): If True, enforce an upper bound
+        upper_bound (int): The maximum possible answer.
+    """
+    class Meta(object):
+        """Specify the result class.
+        """
+        result_class = IntegerQuestionResult
+
+    answer = db.Column(db.Integer(), info={"label": "Correct answer"})
+    lower_bound = db.Column(db.Integer, info={"label": "Lower bound"})
+    upper_bound = db.Column(db.Integer, info={"label": "Upper bound"})
+
+    def get_score(self, result):
+        """If the choice is the answer, one point.
+        """
+        if self.is_correct(result):
+            return 1
+        else:
+            return 0
+
+    def is_correct(self, result):
+        # In percent, how off the participant's answer may be before it is
+        # marked incorrect
+        tolerance = 5
+        try:
+            return tolerance >= (float(abs(result.integer - self.answer))
+                                 / self.answer) * 100
+        except (AttributeError, TypeError):
+            return False
+
+    @db.validates('answer')
+    def validate_answer(self, _, answer):
+        """Ensure answer is within the bounds.
+        """
+        assert self.lower_bound is None or answer >= self.lower_bound
+        assert self.upper_bound is None or answer <= self.upper_bound
+        return answer
+
+    __mapper_args__ = {
+        'polymorphic_identity': 'question_integer',
+    }
+
+
 class MultipleChoiceQuestion(Question):
     """A MultipleChoiceQuestion has one or more choices that are correct.
     """
+    class Meta(object):
+        """Define what kind of Result we are looking for.
+        """
+        result_class = MultipleChoiceQuestionResult
+
+    def get_score(self, result):
+        """If this Question was answered, return the point value of this
+        choice. Otherwise return 0.
+        """
+        try:
+            return result.choice.points
+        except AttributeError:
+            return 0
+
+    def is_correct(self, result):
+        try:
+            return result.choice.correct
+        except AttributeError:
+            return False
+
     __mapper_args__ = {
         'polymorphic_identity': 'question_mc',
     }
@@ -393,6 +658,10 @@ class SingleSelectQuestion(MultipleChoiceQuestion):
 class MultiSelectQuestion(MultipleChoiceQuestion):
     """A MultiSelectQuestion allows any number of Choices to be selected.
     """
+    class Meta(object):
+        """Define what kind of Result we are looking for.
+        """
+        result_class = MultiSelectQuestionResult
 
     __mapper_args__ = {
         'polymorphic_identity': 'question_mc_multiselect',
@@ -413,6 +682,26 @@ class ScaleQuestion(SingleSelectQuestion):
 class FreeAnswerQuestion(Question):
     """A FreeAnswerQuestion allows a Participant to enter an arbitrary answer.
     """
+    class Meta(object):
+        """Define what kind of Result we are looking for.
+        """
+        result_class = FreeAnswerQuestionResult
+
+    def get_score(self, result):
+        """If this Question was answered, return 1.
+        """
+        try:
+            if result.text:
+                return 1
+            return 0
+        except AttributeError:
+            return 0
+
+    def is_correct(self, result):
+        try:
+            return bool(result.text)
+        except AttributeError:
+            return False
 
     __mapper_args__ = {
         'polymorphic_identity': 'question_freeanswer',
@@ -427,21 +716,30 @@ class Choice(Base):
         label (string): The label for this choice (1,2,3,a,b,c etc)
         correct (bool): "True" if this choice is correct, "False" otherwise
         question (Question): Which Question owns this Choice
-        assignment (Assignment): Which Assignments had Participants pick this
-            Choice as the correct answer
+        points (int): How many points the Participant gets for picking this
+            choice
     """
-    choice = db.Column(db.String(200), nullable=False,
+    choice = db.Column(db.String(200),
                        info={"label": "Choice"})
     label = db.Column(db.String(3),
                       info={"label": "Label"})
     correct = db.Column(db.Boolean,
-                        info={"label": "Correct?"})
+                        info={"label": "Correct"})
+    points = db.Column(db.Integer,
+                       info={"label": "Point value of this choice"},
+                       default=0)
 
     question_id = db.Column(db.Integer, db.ForeignKey("activity.id"))
     question = db.relationship("Question", back_populates="choices")
 
-    assignments = db.relationship("Assignment", back_populates="choice",
-                                  info={"import_include": False})
+    def __str__(self):
+        if self.choice and self.label:
+            label = "{} - {}".format(self.label, self.choice)
+        elif self.choice:
+            label = self.choice
+        else:
+            label = self.label
+        return label
 
 
 class MediaItem(Base):
@@ -450,9 +748,6 @@ class MediaItem(Base):
     this class and define their own fields needed for rendering.
 
     Attributes:
-        flash (bool): If True, flash the MediaItem for flash_duration
-        milliseconds
-        flash_duration (int): How long to display the MediaItem in milliseconds
         name (str): Name for this Media Item
         assignments (list of Assignment): Which Assignments display this
             MediaItem
@@ -463,10 +758,6 @@ class MediaItem(Base):
         "Assignment",
         secondary=assignment_media_item_table,
         back_populates="media_items")
-    flash = db.Column(db.Boolean,
-                      info={"label": "Flash this MediaItem when displaying?"})
-    flash_duration = db.Column(db.Integer, nullable=False, default=-1,
-                               info={"label": "Flash duration (ms)"})
     dataset = db.relationship("Dataset", back_populates="media_items")
     dataset_id = db.Column(db.Integer, db.ForeignKey("dataset.id"))
     type = db.Column(db.String(80), nullable=False)
@@ -500,6 +791,54 @@ class Graph(MediaItem):
     }
 
 
+class Text(MediaItem):
+    """Text is simply a piece of text that can be used as a MediaItem.
+
+    Attributes:
+        text (str): The text of this media item.
+    """
+
+    text = db.Column(db.Text, info={"label": "Text"})
+
+    __mapper_args__ = {
+        'polymorphic_identity': 'text'
+    }
+
+
+class ScorecardSettings(Base):
+    """A ScorecardSettings object represents the configuration of some kind of
+    scorecard.
+
+    Scorecards may be shown after each Activity or after each Experiment (or
+    both). Since the configuration of the two scorecards is identical, it has
+    been refactored to this class.
+
+    Attributes:
+        display_scorecard (bool): Whether or not to display this scorecard at
+            all.
+        display_score (bool): Whether or not to display a tally of points.
+        display_time (bool): Whether or not to display a count of how much time
+            elapsed.
+        display_correctness (bool): Whether or not to display correctness
+            grades.
+        display_feedback (bool): Whether or not to display feedback on
+            responses.
+    """
+
+    display_scorecard = db.Column(db.Boolean,
+                                  info={"label": "Display scorecards"})
+    display_score = db.Column(db.Boolean,
+                              info={"label": "Display points on scorecard"})
+    display_time = db.Column(db.Boolean,
+                             info={"label": "Display time on scorecard"})
+    display_correctness = db.Column(db.Boolean,
+                                    info={"label":
+                                          "Display correctness on scorecard"})
+    display_feedback = db.Column(db.Boolean,
+                                 info={"label":
+                                       "Display feedback on scorecard"})
+
+
 class Experiment(Base):
     """An Experiment contains a list of Activities.
 
@@ -509,11 +848,31 @@ class Experiment(Base):
         start (datetime): When this experiment becomes accessible for answers
         stop (datetime): When this experiment stops accepting answers
         activities (list of Activity): What Activities are included in this
-            Experiment's ParticipantExperiments
-        participant_experiments (list of ParticiapntExperiment): List of
-            ParticipantExperiments that are associated with this Experiment
-        assignments (list of Assignment): Assignments that are present in this
-            Experiment's ParticipantExperiments
+            Experiment's AssignmentSets
+        assignment_sets (list of ParticiapntExperiment): List of
+            AssignmentSets that are associated with this Experiment
+        disable_previous (bool): If True, don't allow Participants to view and
+            modify previous activities.
+        show_timers (bool): If True, display a timer on each activity
+            expressing how long the user has been viewing this activity.
+        show_scores (bool): If True, show the participant a cumulative score on
+            every activity.
+        scorecard_settings (ScorecardSettings): A ScorecardSettings instance
+            that determines how scorecards will be rendered in this Experiment.
+
+            If the ``display_scorecard`` field is ``False``, then no scorecards
+            will be displayed.
+
+            If the ``display_scorecard`` field is ``True``, then scorecards
+            will be displayed after Activities whose own ``ScorecardSettings``
+            objects specify that scorecards should be shown. They will be
+            rendered according to the ``ScorecardSettings`` of that Activity.
+
+            In addition, a scorecard will be rendered after the experiment
+            according to the Experiment's ``ScorecardSettings``.
+        flash (bool): If True, flash the MediaItem for flash_duration
+        milliseconds
+        flash_duration (int): How long to display the MediaItem in milliseconds
     """
 
     name = db.Column(db.String(150), index=True, nullable=False,
@@ -521,19 +880,44 @@ class Experiment(Base):
     created = db.Column(db.DateTime, info={"import_include": False})
     start = db.Column(db.DateTime, nullable=False, info={"label": "Start"})
     stop = db.Column(db.DateTime, nullable=False, info={"label": "Stop"})
-    blurb = db.Column(db.String(500), info={"label": "Blurb"})
+    blurb = db.Column(db.Text, info={"label": "Blurb"})
+    show_scores = db.Column(db.Boolean,
+                            info={"label": ("Show score tally during the"
+                                            " experiment")})
+    flash = db.Column(db.Boolean,
+                      info={"label": "Flash MediaItems when displaying"})
+    flash_duration = db.Column(db.Integer, nullable=False, default=0,
+                               info={"label": "Flash duration (ms)"})
+    disable_previous = db.Column(db.Boolean,
+                                 info={"label": ("Don't let participants go "
+                                                 "back after submitting an "
+                                                 "activity")})
+    show_timers = db.Column(db.Boolean,
+                            info={"label": "Show timers on activities"})
 
-    activities = db.relationship("Activity",
-                                 secondary=activity_experiment_table,
-                                 back_populates="experiments",
-                                 info={"import_include": False})
+    assignment_sets = db.relationship("AssignmentSet",
+                                      back_populates="experiment",
+                                      info={"import_include": False})
 
-    participant_experiments = db.relationship("ParticipantExperiment",
-                                              back_populates="experiment",
-                                              info={"import_include": False})
+    scorecard_settings_id = db.Column(db.Integer,
+                                      db.ForeignKey("scorecard_settings.id"))
+    scorecard_settings = db.relationship("ScorecardSettings",
+                                         uselist=False,
+                                         info={"import_include": False})
 
-    assignments = db.relationship("Assignment", back_populates="experiment",
-                                  info={"import_include": False})
+    def __init__(self, *args, **kwargs):
+        """Make sure to populate scorecard_settings.
+        """
+        self.scorecard_settings = ScorecardSettings()
+        super(Experiment, self).__init__(*args, **kwargs)
+
+    @property
+    def running(self):
+        """Returns True if this experiment is currently running, otherwise
+        False.
+        """
+        now = datetime.now()
+        return now >= self.start and now <= self.stop
 
 
 class Dataset(Base):
@@ -541,12 +925,12 @@ class Dataset(Base):
 
     Attributes:
         name (string): The name of this dataset.
-        uri (string): A path or descriptor of where this dataset is located.
+        info (string): Some information about this dataset
         media_items (list of MediaItem): Which MediaItems this Dataset owns
         questions (list of Questions): Which Questions reference this Dataset
     """
     name = db.Column(db.String(100), nullable=False, info={"label": "Name"})
-    uri = db.Column(db.String(200), info={"label": "URI"})
+    info = db.Column(db.Text, info={"label": "Info"})
 
     media_items = db.relationship("MediaItem", back_populates="dataset")
     questions = db.relationship("Question", secondary=question_dataset_table,

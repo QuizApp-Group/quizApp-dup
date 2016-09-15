@@ -11,27 +11,38 @@ info attribute). However, in some cases certain columns need to be filled out
 earlier than others. This is why we use a special method on each model to
 populate an object.
 """
-import os
-from collections import OrderedDict, defaultdict
-import tempfile
 
-from openpyxl import Workbook
+from collections import OrderedDict, defaultdict
+import os
+import tempfile
+import traceback
+
+from flask import Blueprint, render_template
+from flask import send_file, jsonify
+from flask_security import roles_required
+import markupsafe
+import openpyxl
 from sqlalchemy import inspect
 from sqlalchemy.orm.interfaces import ONETOMANY, MANYTOMANY
 from sqlalchemy.orm.properties import ColumnProperty, RelationshipProperty
 
 from quizApp import db
 from quizApp import models
+from quizApp.forms.data import ImportDataForm
+
 
 SHEET_NAME_MAPPING = OrderedDict([
     ("Experiments", models.Experiment),
-    ("Participant Experiments", models.ParticipantExperiment),
+    ("Assignments", models.Assignment),
+    ("Assignment Sets", models.AssignmentSet),
     ("Datasets", models.Dataset),
     ("Media items", models.MediaItem),
-    ("Assignments", models.Assignment),
     ("Activities", models.Activity),
     ("Choices", models.Choice),
+    ("Results", models.Result),
 ])
+
+data = Blueprint("data", __name__, url_prefix="/data")
 
 
 def export_to_workbook():
@@ -43,10 +54,10 @@ def export_to_workbook():
     `info` dictionary.
     """
 
-    workbook = Workbook()
+    workbook = openpyxl.Workbook()
     workbook.remove_sheet(workbook.active)
 
-    for sheet_name, model in SHEET_NAME_MAPPING.iteritems():
+    for sheet_name, model in SHEET_NAME_MAPPING.items():
         current_sheet = workbook.create_sheet()
         current_sheet.title = sheet_name
         sheet_data = object_list_to_sheet(model.query.all())
@@ -84,14 +95,16 @@ def include_column(model, column, prop, key):
 def header_from_property(prop):
     """Given a property, return its name for use in sheet headers.
     """
-    return prop.parent.class_.__tablename__ + "_" + prop.key
+    return prop.parent.class_.__tablename__ + ":" + prop.key
 
 
 def header_to_field_name(header, model):
     """Reverse header_from_property - given a header and a model, return the
     actual name of the field.
     """
-    prefix = model.__tablename__ + "_"
+    if not header or not len(header) or header.lower() == "comments":
+        return
+    prefix = model.__tablename__ + ":"
 
     if header[:len(prefix)] != prefix:
         # Sanity check failed
@@ -130,8 +143,8 @@ def write_list_to_sheet(data_list, sheet):
     a row.
     """
 
-    for r in xrange(1, len(data_list) + 1):
-        for c in xrange(1, len(data_list[r - 1]) + 1):
+    for r in range(1, len(data_list) + 1):
+        for c in range(1, len(data_list[r - 1]) + 1):
             sheet.cell(row=r, column=c).value = data_list[r - 1][c - 1]
 
 
@@ -140,7 +153,7 @@ def relationship_to_string(field, value):
     """
     ids = []
     direction = field.property.direction
-    if direction in (MANYTOMANY, ONETOMANY):
+    if direction in (MANYTOMANY, ONETOMANY) and field.property.uselist:
         for obj in value:
             ids.append(str(obj.id))
         return ",".join(ids)
@@ -253,6 +266,7 @@ def populate_field(obj, field_name, value, pk_mapping, args):
     model = type(obj)
     field_attrs = inspect(model).attrs[field_name]
     field = getattr(model, field_name)
+
     if isinstance(field_attrs, RelationshipProperty):
         # This is a relationship
         remote_model = field.property.mapper.class_
@@ -264,16 +278,15 @@ def populate_field(obj, field_name, value, pk_mapping, args):
                 fk = int(float(fk))  # goddamn stupid excel
                 collection_item = get_object_from_id(remote_model, fk,
                                                      pk_mapping)
-                if collection_item:
-                    args[field_name].append(collection_item)
+                args[field_name].append(collection_item)
         else:
             value = int(float(value))  # goddamn stupid excel
             collection_item = get_object_from_id(remote_model, value,
                                                  pk_mapping)
-            if collection_item:
-                args[field_name] = collection_item
+            args[field_name] = collection_item
     elif field.primary_key:
-        pk_mapping[model.__tablename__][int(float(value))] = obj
+        pk = int(float(value))
+        pk_mapping[model.__tablename__][pk] = obj
     elif isinstance(field_attrs, ColumnProperty):
         args[field_name] = value
 
@@ -283,9 +296,13 @@ def get_object_from_id(model, obj_id, pk_mapping):
     return it. Otherwise, query the database.
     """
     try:
-        return pk_mapping[model.__tablename__][obj_id]
+        obj = pk_mapping[model.__tablename__][obj_id]
     except KeyError:
-        return model.query.get(obj_id)
+        obj = model.query.get(obj_id)
+    if not obj:
+        raise ValueError("No such object {} with ID {}".
+                         format(model, obj_id))
+    return obj
 
 
 def instantiate_model(model, headers, row):
@@ -313,7 +330,7 @@ def import_data_from_workbook(workbook):
     """
     pk_mapping = defaultdict(dict)
 
-    for sheet_name, model in SHEET_NAME_MAPPING.iteritems():
+    for sheet_name, model in SHEET_NAME_MAPPING.items():
         try:
             sheet = workbook.get_sheet_by_name(sheet_name)
         except KeyError:
@@ -327,7 +344,7 @@ def import_data_from_workbook(workbook):
             obj_args = {}
 
             for col_index, cell in enumerate(row):
-                if not cell.value:
+                if not cell.value or headers[col_index] is None:
                     continue
                 populate_field(obj, headers[col_index],
                                cell.value, pk_mapping, obj_args)
@@ -337,3 +354,109 @@ def import_data_from_workbook(workbook):
                 db.session.add(obj)
 
         db.session.commit()
+
+
+@data.route('/export')
+@roles_required("experimenter")
+def export_data():
+    """Send the user a breakddown of datasets, activities, etc. for use in
+    making assignments.
+    """
+    file_name = export_to_workbook()
+    return send_file(file_name, as_attachment=True,
+                     attachment_filename="quizapp_export.xlsx")
+
+
+@data.route('/import_template')
+@roles_required("experimenter")
+def import_template():
+    """Send the user a blank excel sheet that can be filled out and used to
+    populate an experiment's activity list.
+
+    The process is essentially:
+
+    1. Get a list of models to include
+
+    2. From each model, get all its polymorphisms
+
+    3. For each model, get all fields that should be included in the import
+    template, including any fields from polymorphisms
+
+    4. Create a workbook with as many sheets as models, with one row in each
+    sheet, containing the name of the included fields
+    """
+
+    sheets = OrderedDict([
+        ("Assignment Sets", models.AssignmentSet),
+        ("Assignments", models.Assignment),
+    ])
+
+    documentation = [
+        ["Do not modify the first row in every sheet!"],
+        ["Simply add in your data in the rows undeneath it."],
+        ["Use IDs from the export sheet to populate relationship columns."],
+        [("If you want multiple objects in a relation, separate the IDs using"
+          " commas.")],
+    ]
+
+    workbook = openpyxl.Workbook()
+    workbook.remove_sheet(workbook.active)
+
+    current_sheet = workbook.create_sheet()
+    current_sheet.title = "Documentation"
+    write_list_to_sheet(documentation, current_sheet)
+
+    for sheet_name, model in sheets.items():
+        current_sheet = workbook.create_sheet()
+        current_sheet.title = sheet_name
+        headers = model_to_sheet_headers(model)
+        write_list_to_sheet(headers, current_sheet)
+
+    file_handle, file_name = tempfile.mkstemp(".xlsx")
+    os.close(file_handle)
+    workbook.save(file_name)
+    return send_file(file_name, as_attachment=True,
+                     attachment_filename="import_template.xlsx")
+
+
+@data.route('/import', methods=["POST"])
+@roles_required("experimenter")
+def import_data():
+    """Given an uploaded spreadsheet, import data from the spreadsheet
+    into the database.
+    """
+    import_data_form = ImportDataForm()
+
+    if not import_data_form.validate():
+        return jsonify({"success": 0, "errors": import_data_form.errors})
+
+    workbook = openpyxl.load_workbook(import_data_form.data.data)
+
+    try:
+        import_data_from_workbook(workbook)
+    except Exception:
+        # This isn't very nice, but we need a way to capture exceptions that
+        # happen during import and show them to the user. However, we also want
+        # to have the traceback for debugging purposes. So we print the
+        # traceback to stdout.
+        print(traceback.format_exc())
+        return jsonify({
+            "success": 0,
+            "errors": (markupsafe.Markup("<br>") +
+                       markupsafe.escape(traceback.format_exc()).
+                       replace("\n", markupsafe.Markup("<br>")))
+        })
+
+    return jsonify({"success": 1})
+
+
+@data.route('/manage', methods=["GET"])
+@roles_required("experimenter")
+def manage_data():
+    """Show a form for uploading data and such.
+    """
+
+    import_data_form = ImportDataForm()
+
+    return render_template("data/manage_data.html",
+                           import_data_form=import_data_form)

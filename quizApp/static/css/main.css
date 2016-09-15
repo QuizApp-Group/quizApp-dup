@@ -199,7 +199,7 @@ body {
 /* Customize container */
 @media (min-width: 768px) {
   .container {
-    max-width: 730px;
+    max-width: 1000px;
   }
 }
 .container-narrow > hr {
@@ -276,4 +276,31 @@ ul#answers {
 
 .task-list > .done, .task-list > .done a {
   color: green;
+}
+
+.form-group input, .form-group label {
+  transition: all .5s;
+}
+
+form #submit-message {
+  transition: all .5s;
+}
+
+.draggable {
+    cursor: grab;
+}
+
+tr * {
+    transition: all .5s;
+}
+
+.activity-category {
+  background: #eceeef;
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: .3em;
+}
+
+.media-item-container.small img {
+  max-height: 20em;
 }

@@ -1,21 +1,19 @@
-[![codecov](https://codecov.io/gh/PlasmaSheep/quizApp/branch/develop/graph/badge.svg)](https://codecov.io/gh/PlasmaSheep/quizApp)
+[![codecov](https://codecov.io/gh/QuizApp-Group/quizApp/branch/develop/graph/badge.svg)](https://codecov.io/gh/QuizApp-Group/quizApp)
 [![Documentation Status](https://readthedocs.org/projects/quizapp/badge/?version=latest)](http://quizapp.readthedocs.io/en/latest/?badge=latest)
 
 
-Platform for asking questions based on visualizations.
+Platform for running experiments centered around stimuli and responses.
+
+Initially based on [cmgerber/quizApp](https://github.com/cmgerber/quizApp).
 
 ## Installation
 
-    pip install -r requirements.txt
-    mysql -u root -p < setup_db.sql
-    python populate_students_db.py
-
-For more detailed installation instructions, check out the
+Check out the
 [documentation](https://quizapp.readthedocs.io/en/latest/getting_started.html).
 
 ## Running
 
-    python runserver.py
+    ./manage.py run
 
 ## Using
 
@@ -24,7 +22,7 @@ then navigate to this address in a browser to use the quiz platform.
 
 ## Testing
 
-    ./runtests.sh
+    ./manage.py test
 
 ## Branches
 

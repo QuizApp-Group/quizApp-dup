@@ -2,10 +2,11 @@
 unit tests. This is considerably faster than drop_all create_all after every
 test.
 """
+from __future__ import unicode_literals
 
 import pytest
 
-from clear_db import clear_db
+from scripts.clear_db import clear_db
 from quizApp import create_app
 from quizApp import db
 

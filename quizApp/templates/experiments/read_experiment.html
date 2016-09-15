@@ -1,26 +1,34 @@
-{% extends 'header.html' %}
+{% extends 'layout.html' %}
 {% block head %}
-<meta name="csrf-token" content="{{ csrf_token() }}">
-<script src="{{ url_for('static', filename='js/common_ajax.js') }}"></script>
-<script src="{{ url_for('static', filename='js/experiments_ajax.js') }}"></script>
+<script defer src="{{ url_for('static', filename='js/experiments_ajax.js') }}"></script>
 {% endblock %}
 
 {% block title %}
 {{ experiment.name }}
+{% if current_user.has_role("experimenter") %}
+ - Preview
+{% endif %}
 {% endblock %}
 
 {% import 'macros.html' as macros %}
 
 {% block content %}
 <p class="experiment-blurb">{{ experiment.blurb }}</p>
-  {% if current_user.has_role("participant") %}
-    {% if assignment %}
-      <p>Press the start button to begin.</p>
+{% if current_user.has_role("experimenter") %}
+<a href="{{ url_for('experiments.settings_experiment', experiment_id=experiment.id) }}"
+   role="button" class="btn btn-primary">Edit</a>
+<a href="{{ url_for('experiments.experiments') }}" class="btn btn-primary" role="button">Back to experiment listing</a>
+{% endif %}
+{% if current_user.has_role("participant") %}
+  {% if assignment %}
+  <p>Press the start button to begin.</p>
 
-      <a href="{{ url_for('experiments.read_assignment', experiment_id=experiment.id,
-      a_id=assignment.id) }}" class="btn btn-primary">Start</a>
-    {% else %}
-      <p>You are done with this experiment.</p>
-    {% endif %}
+  <a href="{{ url_for('experiments.read_assignment',
+  experiment_id=experiment.id,
+  assignment_set_id=assignment.assignment_set.id,
+  assignment_id=assignment.id) }}" class="btn btn-primary">Start</a>
+  {% else %}
+  <p>You are done with this experiment.</p>
   {% endif %}
+{% endif %}
 {% endblock %}

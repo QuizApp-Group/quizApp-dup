@@ -1,0 +1,43 @@
+{% extends 'layout.html' %}
+
+{% import 'macros.html' as macros %}
+
+{% block head %}
+<script defer src="{{ url_for('static', filename='js/jquery.runner.min.js') }}"></script>
+<script defer src="{{ url_for('static', filename='js/activity_timing.js') }}"></script>
+<script defer src="{{ url_for('static', filename='js/experiments_ajax.js') }}"></script>
+{% endblock %}
+
+{% block title %}
+Quiz{% endblock %}
+
+{% block content %}
+{% if exp.show_timers and not experiment_complete %}
+Time elapsed: <span class="stopwatch"></span>
+{% endif %}
+{% if exp.show_scores %}
+<span class="score">Current score: {{ cumulative_score }}</span>
+{% endif %}
+<div class="row">
+{% for media_item in assignment.media_items %}
+<div class="media-item-container
+{% if assignment.media_items|length > 1 %}
+col-sm-6
+{% endif %}
+"
+     {% if not experiment_complete and exp.flash %}
+     data-flash-duration="{{ exp.flash_duration }}"
+     {% endif %}
+     >
+     {{ macros.render_media_item(media_item) }}
+</div>
+{% endfor %}
+</div>
+
+{% block activity %}
+{% endblock %}
+
+<div id="scorecard">
+</div>
+{% endblock %}
+

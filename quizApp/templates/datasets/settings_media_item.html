@@ -1,0 +1,45 @@
+{% extends 'layout.html' %}
+{% import "macros.html" as macros %}
+{% import "activities/activities_macros.html" as activities_macros %}
+
+{% block head %}
+<script defer src="{{ url_for('static', filename='js/datasets_ajax.js') }}"></script>
+{% endblock %}
+
+{% block title %}Graph {{ media_item.name }} - Settings{% endblock %}
+
+{% block content %}
+<div class="media-item-container">
+  {{ macros.render_media_item(media_item) }}
+</div>
+<br>
+<h3>Settings</h3>
+{{ macros.render_form(update_media_item_form,
+action=url_for('datasets.media_item', dataset_id=dataset.id, media_item_id=media_item.id),
+method="put",
+id="update-media-item-form") }}
+
+<div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+  <div class="panel panel-default">
+    <div class="panel-heading" role="tab" id="create-heading">
+      <h4 class="panel-title">
+        <a class="collapsed" role="button" data-toggle="collapse" data-parent="#accordion" href="#create-collapse" aria-expanded="false" aria-controls="create-collapse">
+          Create new media item
+        </a>
+      </h4>
+    </div>
+    <div id="create-collapse" class="panel-collapse collapse" role="tabpanel" aria-labelledby="create-heading">
+      <div class="panel-body">
+        <h4>Create new...</h4>
+        {{ macros.render_form(create_media_item_form,
+        id="create-media-item-form",
+        method="post",
+        action=url_for('datasets.media_items', dataset_id=dataset.id))
+        }}
+      </div>
+    </div>
+  </div>
+</div>
+<a href="{{ url_for('datasets.settings_dataset', dataset_id=dataset.id)
+}}" role="button" class="btn btn-primary">Back to dataset settings</a>
+{% endblock %}
