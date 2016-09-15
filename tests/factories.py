@@ -96,6 +96,10 @@ class IntegerQuestionFactory(QuestionFactory):
     class Meta(object):
         model = models.IntegerQuestion
 
+    @factory.post_generation
+    def tolerance(self, create, extracted, **kwargs):
+        self.tolerance = 5
+
 
 class SingleSelectQuestionFactory(QuestionFactory):
     class Meta(object):

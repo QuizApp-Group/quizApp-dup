@@ -184,6 +184,7 @@ def test_assignment_get_score():
 
 def test_integer_question_validators():
     int_question = models.IntegerQuestion()
+    int_question.tolerance = 5
     int_result = models.IntegerQuestionResult()
 
     int_question.lower_bound = 1
@@ -248,6 +249,7 @@ def test_assignment_correct():
 
 def test_integer_question_correct():
     int_question = models.IntegerQuestion()
+    int_question.tolerance = 5
     int_result = models.IntegerQuestionResult()
     int_question.answer = 5
 
