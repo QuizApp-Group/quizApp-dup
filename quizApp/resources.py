@@ -1,21 +1,26 @@
 from flask_restful import fields, Resource
 from flask import request
-from quizApp import schemas
-from quizApp import models, api
+from quizApp import models, restful
+import pdb
 
 class CollectionResource(Resource):
-    def __init__(self, schema, retrieval_function=None):
-        self.schema = schema
-        self.model = schema.Meta.model
+    def __init__(self, model, retrieval_function=None):
+        self.model = model
         self.retrieval_function = retrieval_function
 
+    def polymorphic_dump(self, records):
+        result = []
+        for record in records:
+            schema = record.__marshmallow__()
+            result.append(schema.dump(record).data)
+        return result
+
     def get(self, **kwargs):
-        schema = self.schema()
         if self.retrieval_function:
             records = self.retrieval_function(**kwargs)
         else:
             records = self.model.query.all()
-        return schema.dump(records, many=True)
+        return self.polymorphic_dump(records)
 
     def post(self, **kwargs):
         schema = self.schema()
@@ -26,61 +31,78 @@ class CollectionResource(Resource):
         return None, 200
 
 class ItemResource(Resource):
-    def __init__(self, schema, pk_name):
-        self.schema = schema
-        self.model = schema.Meta.model
+    def __init__(self, model, pk_name):
+        self.model = model
         self.pk_name = pk_name
 
     def get(self, **kwargs):
-        schema = self.schema()
         record_id = kwargs.get(self.pk_name)
         record = self.model.query.get(record_id)
+        schema = record.__marshmallow__()
         return schema.dump(record)
 
-def create_resource_endpoints(url, pk_name, schema, endpoint,
-                              retrieval_function=None):
-    api.add_resource(CollectionResource, url,
-                     resource_class_kwargs={
-                         'schema': schema,
-                         'retrieval_function': retrieval_function,
-                     },
-                     endpoint=endpoint + "_list",
+class ExperimentCollectionResource(CollectionResource):
+    def __init__(self):
+        super(ExperimentCollectionResource,
+              self).__init__(model=models.Experiment)
+
+class ExperimentItemResource(ItemResource):
+    def __init__(self):
+        super(ExperimentItemResource,
+              self).__init__(model=models.Experiment,
+                             pk_name="experiment_id")
+
+restful.add_resource(ExperimentCollectionResource,
+                     '/experiments/')
+restful.add_resource(ExperimentItemResource,
+                     '/experiments/<int:experiment_id>',
                      )
-    api.add_resource(ItemResource,
-                     url + '<int:' + pk_name + '>',
-                     resource_class_kwargs={
-                         'schema': schema,
-                         'pk_name': pk_name,
-                     },
-                     endpoint=endpoint)
 
-create_resource_endpoints("/experiments/", "experiment_id",
-                          schemas.ExperimentSchema, "experiment")
+class AssignmentSetCollectionResource(CollectionResource):
+    def __init__(self):
+        super(AssignmentSetCollectionResource,
+              self).__init__(model=models.AssignmentSet)
 
-def participant_experiment_retrieve(experiment_id):
-    return models.ParticipantExperiment.query.filter_by(experiment_id=experiment_id).all()
+class AssignmentSetItemResource(ItemResource):
+    def __init__(self):
+        super(AssignmentSetItemResource,
+              self).__init__(model=models.AssignmentSet,
+                             pk_name="assignment_set_id")
 
-create_resource_endpoints("/experiments/<int:experiment_id>/participant_experiments/",
-                          "participant_experiment_id",
-                          schemas.ParticipantExperimentSchema,
-                          "participant_experiment",
-                          retrieval_function=participant_experiment_retrieve)
+restful.add_resource(AssignmentSetCollectionResource,
+                     '/experiments/<int:experiment_id>/assignment_sets/')
+restful.add_resource(AssignmentSetItemResource,
+                     '/experiments/<int:experiment_id>/assignment_sets/<int:assignment_set_id>',
+                     )
 
-def assignment_retrieve(experiment_id, participant_experiment_id):
-    return models.Assignment.query.\
-        filter_by(participant_experiment_id=participant_experiment_id).all()
+class AssignmentCollectionResource(CollectionResource):
+    def __init__(self):
+        super(AssignmentCollectionResource,
+              self).__init__(model=models.Assignment)
 
-create_resource_endpoints(
-    "/experiments/<int:experiment_id>/participant_experiments/<int:participant_experiment_id>/assignments/",
-    "assignment_id",
-    schemas.AssignmentSchema,
-    "assignment",
-    retrieval_function=assignment_retrieve)
+class AssignmentItemResource(ItemResource):
+    def __init__(self):
+        super(AssignmentItemResource,
+              self).__init__(model=models.Assignment,
+                             pk_name="assignment_id")
 
-create_resource_endpoints(
-    "/activities/",
-    "activity_id",
-    schemas.ActivitySchema,
-    "activity")
+restful.add_resource(AssignmentCollectionResource,
+                     '/experiments/<int:experiment_id>/assignment_sets/<int:assignment_set_id>/assignments/')
+restful.add_resource(AssignmentItemResource,
+                     '/experiments/<int:experiment_id>/assignment_sets/<int:assignment_set_id>/assignments/<int:assignment_id>')
 
+class ActivityCollectionResource(CollectionResource):
+    def __init__(self):
+        super(ActivityCollectionResource,
+              self).__init__(model=models.Activity)
 
+class ActivityItemResource(ItemResource):
+    def __init__(self):
+        super(ActivityItemResource,
+              self).__init__(model=models.Activity,
+                             pk_name="activity_id")
+
+restful.add_resource(ActivityCollectionResource,
+                     '/activities/')
+restful.add_resource(ActivityItemResource,
+                     '/activities/<int:activity_id>')

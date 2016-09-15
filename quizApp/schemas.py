@@ -6,9 +6,9 @@ class ExperimentSchema(ModelSchema):
     class Meta:
         model = models.Experiment
 
-class ParticipantExperimentSchema(ModelSchema):
+class AssignmentSetSchema(ModelSchema):
     class Meta:
-        model = models.ParticipantExperiment
+        model = models.AssignmentSet
 
 class ActivitySchema(ModelSchema):
     class Meta:
