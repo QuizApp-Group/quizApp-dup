@@ -586,11 +586,6 @@ class IntegerQuestion(Question):
     answer = db.Column(db.Integer(), info={"label": "Correct answer"})
     lower_bound = db.Column(db.Integer, info={"label": "Lower bound"})
     upper_bound = db.Column(db.Integer, info={"label": "Upper bound"})
-    tolerance = db.Column(db.Integer,
-                          info={"label": ("Maximal percent differenct for a"
-                                          " correct answer")},
-                          default=5
-                          )
 
     def get_score(self, result):
         """If the choice is the answer, one point.
@@ -601,9 +596,12 @@ class IntegerQuestion(Question):
             return 0
 
     def is_correct(self, result):
+        # In percent, how off the participant's answer may be before it is
+        # marked incorrect
+        tolerance = 5
         try:
-            return self.tolerance >= (float(abs(result.integer - self.answer))
-                                      / self.answer) * 100
+            return tolerance >= (float(abs(result.integer - self.answer))
+                                 / self.answer) * 100
         except (AttributeError, TypeError):
             return False
 
