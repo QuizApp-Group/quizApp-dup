@@ -37,10 +37,10 @@ def get_graph_url_filter(graph):
     else:
         filename = current_app.config.get("EXPERIMENTS_PLACEHOLDER_GRAPH")
 
-    graph_path = url_for(
-        'static',
-        filename=os.path.join(current_app.config.get("GRAPH_DIRECTORY"),
-                              filename))
+    graph_path = url_for('static',
+                         filename=os.path.join(
+                             current_app.config.get("GRAPH_DIRECTORY"),
+                             filename))
     return graph_path
 
 

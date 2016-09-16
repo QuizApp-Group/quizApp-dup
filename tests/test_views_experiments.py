@@ -2,6 +2,7 @@
 """
 from __future__ import unicode_literals
 from builtins import str
+from collections import Counter
 import json
 import random
 import mock
@@ -11,9 +12,10 @@ from mock import patch
 import openpyxl
 
 from quizApp import db
-from quizApp.models import AssignmentSet
+from quizApp.models import AssignmentSet, Activity
 from quizApp.views.experiments import get_next_assignment_url, \
-    POST_FINALIZE_HANDLERS, validate_assignment_set, populate_row_segment
+    POST_FINALIZE_HANDLERS, validate_assignment_set, populate_row_segment, \
+    get_activity_column_index
 from tests.factories import ExperimentFactory, create_experiment, \
     ParticipantFactory, create_result
 from tests.auth import login_participant, get_participant, \
@@ -726,3 +728,25 @@ def test_export_experiment_results(client, users):
     url = "/experiments/{}/results/export".format(exp.id)
     response = client.get(url)
     assert response.status_code == 200
+
+
+def test_get_activity_column_index():
+    activity = mock.MagicMock(autospec=Activity)
+    activity.id = 5
+    activity.__str__.return_value = ""
+    counter = Counter()
+    mapping = {}
+    headers = []
+
+    get_activity_column_index(activity, mapping, counter, headers)
+
+    assert mapping[activity.id][0] == 1  # 1-indexed due to openpyxl
+    assert len(mapping[activity.id]) == 1
+    assert counter[activity.id] == 1
+
+    get_activity_column_index(activity, mapping, counter, headers)
+
+    assert mapping[activity.id][0] == 1
+    assert mapping[activity.id][1] == 4
+    assert len(mapping[activity.id]) == 2
+    assert counter[activity.id] == 2

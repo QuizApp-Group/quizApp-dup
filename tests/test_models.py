@@ -137,6 +137,16 @@ def test_graph_filename():
     assert graph.filename() == filename
 
 
+def test_graph_directory():
+    path = "/foo/bar/baz"
+    filename = "boo.png"
+
+    full_path = os.path.join(path, filename)
+    graph = models.Graph(path=full_path, name="Foobar")
+
+    assert graph.directory == path
+
+
 def test_save():
     """Make sure saving works correctly.
     """
