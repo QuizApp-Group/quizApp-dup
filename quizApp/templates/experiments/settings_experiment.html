@@ -11,7 +11,7 @@
 
 {% block content %}
 <h3>General settings</h2>
-
+<p>This experiment's coded url (for sharing with participants): {{ coded_url }}</p>
 {{ macros.render_form(update_experiment_form,
 action=url_for('experiments.experiment',
 experiment_id=experiment.id),
