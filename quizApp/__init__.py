@@ -3,7 +3,7 @@
 from __future__ import print_function
 from __future__ import unicode_literals
 from sqlalchemy import event
-from marshmallow_sqlalchemy import ModelSchema
+from marshmallow_sqlalchemy import ModelConversionError, ModelSchema
 
 from flask import Flask
 from flask_jwt import JWT
@@ -41,8 +41,8 @@ def create_app(config_name, overrides=None):
         app.config.from_mapping(overrides)
 
     print("Using config: " + config_name)
-    from quizApp.models import Base
-    event.listen(db.mapper, 'after_configured', setup_schema(Base, db.session))
+    from quizApp import models
+    event.listen(db.mapper, 'after_configured', setup_schema(models.Base))
 
     db.init_app(app)  # flask-sqlalchemy
     csrf.init_app(app)  # CSRF for wtforms
@@ -50,14 +50,12 @@ def create_app(config_name, overrides=None):
     migrate.init_app(app, db)  # flask-migrate
     mail.init_app(app)
 
-
     # Initialize flask-restful
     from quizApp import resources
     restful.init_app(app)
 
     # Initialize flask-security
-    from quizApp.models import User, Role, Base
-    user_datastore = SQLAlchemyUserDatastore(db, User, Role)
+    user_datastore = SQLAlchemyUserDatastore(db, models.User, models.Role)
     security.init_app(app, user_datastore)
     # Workaround for flask-security bug #383
     security.datastore = user_datastore
@@ -83,15 +81,15 @@ def create_app(config_name, overrides=None):
 
     user_registered.connect(apply_default_user_role, app)
 
-    # Initialize flask_jwt
-    from quizApp import jwt_auth
-    jwt.init_app(app)
-
     return app
 
-def setup_schema(Base, session):
-    # Create a function which incorporates the Base and session information
+
+def setup_schema(Base):
+    """Create a function which incorporates the Base and session information
+    """
     def setup_schema_fn():
+        """Attach a marshmallow schema to every db model
+        """
         for class_ in Base._decl_class_registry.values():
             if hasattr(class_, '__tablename__'):
                 if class_.__name__.endswith('Schema'):
@@ -101,6 +99,8 @@ def setup_schema(Base, session):
                     )
 
                 class Meta(object):
+                    """Meta information for the schema.
+                    """
                     model = class_
 
                 schema_class_name = '%sSchema' % class_.__name__
@@ -114,6 +114,7 @@ def setup_schema(Base, session):
                 setattr(class_, '__marshmallow__', schema_class)
 
     return setup_schema_fn
+
 
 def apply_default_user_role(_, user, **__):
     """When a new user is registered, make them a participant.
