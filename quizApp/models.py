@@ -767,7 +767,7 @@ class Graph(MediaItem):
     def filename(self):
         """Return the filename of this graph.
         """
-        return os.path.split(os.path.basename(self.path))[1]
+        return os.path.basename(self.path)
 
     @property
     def directory(self):
@@ -776,7 +776,7 @@ class Graph(MediaItem):
         If ``path`` is not empty, return the lowest directory specified by
         ``path``. Otherwise, return the designated graph directory.
         """
-        current_directory = os.path.split(os.path.basename(self.path))[0]
+        current_directory = os.path.split(self.path)[0]
         if current_directory:
             return current_directory
         return os.path.join(current_app.static_folder,
