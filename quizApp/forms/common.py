@@ -70,9 +70,13 @@ class ObjectTypeForm(Form):
 
 
 class OrderFormMixin(object):
-    '''
-    To apply add to Meta 'order' iterable
-    '''
+    """This mixin allows us to set the order of fields in a ModelForm.
+
+    To use, specify a ``Meta`` class in your form class and define ``order`` as
+    an attribute in the ``Meta`` class.
+
+    Based on https://gist.github.com/rombr/89d4d9db0229237f40bbd46482764918/
+    """
     def __init__(self, *args, **kwargs):
         super(OrderFormMixin, self).__init__(*args, **kwargs)
 

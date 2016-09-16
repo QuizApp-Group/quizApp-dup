@@ -199,8 +199,8 @@ def read_scorecard(experiment, assignment):
 
     next_url = get_next_assignment_url(assignment_set, this_index)
 
+    # Get the previous assignment, if any
     previous_assignment = None
-
     if this_index - 1 > -1 and not experiment.disable_previous:
         previous_assignment = assignment_set.assignments[this_index - 1]
 
@@ -239,14 +239,13 @@ def read_question(experiment, assignment):
         question_form.populate_from_result(assignment.result)
 
     if not assignment_set.complete:
-        # If the participant is not done, then save the choice order
         next_url = None
     else:
         # If the participant is done, have a link right to the next question
         next_url = get_next_assignment_url(assignment_set, this_index)
 
+    # Get the previous assignment, if any
     previous_assignment = None
-
     if this_index - 1 > -1 and not experiment.disable_previous:
         previous_assignment = assignment_set.assignments[this_index - 1]
 
@@ -406,9 +405,6 @@ def get_question_stats(assignment, question_stats):
     if assignment.result:
         question_stats[question.id]["num_responses"] += 1
 
-        if assignment.result:
-            question_stats[question.id]["num_correct"] += 1
-
 
 @experiments.route(EXPERIMENT_ROUTE + "/results", methods=["GET"])
 @roles_required("experimenter")
@@ -518,9 +514,11 @@ def get_results_workbook(experiment):
         activity_counter = Counter()
         participant = assignment_set.participant
 
+        # Nobody has done this set
         if not participant:
             continue
 
+        # Encountered a new participant
         if participant.id not in participant_row_mapping:
             participant_row_mapping[participant.id] = next_participant_row
             populate_row_segment(sheet,

@@ -116,7 +116,6 @@ class AssignmentFactory(factory.Factory):
     class Meta(object):
         model = models.Assignment
 
-    skipped = factory.Faker("boolean")
     comment = factory.Faker("text")
     choice_order = factory.Faker("text")
 
