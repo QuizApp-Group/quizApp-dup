@@ -4,9 +4,14 @@
 Importing and exporting data
 ############################
 
-The primary way of importing and exporting data is through the ``/data/manage``
-page. There are two operations you can do on this page: importing and
-exporting.
+After creating your experiment, activities, media items, and datasets, you must
+set up your assignment sets and assignments to begin an experiment. Setting up
+your assignment sets and assignments is referred to as "importing data". Due to
+the diversity of methods for assigning assignments, quizApp does not provide a
+GUI but does allow a lot of flexibility. Once an experiment has been run, you
+will want to export your data to analyze responses. The primary way of
+importing and exporting data is through the ``/data/manage`` page. There are
+two operations you can do on this page: importing and exporting.
 
 *********
 Exporting
