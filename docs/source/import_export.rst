@@ -12,6 +12,9 @@ exporting.
 Exporting
 *********
 
+All data
+========
+
 To export a dump of all data in the database, click on the `Export` link.
 Alternatively, you can visit the ``/data/export`` page. This will take some
 time due to the amount of database queries and processing, but it will give you
@@ -20,53 +23,53 @@ the types of objects in the database, and the column headers are in the format
 ``<table_name>:<database_column_name>``. Each row in every tab represents one
 database record.
 
+One experiment's data
+=====================
+
+To export just the data from one experiment, you can use the
+``/experiments/<id>/results`` page. There is a link there titled `Export to
+XLSX`. Clicking on this link will download a summary of answers to this
+experiment. Each assignment set will have its own row, and each assignment in
+that assignment set will have three columns:
+
+1. A string representation of that activity, e.g. the question text. The
+   contents of this row is a string representation of the result for this
+   activity prepended with the assignment ID - so for example, the header might
+   be the question text and each cell under the header would be a participant's
+   answer (prepended with the ID of the assignment itself).
+2. Correct/incorrect, with each cell below that being ``TRUE`` or ``FALSE``
+3. Number of points awarded for the result
+
+If a participant did not answer a question present in their assignment set, the
+token ``_BLANK_`` will be present to indicate this.
+
+
 *********
 Importing
 *********
 
-To import data into the database, you must first fill out a spreadsheet in a
-particular way. First click on the "Download Template" link. This template
-represents the type of spreadsheet that the import interface is expecting. On
-the first tab is some brief documentation. The other tabs are ordered from
-parent to child, such that children specify their parents. The general idea is
-such:
+To import data into the database, you must modify a script provided with
+quizApp, namely ``scripts/generate_import_sheet.py``. There are two variables
+you are going to be interested in, both defined in the beginning of the file:
 
-* Do not modify the first row (column headers) of any sheet
-* All information that you add must be added under the headers
-* Some fields are relations, and some relations link to multiple objects (these
-  are called one to many or many to many).
+1. ``DEST_FILE``: The name of the output file
+2. ``DATA``: A list containing the actual data that should be written to the
+   spreadsheet
 
-  * For one to one relations, enter the ``id`` of the object you want to link
-    to. For example, if you want to associate an AssignmentSet with a specific
-    Experiment, in the ``assignment_set:experiment`` column you should have the
-    value of the ``experiment:id`` column of the Experiment you want to link
-    to.
-  * For one to many or many to many relations, you should have a comma
-    separated list of IDs. You can find the IDs the same way you did for one to
-    one relations.
+``DEST_FILE`` is self explanatory, and ``DATA`` has comments above it
+documenting its format. Note that you must know the IDs of the experiments,
+activities, and media items you are interested in using. You can find them in
+the export spreadsheet or in the web interface.
 
-You may be asking where you find the IDs for your associations. There are two
-possibilities here.
+Once you have specified your ``DATA`` variable, you can simply run
+``./generate_import_sheet.py`` (make sure you are in your quizApp virtual
+environment). There will be a file in the current directory named based on
+``DEST_FILE``, and by uploading this spreadsheet in ``/data/manage`` your
+experiment will be populated with assignments and ready for use.
 
-1. You want to relate an object you are importing with another object you are
-   importing (e.g. you are creating an AssignmentSet in your import sheet and
-   want to associate an Assignment you are creating with it).
-
-   In this case, you must assign the Assignment some id in the
-   ``assignment:id`` column. The value of this ID is not strictly important, as
-   long as it is unique in this spreadsheet. Then, in the
-   ``assignment_set:assignment`` column, enter the ID of the Assignments you
-   want to associate with - remember that since this is a one to many relation
-   you would enter multiple Assignments as comma separated IDs.
-
-2. You want to relate an object you are importing with an object already in the
-   database (e.g. you are creating a AssignmentSet and you want to add
-   it to an existing Experiment).
-
-   In this case, you must look up the ID of the experiment in the export sheet
-   or in the web interface in the table that lists experiments.  Then, you may
-   put that id in the ``assignment_set:experiment`` column in your import
-   sheet.
+Note that there is no discovery mechanism for participants to find experiments
+- the experiment URL must be provided to the participants, e.g.
+``/experiments/5`` where ``5`` is the ID of the experiment you are linking.
 
 For a general overview of how the models work, refer to
 :ref:`understanding_models`. For a detailed documentation of the models and
