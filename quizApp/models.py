@@ -444,8 +444,7 @@ class Activity(Base):
 
     scorecard_settings_id = db.Column(db.Integer,
                                       db.ForeignKey("scorecard_settings.id"))
-    scorecard_settings = db.relationship("ScorecardSettings",
-                                         info={"import_include": False})
+    scorecard_settings = db.relationship("ScorecardSettings")
 
     def __init__(self, *args, **kwargs):
         """Make sure to populate scorecard_settings.
@@ -547,19 +546,12 @@ class Question(Activity):
                                     "label": "Number of media items to show"
                                 })
 
-    choices = db.relationship("Choice", back_populates="question",
-                              info={"import_include": False})
+    choices = db.relationship("Choice", back_populates="question")
     datasets = db.relationship("Dataset", secondary=question_dataset_table,
                                back_populates="questions")
 
     def __str__(self):
         return self.question
-
-    def import_dict(self, **kwargs):
-        if "num_media_items" in kwargs:
-            self.num_media_items = kwargs.pop("num_media_items")
-
-        super(Question, self).import_dict(**kwargs)
 
     __mapper_args__ = {
         'polymorphic_identity': 'question',
@@ -877,7 +869,7 @@ class Experiment(Base):
 
     name = db.Column(db.String(150), index=True, nullable=False,
                      info={"label": "Name"})
-    created = db.Column(db.DateTime, info={"import_include": False})
+    created = db.Column(db.DateTime)
     start = db.Column(db.DateTime, nullable=False, info={"label": "Start"})
     stop = db.Column(db.DateTime, nullable=False, info={"label": "Stop"})
     blurb = db.Column(db.Text, info={"label": "Blurb"})
@@ -896,14 +888,12 @@ class Experiment(Base):
                             info={"label": "Show timers on activities"})
 
     assignment_sets = db.relationship("AssignmentSet",
-                                      back_populates="experiment",
-                                      info={"import_include": False})
+                                      back_populates="experiment")
 
     scorecard_settings_id = db.Column(db.Integer,
                                       db.ForeignKey("scorecard_settings.id"))
     scorecard_settings = db.relationship("ScorecardSettings",
-                                         uselist=False,
-                                         info={"import_include": False})
+                                         uselist=False)
 
     def __init__(self, *args, **kwargs):
         """Make sure to populate scorecard_settings.
