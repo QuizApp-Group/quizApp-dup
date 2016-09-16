@@ -6,6 +6,7 @@ import os
 from datetime import datetime
 
 from quizApp import db
+from flask import current_app
 from flask_security import UserMixin, RoleMixin
 
 
@@ -104,10 +105,8 @@ class Participant(User):
             canvas, mechanical turk) it may be necessary to record their user
             ID on the other service (e.g. preventing multiple submission). This
             field holds the foreign ID of this user.
-        assignments (list of Assignments): List of assignments that this user
-            has
-        assignment_sets (list of AssignmentSets): List of
-            AssignmentSets that this participant has
+        assignment_sets (list of AssignmentSets): List of AssignmentSets that
+            this participant has
     """
 
     opt_in = db.Column(db.Boolean)
@@ -122,15 +121,12 @@ class Participant(User):
 
 
 class AssignmentSet(Base):
-    """An Association Object that relates a User to an Experiment and also
-    stores the progress of the User in this Experiment as well as the order of
-    Questions that this user does.
-    Essentially, this tracks the progress of each User in each Experiment.
+    """An AssignmentSet represents a sequence of Assignments within an
+    Experiment. All Assignments in an AssignmentSet are done in order by the
+    same Participant.
 
     Attributes:
-        activities (list of Activity): Order of activities for this
-            user in this experiment
-        progress (int): Which question the user is currently working on.
+        progress (int): Which Assignment the user is currently working on.
         complete (bool): True if the user has finalized their responses, False
             otherwise
         participant (Participant): Which Participant this refers to
@@ -195,8 +191,6 @@ class Assignment(Base):
     they skipped this assignment.
 
     Attributes:
-        skipped (bool): True if the Participant skipped this Question, False
-             otherwise
         comment (string): An optional comment entered by the student.
         choice_order (string): A JSON object in string form that represents the
             order of choices that this participant was presented with when
@@ -206,12 +200,10 @@ class Assignment(Base):
             the question being submitted.
         media_items (list of MediaItem): What MediaItems should be shown
         activity (Activity): Which Activity this Participant should see
-        choice (Choice): Which Choice this Participant chose as their answer
-        assignment_set (AssignmentSet): Which
-            AssignmentSet this Assignment belongs to
+        assignment_set (AssignmentSet): Which AssignmentSet this Assignment
+            belongs to
     """
 
-    skipped = db.Column(db.Boolean, info={"import_include": False})
     comment = db.Column(db.String(500), info={"import_include": False})
     choice_order = db.Column(db.String(80), info={"import_include": False})
     time_to_submit = db.Column(db.Interval(), info={"import_include": False})
@@ -254,8 +246,7 @@ class Assignment(Base):
 
     @db.validates("activity")
     def validate_activity(self, _, activity):
-        """Make sure that the activity is part of this experiment.
-        Make sure that the number of media items on the activity is the same as
+        """Make sure that the number of media items on the activity is the same as
         the number of media items this assignment has.
         """
         try:
@@ -420,12 +411,12 @@ class Activity(Base):
             they picked what they did after they answer the question.
         category (string): A description of this assignment's category, for the
             users' convenience.
-        experiments (list of Experiment): What Experiments include this
-            Activity
         assignments (list of Assignment): What Assignments include this
             Activity
         scorecard_settings (ScorecardSettings): Settings for scorecards after
             this Activity is done
+        include_in_scorecards (bool): Whether or not to show this Activity in
+            scorecards
     """
     class Meta(object):
         """Define what kind of Result we are looking for.
@@ -778,6 +769,19 @@ class Graph(MediaItem):
         """
         return os.path.split(os.path.basename(self.path))[1]
 
+    @property
+    def directory(self):
+        """Return the directory this graph is located in.
+
+        If ``path`` is not empty, return the lowest directory specified by
+        ``path``. Otherwise, return the designated graph directory.
+        """
+        current_directory = os.path.split(os.path.basename(self.path))[0]
+        if current_directory:
+            return current_directory
+        return os.path.join(current_app.static_folder,
+                current_app.config.get("GRAPH_DIRECTORY"))
+
     __mapper_args__ = {
         'polymorphic_identity': 'graph'
     }
@@ -835,12 +839,10 @@ class Experiment(Base):
     """An Experiment contains a list of Activities.
 
     Attributes:
-        name (string
-        created (datetime
+        name (str): The name of this experiment
+        created (datetime): When this experiment was created
         start (datetime): When this experiment becomes accessible for answers
         stop (datetime): When this experiment stops accepting answers
-        activities (list of Activity): What Activities are included in this
-            Experiment's AssignmentSets
         assignment_sets (list of ParticiapntExperiment): List of
             AssignmentSets that are associated with this Experiment
         disable_previous (bool): If True, don't allow Participants to view and
@@ -863,12 +865,11 @@ class Experiment(Base):
             In addition, a scorecard will be rendered after the experiment
             according to the Experiment's ``ScorecardSettings``.
         flash (bool): If True, flash the MediaItem for flash_duration
-        milliseconds
+            milliseconds
         flash_duration (int): How long to display the MediaItem in milliseconds
     """
 
-    name = db.Column(db.String(150), index=True, nullable=False,
-                     info={"label": "Name"})
+    name = db.Column(db.String(150), nullable=False, info={"label": "Name"})
     created = db.Column(db.DateTime)
     start = db.Column(db.DateTime, nullable=False, info={"label": "Start"})
     stop = db.Column(db.DateTime, nullable=False, info={"label": "Stop"})

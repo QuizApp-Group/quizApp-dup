@@ -15,16 +15,10 @@ class UploadedFileField(FileField):
     """This behaves just like FileField, however when ``populate_obj`` is
     called it will overwrite the file pointed to by ``obj.name`` with the
     uploaded file.
+
+    ``obj.directory`` must return the directory where the file is to be saved,
+    if ``getattr(obj, name)`` does not exist.
     """
-    file_dir = ""
-
-    def __init__(self, *args, **kwargs):
-        # TODO: can we move this elsewhere
-        self.file_dir = os.path.join(
-            current_app.static_folder,
-            current_app.config.get("GRAPH_DIRECTORY"))
-        super(UploadedFileField, self).__init__(*args, **kwargs)
-
     def populate_obj(self, obj, name):
         if not self.data:
             return
@@ -36,7 +30,7 @@ class UploadedFileField(FileField):
             # Need to create a new file
             file_name = str(obj.id) +\
                 os.path.splitext(self.data.filename)[1]
-            path = os.path.join(self.file_dir, file_name)
+            path = os.path.join(obj.directory, file_name)
             setattr(obj, name, path)
             db.session.commit()
         self.data.save(path)
