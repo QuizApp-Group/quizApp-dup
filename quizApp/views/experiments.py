@@ -420,7 +420,7 @@ def results_experiment(experiment_id):
     num_participants = Participant.query.count()
     num_finished = AssignmentSet.query.\
         filter_by(experiment_id=experiment.id).\
-        filter_by(progress=-1).count()
+        filter_by(complete=True).count()
 
     percent_finished = num_finished / float(num_participants)
 
@@ -540,7 +540,7 @@ def get_results_workbook(experiment):
             if not assignment.result:
                 row = ["_BLANK_"] * 3
             else:
-                row = [str(assignment.result),
+                row = ["{}:{}".format(assignment.id, assignment.result),
                        assignment.correct,
                        assignment.score]
 
