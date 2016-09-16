@@ -3,7 +3,6 @@ participants.
 """
 from collections import defaultdict, Counter
 from datetime import datetime
-import base64
 import json
 import os
 import tempfile
@@ -20,7 +19,8 @@ from quizApp.forms.experiments import CreateExperimentForm, \
 from quizApp.views.common import ObjectCollectionView, ObjectView
 from quizApp.models import Experiment, Assignment, \
     AssignmentSet, Participant
-from quizApp.views.helpers import validate_model_id, get_first_assignment
+from quizApp.views.helpers import validate_model_id, get_first_assignment,\
+    url_code_to_experiment, experiment_to_url_code
 from quizApp.views.activities import render_activity
 from quizApp.views.mturk import submit_assignment
 
@@ -109,28 +109,13 @@ experiments.add_url_rule(
     view_func=ExperimentCollectionView.as_view('experiments'))
 
 
-def get_experiment_url_code(experiment):
-    """Convert this experiment to a base64 encoded key that we can use to look
-    it up later.
-    """
-    return base64.urlsafe_b64encode("{}:{}".format(experiment.id,
-                                                   experiment.name))
-
-
-def decode_experiment_url_code(code):
-    """Return the experiment referreed to by this key.
-    """
-    return validate_model_id(Experiment,
-                             base64.urlsafe_b64decode(str(code)).split(":")[0])
-
-
 @experiments.route("/<string:experiment_code>", methods=["GET"])
 @login_required
 def read_coded_experiment(experiment_code):
     """This endpoint is where participants begin an experiment. Allows them to
     start an assignment set.
     """
-    experiment = decode_experiment_url_code(experiment_code)
+    experiment = url_code_to_experiment(experiment_code)
 
     if current_user.has_role("participant"):
         if not experiment.running:
@@ -384,7 +369,7 @@ def get_next_assignment_url(assignment_set, current_index):
             next_url = url_for(
                 "experiments.confirm_done_assignment_set",
                 assignment_set_id=assignment_set.id,
-                experiment_code=get_experiment_url_code(
+                experiment_code=experiment_to_url_code(
                     assignment_set.experiment),
                 experiment_id=experiment_id)
         else:
@@ -403,7 +388,7 @@ def settings_experiment(experiment_id):
     experiment = validate_model_id(Experiment, experiment_id)
 
     update_experiment_form = CreateExperimentForm(obj=experiment)
-    experiment_code = get_experiment_url_code(experiment)
+    experiment_code = experiment_to_url_code(experiment)
     coded_url = url_for("experiments.read_coded_experiment",
                         experiment_code=experiment_code, _external=True)
 

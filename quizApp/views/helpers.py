@@ -1,6 +1,7 @@
 """Various functions that are useful in multiple views.
 """
 import random
+import base64
 from flask import abort, jsonify
 from flask_security import current_user
 from sqlalchemy.orm.exc import NoResultFound
@@ -84,3 +85,18 @@ def validate_form_or_error(form):
         return jsonify({"success": 0, "errors": form.errors})
 
     return None
+
+
+def experiment_to_url_code(experiment):
+    """Convert this experiment to a base64 encoded key that we can use to look
+    it up later.
+    """
+    return base64.urlsafe_b64encode("{}:{}".format(experiment.id,
+                                                   experiment.name))
+
+
+def url_code_to_experiment(code):
+    """Return the experiment referreed to by this key.
+    """
+    return validate_model_id(models.Experiment,
+                             base64.urlsafe_b64decode(str(code)).split(":")[0])

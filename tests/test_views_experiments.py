@@ -16,6 +16,7 @@ from quizApp.models import AssignmentSet, Activity
 from quizApp.views.experiments import get_next_assignment_url, \
     POST_FINALIZE_HANDLERS, validate_assignment_set, populate_row_segment, \
     get_activity_column_index
+from quizApp.views import helpers as view_helpers
 from tests.factories import ExperimentFactory, create_experiment, \
     ParticipantFactory, create_result
 from tests.auth import login_participant, get_participant, \
@@ -68,27 +69,20 @@ def test_experiments_authed_participant(client, users):
     assignment_set = AssignmentSet(experiment_id=exp.id,
                                    participant_id=participant.id)
     assignment_set.save()
+    url_code = view_helpers.experiment_to_url_code(exp)
 
-    exp_url = "/experiments/" + str(exp.id)
+    coded_exp_url = "/experiments/" + url_code
 
-    response = client.get(exp_url)
+    response = client.get(coded_exp_url)
     data = response.data.decode(response.charset)
     assert response.status_code == 200
     assert exp.name in data
     assert exp.blurb in data
 
+    exp_url = "/experiments/" + str(exp.id)
+
     response = client.get(exp_url + "/settings")
     assert response.status_code == 302
-
-    response = client.delete(exp_url)
-    assert response.status_code == 403
-
-    response = client.put(exp_url)
-    assert response.status_code == 403
-
-    exp.stop = datetime.now() - timedelta(days=50)
-    response = client.get(exp_url)
-    assert response.status_code == 400
 
 
 def test_experiments_authed_experimenter(client, users):
@@ -210,7 +204,8 @@ def test_read_experiment(client, users):
     exp.assignment_sets[0].progress = 0
     exp.save()
 
-    url = "/experiments/" + str(exp.id)
+    experiment_code = view_helpers.experiment_to_url_code(exp)
+    url = "/experiments/" + experiment_code
 
     response = client.get(url)
     data = response.data.decode(response.charset)
