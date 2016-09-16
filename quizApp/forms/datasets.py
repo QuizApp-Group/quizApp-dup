@@ -4,7 +4,6 @@
 import os
 from wtforms import SubmitField, FileField
 from wtforms_alchemy import ModelForm
-from flask import current_app
 
 from quizApp import db
 from quizApp.forms.common import OrderFormMixin

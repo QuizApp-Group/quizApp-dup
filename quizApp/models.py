@@ -780,7 +780,7 @@ class Graph(MediaItem):
         if current_directory:
             return current_directory
         return os.path.join(current_app.static_folder,
-                current_app.config.get("GRAPH_DIRECTORY"))
+                            current_app.config.get("GRAPH_DIRECTORY"))
 
     __mapper_args__ = {
         'polymorphic_identity': 'graph'
