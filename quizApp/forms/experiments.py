@@ -87,6 +87,9 @@ class ActivityAnswerForm(Form):
     @property
     def result(self):
         """Create a Result object based on this form's data.
+
+        The Result should be appropriate to the type of activity this form is
+        dealing with.
         """
         raise NotImplementedError
 

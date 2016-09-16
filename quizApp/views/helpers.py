@@ -45,8 +45,6 @@ def get_first_assignment(experiment):
 
     If the set is complete, this function returns the first assignment in the
     set.
-
-    If
     """
     assignment_set = get_or_create_assignment_set(experiment)
 

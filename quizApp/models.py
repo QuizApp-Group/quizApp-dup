@@ -6,6 +6,7 @@ import os
 from datetime import datetime
 
 from quizApp import db
+from flask import current_app
 from flask_security import UserMixin, RoleMixin
 
 
@@ -104,10 +105,8 @@ class Participant(User):
             canvas, mechanical turk) it may be necessary to record their user
             ID on the other service (e.g. preventing multiple submission). This
             field holds the foreign ID of this user.
-        assignments (list of Assignments): List of assignments that this user
-            has
-        assignment_sets (list of AssignmentSets): List of
-            AssignmentSets that this participant has
+        assignment_sets (list of AssignmentSets): List of AssignmentSets that
+            this participant has
     """
 
     opt_in = db.Column(db.Boolean)
@@ -122,15 +121,12 @@ class Participant(User):
 
 
 class AssignmentSet(Base):
-    """An Association Object that relates a User to an Experiment and also
-    stores the progress of the User in this Experiment as well as the order of
-    Questions that this user does.
-    Essentially, this tracks the progress of each User in each Experiment.
+    """An AssignmentSet represents a sequence of Assignments within an
+    Experiment. All Assignments in an AssignmentSet are done in order by the
+    same Participant.
 
     Attributes:
-        activities (list of Activity): Order of activities for this
-            user in this experiment
-        progress (int): Which question the user is currently working on.
+        progress (int): Which Assignment the user is currently working on.
         complete (bool): True if the user has finalized their responses, False
             otherwise
         participant (Participant): Which Participant this refers to
@@ -195,8 +191,6 @@ class Assignment(Base):
     they skipped this assignment.
 
     Attributes:
-        skipped (bool): True if the Participant skipped this Question, False
-             otherwise
         comment (string): An optional comment entered by the student.
         choice_order (string): A JSON object in string form that represents the
             order of choices that this participant was presented with when
@@ -206,12 +200,10 @@ class Assignment(Base):
             the question being submitted.
         media_items (list of MediaItem): What MediaItems should be shown
         activity (Activity): Which Activity this Participant should see
-        choice (Choice): Which Choice this Participant chose as their answer
-        assignment_set (AssignmentSet): Which
-            AssignmentSet this Assignment belongs to
+        assignment_set (AssignmentSet): Which AssignmentSet this Assignment
+            belongs to
     """
 
-    skipped = db.Column(db.Boolean, info={"import_include": False})
     comment = db.Column(db.String(500), info={"import_include": False})
     choice_order = db.Column(db.String(80), info={"import_include": False})
     time_to_submit = db.Column(db.Interval(), info={"import_include": False})
@@ -254,8 +246,7 @@ class Assignment(Base):
 
     @db.validates("activity")
     def validate_activity(self, _, activity):
-        """Make sure that the activity is part of this experiment.
-        Make sure that the number of media items on the activity is the same as
+        """Make sure that the number of media items on the activity is the same as
         the number of media items this assignment has.
         """
         try:
@@ -313,6 +304,10 @@ class ScorecardResult(Result):
 
     def __str__(self):
         return ""
+
+    __mapper_args__ = {
+        "polymorphic_identity": "scorecard_result",
+    }
 
 
 class IntegerQuestionResult(Result):
@@ -416,12 +411,12 @@ class Activity(Base):
             they picked what they did after they answer the question.
         category (string): A description of this assignment's category, for the
             users' convenience.
-        experiments (list of Experiment): What Experiments include this
-            Activity
         assignments (list of Assignment): What Assignments include this
             Activity
         scorecard_settings (ScorecardSettings): Settings for scorecards after
             this Activity is done
+        include_in_scorecards (bool): Whether or not to show this Activity in
+            scorecards
     """
     class Meta(object):
         """Define what kind of Result we are looking for.
@@ -440,8 +435,7 @@ class Activity(Base):
 
     scorecard_settings_id = db.Column(db.Integer,
                                       db.ForeignKey("scorecard_settings.id"))
-    scorecard_settings = db.relationship("ScorecardSettings",
-                                         info={"import_include": False})
+    scorecard_settings = db.relationship("ScorecardSettings")
 
     def __init__(self, *args, **kwargs):
         """Make sure to populate scorecard_settings.
@@ -543,19 +537,12 @@ class Question(Activity):
                                     "label": "Number of media items to show"
                                 })
 
-    choices = db.relationship("Choice", back_populates="question",
-                              info={"import_include": False})
+    choices = db.relationship("Choice", back_populates="question")
     datasets = db.relationship("Dataset", secondary=question_dataset_table,
                                back_populates="questions")
 
     def __str__(self):
         return self.question
-
-    def import_dict(self, **kwargs):
-        if "num_media_items" in kwargs:
-            self.num_media_items = kwargs.pop("num_media_items")
-
-        super(Question, self).import_dict(**kwargs)
 
     __mapper_args__ = {
         'polymorphic_identity': 'question',
@@ -586,15 +573,19 @@ class IntegerQuestion(Question):
     def get_score(self, result):
         """If the choice is the answer, one point.
         """
-        try:
-            return int(result.integer == self.answer)
-        except AttributeError:
+        if self.is_correct(result):
+            return 1
+        else:
             return 0
 
     def is_correct(self, result):
+        # In percent, how off the participant's answer may be before it is
+        # marked incorrect
+        tolerance = 5
         try:
-            return result.integer == self.answer
-        except AttributeError:
+            return tolerance >= (float(abs(result.integer - self.answer))
+                                 / self.answer) * 100
+        except (AttributeError, TypeError):
             return False
 
     @db.validates('answer')
@@ -776,7 +767,20 @@ class Graph(MediaItem):
     def filename(self):
         """Return the filename of this graph.
         """
-        return os.path.split(os.path.basename(self.path))[1]
+        return os.path.basename(self.path)
+
+    @property
+    def directory(self):
+        """Return the directory this graph is located in.
+
+        If ``path`` is not empty, return the lowest directory specified by
+        ``path``. Otherwise, return the designated graph directory.
+        """
+        current_directory = os.path.split(self.path)[0]
+        if current_directory:
+            return current_directory
+        return os.path.join(current_app.static_folder,
+                            current_app.config.get("GRAPH_DIRECTORY"))
 
     __mapper_args__ = {
         'polymorphic_identity': 'graph'
@@ -835,12 +839,10 @@ class Experiment(Base):
     """An Experiment contains a list of Activities.
 
     Attributes:
-        name (string
-        created (datetime
+        name (str): The name of this experiment
+        created (datetime): When this experiment was created
         start (datetime): When this experiment becomes accessible for answers
         stop (datetime): When this experiment stops accepting answers
-        activities (list of Activity): What Activities are included in this
-            Experiment's AssignmentSets
         assignment_sets (list of ParticiapntExperiment): List of
             AssignmentSets that are associated with this Experiment
         disable_previous (bool): If True, don't allow Participants to view and
@@ -863,13 +865,12 @@ class Experiment(Base):
             In addition, a scorecard will be rendered after the experiment
             according to the Experiment's ``ScorecardSettings``.
         flash (bool): If True, flash the MediaItem for flash_duration
-        milliseconds
+            milliseconds
         flash_duration (int): How long to display the MediaItem in milliseconds
     """
 
-    name = db.Column(db.String(150), index=True, nullable=False,
-                     info={"label": "Name"})
-    created = db.Column(db.DateTime, info={"import_include": False})
+    name = db.Column(db.String(150), nullable=False, info={"label": "Name"})
+    created = db.Column(db.DateTime)
     start = db.Column(db.DateTime, nullable=False, info={"label": "Start"})
     stop = db.Column(db.DateTime, nullable=False, info={"label": "Stop"})
     blurb = db.Column(db.Text, info={"label": "Blurb"})
@@ -888,14 +889,12 @@ class Experiment(Base):
                             info={"label": "Show timers on activities"})
 
     assignment_sets = db.relationship("AssignmentSet",
-                                      back_populates="experiment",
-                                      info={"import_include": False})
+                                      back_populates="experiment")
 
     scorecard_settings_id = db.Column(db.Integer,
                                       db.ForeignKey("scorecard_settings.id"))
     scorecard_settings = db.relationship("ScorecardSettings",
-                                         uselist=False,
-                                         info={"import_include": False})
+                                         uselist=False)
 
     def __init__(self, *args, **kwargs):
         """Make sure to populate scorecard_settings.
