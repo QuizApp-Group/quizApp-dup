@@ -1,7 +1,7 @@
 """Views that handle CRUD for experiments and rendering questions for
 participants.
 """
-from collections import defaultdict
+from collections import defaultdict, Counter
 from datetime import datetime
 import json
 import os
@@ -416,7 +416,7 @@ def results_experiment(experiment_id):
     num_participants = Participant.query.count()
     num_finished = AssignmentSet.query.\
         filter_by(experiment_id=experiment.id).\
-        filter_by(progress=-1).count()
+        filter_by(complete=True).count()
 
     percent_finished = num_finished / float(num_participants)
 
@@ -467,6 +467,28 @@ def export_results_experiment(experiment_id):
         attachment_filename="experiment_{}_report.xlsx".format(experiment.id))
 
 
+def get_activity_column_index(activity, activity_column_mapping,
+                              activity_counter, headers):
+    """Find the column index for this occurrence of the given activity. This
+    will update headers, counter, and mapping if necessary.
+    """
+    activity_occurrence = activity_counter[activity.id]
+    activity_counter[activity.id] += 1
+    try:
+        return activity_column_mapping[activity.id][activity_occurrence]
+    except KeyError:
+        activity_column_mapping[activity.id] = [len(headers) + 1]
+        headers.append("{}: {}".format(activity.id, activity))
+        headers.append("Correct?")
+        headers.append("Points")
+    except IndexError:
+        activity_column_mapping[activity.id].append(len(headers) + 1)
+        headers.append("{}: {}".format(activity.id, activity))
+        headers.append("Correct?")
+        headers.append("Points")
+    return activity_column_mapping[activity.id][activity_occurrence]
+
+
 def get_results_workbook(experiment):
     """Analyze the assignment sets in the experiment and return an excel
     workbook.
@@ -477,11 +499,19 @@ def get_results_workbook(experiment):
     next_participant_row = 2
     participant_row_mapping = {}
 
+    # The same activity can appear multiple times in an assignment set. To
+    # display them properly, we keep a list of their ocurrences in
+    # activity_column_mapping, like so:
+    # {1: [3, 7, 10], ...} means activity 1 occurs in columns 3, 7, and 10
+    # When populating a row, we will use the earliest occurrence of the
+    # activity possible.
+
     workbook = openpyxl.Workbook()
     sheet = workbook.active
     sheet.title = "Experiment {} - Report".format(experiment.id)
 
     for assignment_set in assignment_sets:
+        activity_counter = Counter()
         participant = assignment_set.participant
 
         # Nobody has done this set
@@ -499,35 +529,27 @@ def get_results_workbook(experiment):
 
         for assignment in assignment_set.assignments:
             activity = assignment.activity
-
-            # Encountered a new activity
-            if activity.id not in activity_column_mapping:
-                activity_column_mapping[activity.id] = len(headers) + 1
-                headers.append("{}/{}: {}".format(assignment.id,
-                                                  activity.id, activity))
-                headers.append("Correct?")
-                headers.append("Points")
+            activity_column_index = get_activity_column_index(
+                activity,
+                activity_column_mapping,
+                activity_counter,
+                headers)
 
             if not assignment.result:
-                continue
+                row = ["_BLANK_"] * 3
+            else:
+                row = ["{}:{}".format(assignment.id, assignment.result),
+                       assignment.correct,
+                       assignment.score]
 
             populate_row_segment(
                 sheet,
                 participant_row_mapping[participant.id],
-                activity_column_mapping[activity.id],
-                [str(assignment.result),
-                 assignment.correct,
-                 assignment.score]
+                activity_column_index,
+                row
             )
 
     populate_row_segment(sheet, 1, 1, headers)
-
-    # Put a special token in all blank spaces
-    for r in range(1, next_participant_row):
-        for c in range(1, len(headers) + 1):
-            value = sheet.cell(row=r, column=c).value
-            if value is None:
-                sheet.cell(row=r, column=c).value = "_BLANK_"
 
     # Specify experiment ID
     sheet.cell(row=1, column=len(headers) + 1).value = "Experiment ID"
