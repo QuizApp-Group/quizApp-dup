@@ -1,7 +1,7 @@
 .. _understanding_quizapp:
 
 ###################################
-Understanding the QuizApp structure 
+Understanding the QuizApp structure
 ###################################
 
 There are 3 principle parts of the quizApp system: the experiments, activities,
@@ -49,4 +49,4 @@ the experiment's blurb and be assigned an assignment set. Once they click
 be rendered as its media items followed by its activity. The participant's
 response will be stored as a Result object on the Assignment. Once the
 participant finalizes their responses, their assignment set will be marked as
-completed and they will be unable to run the experiment again. 
+completed and they will be unable to run the experiment again.

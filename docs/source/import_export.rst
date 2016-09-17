@@ -73,8 +73,8 @@ environment). There will be a file in the current directory named based on
 experiment will be populated with assignments and ready for use.
 
 Note that there is no discovery mechanism for participants to find experiments
-- the experiment URL must be provided to the participants, e.g.
-``/experiments/5`` where ``5`` is the ID of the experiment you are linking.
+- the experiment URL must be provided to the participants, which can be found
+on the experiments settings page.
 
 For a general overview of how the models work, refer to
 :ref:`understanding_models`. For a detailed documentation of the models and
