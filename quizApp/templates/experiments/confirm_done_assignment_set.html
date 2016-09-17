@@ -17,7 +17,8 @@ experiment_id=experiment.id, assignment_set_id=assignment_set.id)
 }}" method="patch" id="submit-experiment-form">
   <input type="submit" value="Submit" class="btn btn-primary">
   {% if not experiment.disable_previous %}
-  <a href="{{ url_for('experiments.experiment', experiment_id=experiment.id) }}"
+  <a href="{{ url_for('experiments.read_coded_experiment',
+     experiment_code=experiment.code) }}"
      class="btn btn-primary" role="button">Go back to start</a>
   {% endif %}
 </form>
