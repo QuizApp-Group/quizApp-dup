@@ -2,6 +2,7 @@
 """
 import base64
 import random
+import pdb
 
 from flask import abort, jsonify
 from flask_security import current_user
@@ -96,13 +97,13 @@ def experiment_to_url_code(experiment):
     """
     code_string = u"{}-{}".format(experiment.id, experiment.name[:10])
     code = base64.urlsafe_b64encode(code_string.encode())
-    return code
+    return code.decode("utf-8")
 
 
 def url_code_to_experiment(code):
     """Return the experiment referreed to by this key.
     """
-    decoded = base64.urlsafe_b64decode(code.encode("utf8"))
+    decoded = base64.urlsafe_b64decode(code.encode("utf8")).decode("utf-8")
     id_part = decoded.split("-", 1)[0]
     experiment = validate_model_id(models.Experiment, id_part)
 
