@@ -2,7 +2,6 @@
 """
 import base64
 import random
-import pdb
 
 from flask import abort, jsonify
 from flask_security import current_user
