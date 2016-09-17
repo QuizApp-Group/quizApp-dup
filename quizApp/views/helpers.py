@@ -1,7 +1,8 @@
 """Various functions that are useful in multiple views.
 """
-import random
 import base64
+import random
+
 from flask import abort, jsonify
 from flask_security import current_user
 from sqlalchemy.orm.exc import NoResultFound
@@ -88,15 +89,24 @@ def validate_form_or_error(form):
 
 
 def experiment_to_url_code(experiment):
-    """Convert this experiment to a base64 encoded key that we can use to look
-    it up later.
+    """Convert this experiment to a key that we can use to look it up later.
+
+    Not much trickery going on, but unless a participant knows the name of the
+    experiment as well as its ID they can't find it.
     """
-    return base64.urlsafe_b64encode("{}:{}".format(experiment.id,
-                                                   experiment.name))
+    code_string = u"{}-{}".format(experiment.id, experiment.name[:10])
+    code = base64.urlsafe_b64encode(code_string.encode())
+    return code
 
 
 def url_code_to_experiment(code):
     """Return the experiment referreed to by this key.
     """
-    return validate_model_id(models.Experiment,
-                             base64.urlsafe_b64decode(str(code)).split(":")[0])
+    decoded = base64.urlsafe_b64decode(code.encode("utf8"))
+    id_part = decoded.split("-", 1)[0]
+    experiment = validate_model_id(models.Experiment, id_part)
+
+    if experiment_to_url_code(experiment) != code:
+        abort(404)
+
+    return experiment
