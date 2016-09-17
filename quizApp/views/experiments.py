@@ -19,7 +19,8 @@ from quizApp.forms.experiments import CreateExperimentForm, \
 from quizApp.views.common import ObjectCollectionView, ObjectView
 from quizApp.models import Experiment, Assignment, \
     AssignmentSet, Participant
-from quizApp.views.helpers import validate_model_id, get_first_assignment
+from quizApp.views.helpers import validate_model_id, get_first_assignment,\
+    url_code_to_experiment, experiment_to_url_code
 from quizApp.views.activities import render_activity
 from quizApp.views.mturk import submit_assignment
 
@@ -108,10 +109,30 @@ experiments.add_url_rule(
     view_func=ExperimentCollectionView.as_view('experiments'))
 
 
+@experiments.route("/<string:experiment_code>", methods=["GET"])
+@login_required
+def read_coded_experiment(experiment_code):
+    """This endpoint is where participants begin an experiment. Allows them to
+    start an assignment set.
+    """
+    experiment = url_code_to_experiment(experiment_code)
+
+    if current_user.has_role("participant"):
+        if not experiment.running:
+            abort(400)
+        assignment = get_first_assignment(experiment)
+    else:
+        assignment = None
+
+    return render_template("experiments/read_experiment.html",
+                           experiment=experiment,
+                           assignment=assignment)
+
+
 class ExperimentView(ObjectView):
     """View for a particular experiment.
     """
-    decorators = [login_required]
+    decorators = [roles_required("experimenter")]
     methods = ["GET", "PUT", "DELETE"]
     object_key = "experiment"
     template = "experiments/read_experiment.html"
@@ -126,28 +147,8 @@ class ExperimentView(ObjectView):
         return url_for("experiments.experiments")
 
     def get(self, experiment):
-        """View the landing page of an experiment, along with the ability to start.
-        """
-        if current_user.has_role("participant"):
-            if not experiment.running:
-                abort(400)
-            assignment = get_first_assignment(experiment)
-        else:
-            assignment = None
-
         return render_template("experiments/read_experiment.html",
-                               experiment=experiment,
-                               assignment=assignment)
-
-    def delete(self, **kwargs):
-        if current_user.has_role("experimenter"):
-            return super(ExperimentView, self).delete(**kwargs)
-        abort(403)
-
-    def put(self, **kwargs):
-        if current_user.has_role("experimenter"):
-            return super(ExperimentView, self).put(**kwargs)
-        abort(403)
+                               experiment=experiment)
 
 experiments.add_url_rule(
     EXPERIMENT_ROUTE,
@@ -365,9 +366,12 @@ def get_next_assignment_url(assignment_set, current_index):
         # We've reached the end of the experiment
         if not assignment_set.complete:
             # The experiment needs to be submitted
-            next_url = url_for("experiments.confirm_done_assignment_set",
-                               assignment_set_id=assignment_set.id,
-                               experiment_id=experiment_id)
+            next_url = url_for(
+                "experiments.confirm_done_assignment_set",
+                assignment_set_id=assignment_set.id,
+                experiment_code=experiment_to_url_code(
+                    assignment_set.experiment),
+                experiment_id=experiment_id)
         else:
             # Experiment has already been submitted
             next_url = url_for("experiments.experiment",
@@ -384,9 +388,13 @@ def settings_experiment(experiment_id):
     experiment = validate_model_id(Experiment, experiment_id)
 
     update_experiment_form = CreateExperimentForm(obj=experiment)
+    experiment_code = experiment_to_url_code(experiment)
+    coded_url = url_for("experiments.read_coded_experiment",
+                        experiment_code=experiment_code, _external=True)
 
     return render_template("experiments/settings_experiment.html",
                            experiment=experiment,
+                           coded_url=coded_url,
                            update_experiment_form=update_experiment_form)
 
 
