@@ -14,7 +14,7 @@ if [ $TRAVIS_BRANCH == 'master' ] && [ $TRAVIS_PULL_REQUEST == 'false' ] &&
     mv deploy_key ~/.ssh/id_rsa
 
     # Add the server and push
-    git remote add deploy "www@159.203.101.171:/home/www/quizApp.git"
+    git remote add deploy "www@45.55.90.40:/home/www/quizApp.git"
     git config user.name "Travis CI"
     git config user.email "alexeibendebury+travis@gmail.com"
 
