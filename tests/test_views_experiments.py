@@ -747,6 +747,6 @@ def test_get_activity_column_index():
     get_activity_column_index(activity, mapping, counter, headers)
 
     assert mapping[activity.id][0] == 1
-    assert mapping[activity.id][1] == 4
+    assert mapping[activity.id][1] == 6
     assert len(mapping[activity.id]) == 2
     assert counter[activity.id] == 2

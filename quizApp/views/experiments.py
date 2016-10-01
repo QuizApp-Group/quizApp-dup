@@ -481,12 +481,33 @@ def get_activity_column_index(activity, activity_column_mapping,
         headers.append("{}: {}".format(activity.id, activity))
         headers.append("Correct?")
         headers.append("Points")
+        headers.append("Comments")
+        headers.append("Media items")
     except IndexError:
         activity_column_mapping[activity.id].append(len(headers) + 1)
         headers.append("{}: {}".format(activity.id, activity))
         headers.append("Correct?")
         headers.append("Points")
+        headers.append("Comments")
+        headers.append("Media items")
     return activity_column_mapping[activity.id][activity_occurrence]
+
+
+def assignment_to_cells(assignment):
+    """Given an assignment, convert it into a 4-cell block for use in a
+    spreadsheet.
+    """
+    media_items = ",".join([str(mi.id) for mi
+                            in assignment.media_items])
+    if not assignment.result:
+        row = ["_BLANK_"] * 4 + [media_items]
+    else:
+        row = ["{}:{}".format(assignment.id, assignment.result),
+               assignment.correct,
+               assignment.score,
+               assignment.comment,
+               media_items]
+    return row
 
 
 def get_results_workbook(experiment):
@@ -535,12 +556,7 @@ def get_results_workbook(experiment):
                 activity_counter,
                 headers)
 
-            if not assignment.result:
-                row = ["_BLANK_"] * 3
-            else:
-                row = ["{}:{}".format(assignment.id, assignment.result),
-                       assignment.correct,
-                       assignment.score]
+            row = assignment_to_cells(assignment)
 
             populate_row_segment(
                 sheet,
