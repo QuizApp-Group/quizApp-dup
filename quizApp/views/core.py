@@ -11,7 +11,6 @@ from flask_security import roles_required, login_required, current_user,\
 from flask_security.utils import encrypt_password
 
 from quizApp import models, db, security
-from quizApp.views import helpers
 
 core = Blueprint("core", __name__, url_prefix="/")
 
@@ -72,8 +71,6 @@ def auto_register():
     created, they will be logged in, then redirected to the specified
     experiment.
     """
-    experiment = helpers.validate_model_id(models.Experiment,
-                                           request.args["experiment_id"])
     if not current_user.is_authenticated:
         password = ''.join(random.SystemRandom().
                            choice(string.ascii_uppercase + string.digits)
@@ -86,6 +83,5 @@ def auto_register():
         participant.save()
         login_user(participant)
 
-    return redirect(url_for(
-        "experiments.read_coded_experiment",
-        experiment_code=helpers.experiment_to_url_code(experiment)))
+    return redirect(url_for("experiments.experiment",
+                            experiment_id=request.args["experiment_id"]))
