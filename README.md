@@ -2,7 +2,7 @@
 [![Documentation Status](https://readthedocs.org/projects/quizapp/badge/?version=latest)](http://quizapp.readthedocs.io/en/latest/?badge=latest)
 
 
-Platform for running experiments centered around stimuli and responses.
+QuizApp is a platform for running experiments centered around stimuli and responses. A full documentation and description is available at [readthedocs](http://quizapp.readthedocs.io/en/latest/?badge=latest).
 
 Initially based on [cmgerber/quizApp](https://github.com/cmgerber/quizApp).
 
