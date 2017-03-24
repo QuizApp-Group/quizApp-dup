@@ -209,7 +209,11 @@
         defer
         integrity="sha384-ohw6o2vy/chIavW0iVsUoWaIPmAnF9VKjEMSusADB79PrE3CdeJhvR84BjcynjVl"
         data-fallback="{{ url_for('static', filename='js/moment.min.js') }}"
-        crossorigin="anonymous" onerror="resource_error(this)"></script>
+        crossorigin="anonymous"></script>
+<script defer>
+check_js_error(moment,
+      "{{ url_for('static', filename='js/bootstrap.min.js') }}")
+</script>
 <script src="{{ url_for('static', filename='js/bootstrap-datetimepicker.min.js') }}"
         defer></script>
 <script defer src="{{ url_for('static', filename='js/form.js') }}"></script>
@@ -223,12 +227,20 @@
         integrity="sha384-89aj/hOsfOyfD0Ll+7f2dobA15hDyiNb8m1dJ+rJuqgrGR+PVqNU8pybx4pbF3Cc"
         data-fallback="{{ url_for('static', filename='js/jquery.dataTables.min.js') }}"
         defer
-        crossorigin="anonymous" onerror="resource_error(this)"></script>
+        crossorigin="anonymous"></script>
+<script defer>
+check_js_error(jQuery().DataTable,
+      "{{ url_for('static', filename='js/jquery.dataTables.min.js') }}")
+</script>
 <script src="https://cdn.datatables.net/1.10.12/js/dataTables.bootstrap.min.js"
-        integrity="sha384-SR1gffNfWzqensZ3u8O8AkytPBwtg4pKQuOrHUvvCuAxqcoAE4LWPryg4o+1Y9uP"
+        integrity="sha384-SR1gfNfWzqensZ3u8O8AkytPBwtg4pKQuOrHUvvCuAxqcoAE4LWPryg4o+1Y9uP"
         data-fallback="{{ url_for('static', filename='js/dataTables.bootstrap.min.js') }}"
         defer
-        crossorigin="anonymous" onerror="resource_error(this)"></script>
+        crossorigin="anonymous"></script>
+<script defer>
+check_js_error($.fn.dataTable.ext.renderer.pageButton.bootstrap,
+      "{{ url_for('static', filename='js/dataTables.bootstrap.min.js') }}")
+</script>
 <link rel="stylesheet"
       href="https://cdn.datatables.net/1.10.12/css/dataTables.bootstrap.min.css"
       data-fallback="{{ url_for('static', filename='js/dataTables.bootstrap.min.js') }}"

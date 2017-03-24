@@ -24,6 +24,10 @@
           integrity="sha256-cCueBR6CsyA4/9szpPfrX3s49M9vUU5BgtiJj06wt/s="
           data-fallback="{{ url_for('static', filename='js/jquery.min.js') }}"
           crossorigin="anonymous" onerror="resource_error(this)"></script>
+    <script defer>
+      check_js_error(window.jQuery,
+      "{{ url_for('static', filename='js/jquery.min.js') }}")
+    </script>
     <link rel="stylesheet"
           href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
           integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
@@ -34,6 +38,10 @@
             data-fallback="{{ url_for('static', filename='js/bootstrap.min.js') }}"
             integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
             crossorigin="anonymous" onerror="resource_error(this)"></script>
+    <script defer>
+      check_js_error(typeof $().emulateTransitionEnd == "function",
+      "{{ url_for('static', filename='js/bootstrap.min.js') }}")
+    </script>
     <link href="{{ url_for('static', filename='css/main.css') }}" rel="stylesheet">
     <script defer src="{{ url_for('static', filename='js/frame.js') }}"></script>
     <script defer src="{{ url_for('static', filename='js/common_ajax.js') }}"></script>
@@ -45,10 +53,18 @@
               integrity="sha384-FFgGfda92tXC8nCNOxrCQ3R8x1TNkMFqDZVQdDaaJiiVbjkPBXIJBx0o7ETjy8Bh"
               data-fallback="{{ url_for('static', filename='js/html5shiv.min.js') }}"
               crossorigin="anonymous" onerror="resource_error(this)"></script>
+      <script defer>
+        check_js_error(window.html5,
+        "{{ url_for('static', filename='js/bootstrap.min.js') }}")
+      </script>
       <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"
               integrity="sha384-ZoaMbDF+4LeFxg6WdScQ9nnR1QC2MIRxA1O9KWEXQwns1G8UNyIEZIQidzb0T1fo"
               data-fallback="{{ url_for('static', filename='js/respond.min.js') }}"
               crossorigin="anonymous" onerror="resource_error(this)"></script>
+      <script defer>
+        check_js_error(respond,
+        "{{ url_for('static', filename='js/respond.min.js') }}")
+      </script>
     <![endif]-->
     {% block head %}{% endblock %}
   </head>
